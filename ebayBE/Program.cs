@@ -30,8 +30,11 @@ var jwtSettings = builder.Configuration
     .GetSection("JwtSettings")
     .Get<JwtSettings>()!;
 
+if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.SecretKey))
+    throw new InvalidOperationException("JWT Settings or SecretKey is missing in configuration");
+
 if (Encoding.UTF8.GetBytes(jwtSettings.SecretKey).Length < 32)
-    throw new InvalidOperationException("JWT SecretKey must be at least 256-bit");
+    throw new InvalidOperationException("JWT SecretKey must be at least 256-bit (32 characters)");
 
 builder.Services.AddDbContext<EbayDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

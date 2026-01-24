@@ -1,4 +1,4 @@
-﻿services:
+services:
   db:
     image: postgres:16
     container_name: ebay-db
@@ -7,7 +7,7 @@
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./Docker/DB/Init:/docker-entrypoint-initdb.d:ro
@@ -26,6 +26,8 @@
         Password=${POSTGRES_PASSWORD}
     depends_on:
       - db
+    env_file:
+      - .env
     ports:
       - "5000:8080"
     restart: unless-stopped

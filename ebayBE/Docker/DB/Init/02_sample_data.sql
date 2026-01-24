@@ -34,13 +34,11 @@ INSERT INTO addresses (user_id, full_name, phone, street, city, state, postal_co
 (9, 'Lisa Brown', '0934567890', '987 Phan Chu Trinh', 'Hue', 'Thua Thien Hue', '530000', 'Vietnam', true),
 (10, 'Tom Davis', '0945678901', '147 Vo Van Tan', 'Can Tho', 'Can Tho', '900000', 'Vietnam', true);
 
--- ============================================
--- CATEGORIES
--- ============================================
 
 -- ============================================
 -- CATEGORIES
 -- ============================================
+
 
 INSERT INTO categories (name, slug, description, parent_id, image_url, is_active, display_order) VALUES
 -- Top-level Categories (User Requested 7 First)
@@ -53,7 +51,7 @@ INSERT INTO categories (name, slug, description, parent_id, image_url, is_active
 ('Lenses and filters', 'lenses-filters', 'Camera lenses and filtering equipment', NULL, 'https://i.ebayimg.com/images/g/RusAAeSw0uxpqvtW/s-l500.webp', true, 7),
 -- Other Top-level Categories
 ('Automotive', 'automotive', 'Car parts and accessories', NULL, 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7', true, 8),
-('Fashion', 'fashion', 'Clothing and fashion items', NULL, 'https://images.unsplash.com/photo-1445205170230-053b83016050', true, 9),
+('Fashion', 'fashion', 'Clothing and fashion items', NULL, 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04', true, 9),
 ('Home & Garden', 'home-garden', 'Home improvement and garden supplies', NULL, 'https://images.unsplash.com/photo-1484101403633-562f891dc89a', true, 10),
 ('Sports & Outdoors', 'sports-outdoors', 'Sports equipment and outdoor gear', NULL, 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211', true, 11),
 ('Books', 'books', 'Books and educational materials', NULL, 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d', true, 12),
@@ -479,8 +477,24 @@ INSERT INTO products (title, slug, description, price, images, category_id, sell
 -- INVENTORY
 -- ============================================
 
-INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated)
-SELECT id, stock, (random() * 5)::INT, CURRENT_TIMESTAMP FROM products;
+INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated) VALUES
+(1, 15, 2, CURRENT_TIMESTAMP),
+(2, 50, 5, CURRENT_TIMESTAMP),
+(3, 30, 3, CURRENT_TIMESTAMP),
+(4, 20, 1, CURRENT_TIMESTAMP),
+(5, 8, 0, CURRENT_TIMESTAMP),
+(6, 100, 10, CURRENT_TIMESTAMP),
+(7, 75, 8, CURRENT_TIMESTAMP),
+(8, 150, 15, CURRENT_TIMESTAMP),
+(9, 200, 20, CURRENT_TIMESTAMP),
+(10, 80, 5, CURRENT_TIMESTAMP),
+(11, 120, 12, CURRENT_TIMESTAMP),
+(12, 45, 3, CURRENT_TIMESTAMP),
+(13, 30, 2, CURRENT_TIMESTAMP),
+(14, 60, 4, CURRENT_TIMESTAMP),
+(15, 90, 6, CURRENT_TIMESTAMP),
+(16, 25, 1, CURRENT_TIMESTAMP),
+(17, 40, 2, CURRENT_TIMESTAMP);
 
 -- ============================================
 -- CARTS
@@ -644,16 +658,16 @@ INSERT INTO messages (sender_id, receiver_id, subject, content, is_read, read_at
 -- ============================================
 
 INSERT INTO notifications (user_id, type, title, body, link, is_read, read_at) VALUES
-('5', 'order', 'Order Delivered', 'Your order #ORD-20240105-000001 has been delivered successfully!', '/orders/1', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
-('5', 'promotion', 'New Year Sale!', 'Get 20% off on all electronics. Use code: NEWYEAR20', '/promotions', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
-('6', 'shipping', 'Order Shipped', 'Your order #ORD-20240108-000002 is on the way!', '/orders/2', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
-('6', 'message', 'New Message', 'You have a new message from Jane Fashion Hub', '/messages', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
-('7', 'order', 'Order Confirmed', 'Your order #ORD-20240110-000003 has been confirmed!', '/orders/3', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
-('7', 'promotion', 'Flash Sale Alert!', 'Flash sale on fashion items starting now!', '/promotions', false, NULL),
-('9', 'order', 'Order Confirmed', 'Your order #ORD-20240112-000004 has been confirmed!', '/orders/4', true, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-('9', 'message', 'New Message', 'Robert Home Decor replied to your message', '/messages', false, NULL),
-('10', 'order', 'Payment Pending', 'Please complete payment for order #ORD-20240114-000005', '/orders/5', false, NULL),
-('10', 'system', 'Welcome!', 'Welcome to Clone eBay! Start shopping now and enjoy exclusive deals.', '/', false, NULL);
+(5, 'order', 'Order Delivered', 'Your order #ORD-20240105-000001 has been delivered successfully!', '/orders/1', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
+(5, 'promotion', 'New Year Sale!', 'Get 20% off on all electronics. Use code: NEWYEAR20', '/promotions', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+(6, 'shipping', 'Order Shipped', 'Your order #ORD-20240108-000002 is on the way!', '/orders/2', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
+(6, 'message', 'New Message', 'You have a new message from Jane Fashion Hub', '/messages', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+(7, 'order', 'Order Confirmed', 'Your order #ORD-20240110-000003 has been confirmed!', '/orders/3', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+(7, 'promotion', 'Flash Sale Alert!', 'Flash sale on fashion items starting now!', '/promotions', false, NULL),
+(9, 'order', 'Order Confirmed', 'Your order #ORD-20240112-000004 has been confirmed!', '/orders/4', true, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+(9, 'message', 'New Message', 'Robert Home Decor replied to your message', '/messages', false, NULL),
+(10, 'order', 'Payment Pending', 'Please complete payment for order #ORD-20240114-000005', '/orders/5', false, NULL),
+(10, 'system', 'Welcome!', 'Welcome to Clone eBay! Start shopping now and enjoy exclusive deals.', '/', false, NULL);
 
 -- ============================================
 -- WISHLISTS
