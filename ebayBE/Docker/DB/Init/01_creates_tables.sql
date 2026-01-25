@@ -27,10 +27,14 @@ CREATE TABLE users (
     password_reset_token VARCHAR(255),
     password_reset_expires TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
+
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+    lockout_end TIMESTAMP,
+
     last_login TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     CONSTRAINT chk_role CHECK (role IN ('buyer', 'seller', 'admin'))
 );
 
