@@ -67,9 +67,10 @@ public partial class EbayDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-
+        // Configure Npgsql to handle DateTime UTC conversion
         if (!optionsBuilder.IsConfigured)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
     }
 
@@ -1062,6 +1063,9 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.EmailVerificationToken)
                 .HasMaxLength(255)
                 .HasColumnName("email_verification_token");
+            entity.Property(e => e.FailedLoginAttempts)
+                .HasDefaultValue(0)
+                .HasColumnName("failed_login_attempts");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
@@ -1071,6 +1075,9 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.LastLogin)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("last_login");
+            entity.Property(e => e.LockoutEnd)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("lockout_end");
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .HasColumnName("password_hash");
