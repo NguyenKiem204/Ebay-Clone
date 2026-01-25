@@ -18,7 +18,7 @@ namespace ebay.Services.Implementations
             _fileService = fileService;
         }
 
-        public async Task<StoreResponseDto> GetStoreBySellerIdAsync(int sellerId)
+        public async Task<StoreResponseDto?> GetStoreBySellerIdAsync(int sellerId)
         {
             var store = await _context.Stores
                 .FirstOrDefaultAsync(s => s.SellerId == sellerId);
