@@ -9,17 +9,17 @@
 -- Note: Passwords are hashed using BCrypt
 -- All passwords are: "Password123!"
 
-INSERT INTO users (username, email, password_hash, role, avatar_url, is_email_verified, is_active) VALUES
-('admin_user', 'admin@ebay.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'admin', 'https://i.pravatar.cc/150?img=1', true, true),
-('john_seller', 'john.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=2', true, true),
-('jane_shop', 'jane.shop@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=3', true, true),
-('mike_store', 'mike.store@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=4', true, true),
-('sarah_buyer', 'sarah.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=5', true, true),
-('david_buyer', 'david.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=6', true, true),
-('emma_buyer', 'emma.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=7', true, true),
-('robert_seller', 'robert.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=8', true, true),
-('lisa_buyer', 'lisa.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=9', true, true),
-('tom_buyer', 'tom.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=10', true, true);
+INSERT INTO users (username, email, password_hash, role, avatar_url, is_email_verified, is_active, phone) VALUES
+('admin_user', 'admin@ebay.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'admin', 'https://i.pravatar.cc/150?img=1', true, true, '0123456789'),
+('john_seller', 'john.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=2', true, true, '0123456788'),
+('jane_shop', 'jane.shop@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=3', true, true, '0123456787'),
+('mike_store', 'mike.store@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=4', true, true, '0123456786'),
+('sarah_buyer', 'sarah.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=5', true, true, '0901234567'),
+('david_buyer', 'david.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=6', true, true, '0912345678'),
+('emma_buyer', 'emma.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=7', true, true, '0923456789'),
+('robert_seller', 'robert.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=8', true, true, '0123456785'),
+('lisa_buyer', 'lisa.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=9', true, true, '0934567890'),
+('tom_buyer', 'tom.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=10', true, true, '0945678901');
 
 -- ============================================
 -- ADDRESSES
@@ -38,15 +38,15 @@ INSERT INTO addresses (user_id, full_name, phone, street, city, state, postal_co
 -- CATEGORIES
 -- ============================================
 
-INSERT INTO categories (name, slug, description, parent_id, image_url, is_active) VALUES
-('Electronics', 'electronics', 'Electronic devices and accessories', NULL, 'https://images.unsplash.com/photo-1498049794561-7780e7231661', true),
-('Fashion', 'fashion', 'Clothing and fashion items', NULL, 'https://images.unsplash.com/photo-1445205170230-053b83016050', true),
-('Home & Garden', 'home-garden', 'Home improvement and garden supplies', NULL, 'https://images.unsplash.com/photo-1484101403633-562f891dc89a', true),
-('Sports & Outdoors', 'sports-outdoors', 'Sports equipment and outdoor gear', NULL, 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211', true),
-('Books', 'books', 'Books and educational materials', NULL, 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d', true),
-('Toys & Games', 'toys-games', 'Toys, games and entertainment', NULL, 'https://images.unsplash.com/photo-1558060370-d644479cb6f7', true),
-('Health & Beauty', 'health-beauty', 'Health and beauty products', NULL, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571', true),
-('Automotive', 'automotive', 'Car parts and accessories', NULL, 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7', true),
+INSERT INTO categories (name, slug, description, parent_id, image_url, is_active, display_order) VALUES
+('Electronics', 'electronics', 'Electronic devices and accessories', NULL, 'https://images.unsplash.com/photo-1498049794561-7780e7231661', true, 1),
+('Fashion', 'fashion', 'Clothing and fashion items', NULL, 'https://images.unsplash.com/photo-1445205170230-053b83016050', true, 2),
+('Home & Garden', 'home-garden', 'Home improvement and garden supplies', NULL, 'https://images.unsplash.com/photo-1484101403633-562f891dc89a', true, 3),
+('Sports & Outdoors', 'sports-outdoors', 'Sports equipment and outdoor gear', NULL, 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211', true, 4),
+('Books', 'books', 'Books and educational materials', NULL, 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d', true, 5),
+('Toys & Games', 'toys-games', 'Toys, games and entertainment', NULL, 'https://images.unsplash.com/photo-1558060370-d644479cb6f7', true, 6),
+('Health & Beauty', 'health-beauty', 'Health and beauty products', NULL, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571', true, 7),
+('Automotive', 'automotive', 'Car parts and accessories', NULL, 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7', true, 8),
 
 -- Sub-categories for Electronics
 ('Laptops', 'laptops', 'Laptop computers', 1, 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853', true),
@@ -74,68 +74,79 @@ INSERT INTO stores (seller_id, store_name, slug, description, banner_image_url, 
 -- PRODUCTS
 -- ============================================
 
-INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count) VALUES
+INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count, status, stock, shipping_fee) VALUES
 -- Electronics
-('MacBook Pro 16" M3 Max', 'macbook-pro-16-m3-max', 'Latest MacBook Pro with M3 Max chip, 36GB RAM, 1TB SSD. Perfect for professionals.', 89990000, ARRAY['https://images.unsplash.com/photo-1517336714731-489689fd1ca8', 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853'], 9, 2, 1, false, 'new', 'Apple', 2.15, 1250),
-('iPhone 15 Pro Max 256GB', 'iphone-15-pro-max-256gb', 'Latest iPhone with titanium design, A17 Pro chip, amazing camera system.', 32990000, ARRAY['https://images.unsplash.com/photo-1592286927505-2fd6c44d0fb4', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9'], 10, 2, 1, false, 'new', 'Apple', 0.22, 2340),
-('Sony WH-1000XM5 Headphones', 'sony-wh-1000xm5-headphones', 'Industry-leading noise cancellation, exceptional sound quality, 30-hour battery life.', 8990000, ARRAY['https://images.unsplash.com/photo-1505740420928-5e560c06d30e', 'https://images.unsplash.com/photo-1524678606370-a47ad25cb82a'], 12, 2, 1, false, 'new', 'Sony', 0.25, 890),
-('Dell XPS 15 Laptop', 'dell-xps-15-laptop', 'Powerful laptop with Intel i7, 16GB RAM, 512GB SSD, perfect for work and creativity.', 45990000, ARRAY['https://images.unsplash.com/photo-1593642632823-8f785ba67e45', 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2'], 9, 2, 1, false, 'new', 'Dell', 1.83, 567),
-('Canon EOS R6 Camera', 'canon-eos-r6-camera', 'Full-frame mirrorless camera, 20MP, 4K video, perfect for photography enthusiasts.', 65990000, ARRAY['https://images.unsplash.com/photo-1502920917128-1aa500764cbd', 'https://images.unsplash.com/photo-1606980620778-59a1c1f2c100'], 11, 2, 1, true, 'new', 'Canon', 0.68, 445),
+('MacBook Pro 16" M3 Max', 'macbook-pro-16-m3-max', 'Latest MacBook Pro with M3 Max chip, 36GB RAM, 1TB SSD. Perfect for professionals.', 89990000, ARRAY['https://images.unsplash.com/photo-1517336714731-489689fd1ca8', 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853'], 9, 2, 1, false, 'new', 'Apple', 2.15, 1250, 'active', 15, 0),
+('iPhone 15 Pro Max 256GB', 'iphone-15-pro-max-256gb', 'Latest iPhone with titanium design, A17 Pro chip, amazing camera system.', 32990000, ARRAY['https://images.unsplash.com/photo-1592286927505-2fd6c44d0fb4', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9'], 10, 2, 1, false, 'new', 'Apple', 0.22, 2340, 'active', 50, 0),
+('Sony WH-1000XM5 Headphones', 'sony-wh-1000xm5-headphones', 'Industry-leading noise cancellation, exceptional sound quality, 30-hour battery life.', 8990000, ARRAY['https://images.unsplash.com/photo-1505740420928-5e560c06d30e', 'https://images.unsplash.com/photo-1524678606370-a47ad25cb82a'], 12, 2, 1, false, 'new', 'Sony', 0.25, 890, 'active', 30, 0),
+('Dell XPS 15 Laptop', 'dell-xps-15-laptop', 'Powerful laptop with Intel i7, 16GB RAM, 512GB SSD, perfect for work and creativity.', 45990000, ARRAY['https://images.unsplash.com/photo-1593642632823-8f785ba67e45', 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2'], 9, 2, 1, false, 'new', 'Dell', 1.83, 567, 'active', 20, 0),
+('Canon EOS R6 Camera', 'canon-eos-r6-camera', 'Full-frame mirrorless camera, 20MP, 4K video, perfect for photography enthusiasts.', 65990000, ARRAY['https://images.unsplash.com/photo-1502920917128-1aa500764cbd', 'https://images.unsplash.com/photo-1606980620778-59a1c1f2c100'], 11, 2, 1, true, 'new', 'Canon', 0.68, 445, 'active', 8, 0),
 
 -- Fashion
-('Men''s Casual Shirt Blue', 'mens-casual-shirt-blue', 'Comfortable cotton shirt, perfect for casual wear. Available in multiple sizes.', 450000, ARRAY['https://images.unsplash.com/photo-1596755094514-f87e34085b2c', 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf'], 13, 3, 2, false, 'new', 'Zara', 0.30, 234),
-('Women''s Summer Dress', 'womens-summer-dress', 'Light and breezy summer dress, perfect for hot weather. Beautiful floral pattern.', 890000, ARRAY['https://images.unsplash.com/photo-1595777457583-95e059d581b8', 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1'], 14, 3, 2, false, 'new', 'H&M', 0.25, 567),
-('Nike Air Max Sneakers', 'nike-air-max-sneakers', 'Comfortable and stylish sneakers for everyday wear. Cushioned sole, breathable material.', 2990000, ARRAY['https://images.unsplash.com/photo-1542291026-7eec264c27ff', 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa'], 15, 3, 2, false, 'new', 'Nike', 0.80, 1890),
-('Leather Wallet Brown', 'leather-wallet-brown', 'Genuine leather wallet with multiple card slots and cash compartment.', 350000, ARRAY['https://images.unsplash.com/photo-1627123424574-724758594e93', 'https://images.unsplash.com/photo-1591561954555-607968c989ab'], 16, 3, 2, false, 'new', 'Fossil', 0.15, 123),
-('Designer Sunglasses', 'designer-sunglasses', 'UV protection, polarized lenses, stylish frame. Perfect for sunny days.', 1250000, ARRAY['https://images.unsplash.com/photo-1511499767150-a48a237f0083', 'https://images.unsplash.com/photo-1572635196237-14b3f281503f'], 16, 3, 2, false, 'new', 'Ray-Ban', 0.10, 345),
+('Men''s Casual Shirt Blue', 'mens-casual-shirt-blue', 'Comfortable cotton shirt, perfect for casual wear. Available in multiple sizes.', 450000, ARRAY['https://images.unsplash.com/photo-1596755094514-f87e34085b2c', 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf'], 13, 3, 2, false, 'new', 'Zara', 0.30, 234, 'active', 100, 15000),
+('Women''s Summer Dress', 'womens-summer-dress', 'Light and breezy summer dress, perfect for hot weather. Beautiful floral pattern.', 890000, ARRAY['https://images.unsplash.com/photo-1595777457583-95e059d581b8', 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1'], 14, 3, 2, false, 'new', 'H&M', 0.25, 567, 'active', 75, 15000),
+('Nike Air Max Sneakers', 'nike-air-max-sneakers', 'Comfortable and stylish sneakers for everyday wear. Cushioned sole, breathable material.', 2990000, ARRAY['https://images.unsplash.com/photo-1542291026-7eec264c27ff', 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa'], 15, 3, 2, false, 'new', 'Nike', 0.80, 1890, 'active', 150, 25000),
+('Leather Wallet Brown', 'leather-wallet-brown', 'Genuine leather wallet with multiple card slots and cash compartment.', 350000, ARRAY['https://images.unsplash.com/photo-1627123424574-724758594e93', 'https://images.unsplash.com/photo-1591561954555-607968c989ab'], 16, 3, 2, false, 'new', 'Fossil', 0.15, 123, 'active', 200, 10000),
+('Designer Sunglasses', 'designer-sunglasses', 'UV protection, polarized lenses, stylish frame. Perfect for sunny days.', 1250000, ARRAY['https://images.unsplash.com/photo-1511499767150-a48a237f0083', 'https://images.unsplash.com/photo-1572635196237-14b3f281503f'], 16, 3, 2, false, 'new', 'Ray-Ban', 0.10, 345, 'active', 80, 10000),
 
 -- Sports
-('Professional Yoga Mat', 'professional-yoga-mat', 'Non-slip, eco-friendly yoga mat. Perfect for all types of yoga and exercises.', 890000, ARRAY['https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f', 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b'], 4, 4, 3, false, 'new', 'Lululemon', 1.20, 456),
-('Basketball Pro', 'basketball-pro', 'Official size basketball, indoor/outdoor use, excellent grip.', 650000, ARRAY['https://images.unsplash.com/photo-1546519638-68e109498ffc', 'https://images.unsplash.com/photo-1608245449230-4ac19066d2d0'], 4, 4, 3, false, 'new', 'Spalding', 0.62, 234),
-('Tennis Racket Set', 'tennis-racket-set', 'Professional tennis racket with carrying case and 3 balls included.', 2450000, ARRAY['https://images.unsplash.com/photo-1622163642998-1ea32b0bbc67', 'https://images.unsplash.com/photo-1617882309324-a66b5163c742'], 4, 4, 3, false, 'new', 'Wilson', 0.35, 189),
+('Professional Yoga Mat', 'professional-yoga-mat', 'Non-slip, eco-friendly yoga mat. Perfect for all types of yoga and exercises.', 890000, ARRAY['https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f', 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b'], 4, 4, 3, false, 'new', 'Lululemon', 1.20, 456, 'active', 120, 20000),
+('Basketball Pro', 'basketball-pro', 'Official size basketball, indoor/outdoor use, excellent grip.', 650000, ARRAY['https://images.unsplash.com/photo-1546519638-68e109498ffc', 'https://images.unsplash.com/photo-1608245449230-4ac19066d2d0'], 4, 4, 3, false, 'new', 'Spalding', 0.62, 234, 'active', 45, 15000),
+('Tennis Racket Set', 'tennis-racket-set', 'Professional tennis racket with carrying case and 3 balls included.', 2450000, ARRAY['https://images.unsplash.com/photo-1622163642998-1ea32b0bbc67', 'https://images.unsplash.com/photo-1617882309324-a66b5163c742'], 4, 4, 3, false, 'new', 'Wilson', 0.35, 189, 'active', 30, 25000),
 
 -- Home & Garden
-('Modern LED Desk Lamp', 'modern-led-desk-lamp', 'Adjustable LED desk lamp with touch control and USB charging port.', 450000, ARRAY['https://images.unsplash.com/photo-1513506003901-1e6a229e2d15', 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c'], 3, 8, 4, false, 'new', 'Philips', 0.65, 345),
-('Ceramic Flower Vase', 'ceramic-flower-vase', 'Handmade ceramic vase, perfect for home decoration. Modern minimalist design.', 290000, ARRAY['https://images.unsplash.com/photo-1578500494198-246f612d3b3d', 'https://images.unsplash.com/photo-1610701596007-11502861dcfa'], 3, 8, 4, false, 'new', 'HomeDecor', 0.80, 123),
+('Modern LED Desk Lamp', 'modern-led-desk-lamp', 'Adjustable LED desk lamp with touch control and USB charging port.', 450000, ARRAY['https://images.unsplash.com/photo-1513506003901-1e6a229e2d15', 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c'], 3, 8, 4, false, 'new', 'Philips', 0.65, 345, 'active', 60, 15000),
+('Ceramic Flower Vase', 'ceramic-flower-vase', 'Handmade ceramic vase, perfect for home decoration. Modern minimalist design.', 290000, ARRAY['https://images.unsplash.com/photo-1578500494198-246f612d3b3d', 'https://images.unsplash.com/photo-1610701596007-11502861dcfa'], 3, 8, 4, false, 'new', 'HomeDecor', 0.80, 123, 'active', 90, 10000),
 
 -- Books
-('The Art of Computer Programming', 'art-of-computer-programming', 'Classic computer science book by Donald Knuth. Must-have for programmers.', 1250000, ARRAY['https://images.unsplash.com/photo-1544947950-fa07a98d237f', 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d'], 5, 2, 1, false, 'new', 'Addison-Wesley', 2.50, 567),
-('Clean Code', 'clean-code', 'A Handbook of Agile Software Craftsmanship by Robert C. Martin.', 650000, ARRAY['https://images.unsplash.com/photo-1532012197267-da84d127e765', 'https://images.unsplash.com/photo-1589998059171-988d887df646'], 5, 2, 1, false, 'used', 'Prentice Hall', 0.75, 890);
+('The Art of Computer Programming', 'art-of-computer-programming', 'Classic computer science book by Donald Knuth. Must-have for programmers.', 1250000, ARRAY['https://images.unsplash.com/photo-1544947950-fa07a98d237f', 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d'], 5, 2, 1, false, 'new', 'Addison-Wesley', 2.50, 567, 'active', 20, 30000),
+('Clean Code', 'clean-code', 'A Handbook of Agile Software Craftsmanship by Robert C. Martin.', 650000, ARRAY['https://images.unsplash.com/photo-1532012197267-da84d127e765', 'https://images.unsplash.com/photo-1589998059171-988d887df646'], 5, 2, 1, false, 'used', 'Prentice Hall', 0.75, 890, 'active', 50, 15000);
+
+-- Bulk Generate 300 Products
+INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count, status, stock, shipping_fee)
+SELECT 
+    'Product ' || i, 
+    'product-' || i || '-' || floor(random() * 10000), 
+    'High quality product description for item ' || i || '. This is a sample product generated for testing the eBay clone buyer system.', 
+    (random() * 5000000 + 100000)::DECIMAL(10,2), 
+    ARRAY['https://picsum.photos/seed/p' || i || '/600/400', 'https://picsum.photos/seed/p' || i || 'b/600/400'], 
+    (i % 16) + 1, 
+    CASE WHEN i % 4 = 0 THEN 2 WHEN i % 4 = 1 THEN 3 WHEN i % 4 = 2 THEN 4 ELSE 8 END, 
+    (i % 4) + 1, 
+    (random() < 0.15),
+    CASE WHEN i % 3 = 0 THEN 'new' WHEN i % 3 = 1 THEN 'used' ELSE 'refurbished' END,
+    'Brand ' || (i % 10),
+    (random() * 5 + 0.1)::DECIMAL(8,2),
+    (random() * 5000)::INT,
+    'active',
+    (CASE WHEN random() < 0.3 THEN 0 ELSE (floor(random() * 5) * 10000 + 15000) END)::DECIMAL(10,2),
+    (random() * 100 + 5)::INT
+FROM generate_series(21, 320) s(i);
 
 -- ============================================
 -- INVENTORY
 -- ============================================
 
-INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated) VALUES
-(1, 15, 2, CURRENT_TIMESTAMP),
-(2, 50, 5, CURRENT_TIMESTAMP),
-(3, 30, 3, CURRENT_TIMESTAMP),
-(4, 20, 1, CURRENT_TIMESTAMP),
-(5, 8, 0, CURRENT_TIMESTAMP),
-(6, 100, 10, CURRENT_TIMESTAMP),
-(7, 75, 8, CURRENT_TIMESTAMP),
-(8, 150, 15, CURRENT_TIMESTAMP),
-(9, 200, 20, CURRENT_TIMESTAMP),
-(10, 80, 5, CURRENT_TIMESTAMP),
-(11, 120, 12, CURRENT_TIMESTAMP),
-(12, 45, 3, CURRENT_TIMESTAMP),
-(13, 30, 2, CURRENT_TIMESTAMP),
-(14, 60, 4, CURRENT_TIMESTAMP),
-(15, 90, 6, CURRENT_TIMESTAMP),
-(16, 25, 1, CURRENT_TIMESTAMP),
-(17, 40, 2, CURRENT_TIMESTAMP);
+INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated)
+SELECT id, stock, (random() * 5)::INT, CURRENT_TIMESTAMP FROM products;
+
+-- ============================================
+-- CARTS
+-- ============================================
+
+INSERT INTO carts (user_id) VALUES (5), (6), (7), (9);
 
 -- ============================================
 -- CART ITEMS
 -- ============================================
 
-INSERT INTO cart_items (user_id, product_id, quantity) VALUES
-(5, 2, 1),
-(5, 3, 1),
-(6, 8, 2),
-(7, 6, 1),
-(7, 10, 1),
-(9, 1, 1);
+INSERT INTO cart_items (cart_id, product_id, quantity) VALUES
+(1, 2, 1),
+(1, 3, 1),
+(2, 8, 2),
+(3, 6, 1),
+(3, 10, 1),
+(4, 1, 1);
 
 -- ============================================
 -- ORDERS
@@ -195,7 +206,7 @@ INSERT INTO shipping_info (order_id, carrier, tracking_number, status, shipped_a
 -- COUPONS
 -- ============================================
 
-INSERT INTO coupons (code, description, discount_type, discount_value, min_purchase, max_discount, start_date, end_date, max_usage, used_count, is_active, applicable_to) VALUES
+INSERT INTO coupons (code, description, discount_type, discount_value, min_order_amount, max_discount, start_date, end_date, max_usage, used_count, is_active, applicable_to) VALUES
 ('WELCOME2024', 'Welcome discount for new users', 'percentage', 10.00, 500000, 500000, '2024-01-01', '2024-12-31', 1000, 45, true, 'all'),
 ('NEWYEAR50', 'New Year special - 50k off', 'fixed', 50000, 1000000, 50000, '2024-01-01', '2024-01-31', 500, 123, true, 'all'),
 ('ELECTRONICS15', '15% off on electronics', 'percentage', 15.00, 2000000, 1000000, '2024-01-01', '2024-12-31', 200, 34, true, 'category'),
@@ -280,17 +291,17 @@ INSERT INTO messages (sender_id, receiver_id, subject, content, is_read, read_at
 -- NOTIFICATIONS
 -- ============================================
 
-INSERT INTO notifications (user_id, type, title, message, link, is_read, read_at) VALUES
-(5, 'order', 'Order Delivered', 'Your order #ORD-20240105-000001 has been delivered successfully!', '/orders/1', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
-(5, 'promotion', 'New Year Sale!', 'Get 20% off on all electronics. Use code: NEWYEAR20', '/promotions', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
-(6, 'shipping', 'Order Shipped', 'Your order #ORD-20240108-000002 is on the way!', '/orders/2', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
-(6, 'message', 'New Message', 'You have a new message from Jane Fashion Hub', '/messages', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
-(7, 'order', 'Order Confirmed', 'Your order #ORD-20240110-000003 has been confirmed!', '/orders/3', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
-(7, 'promotion', 'Flash Sale Alert!', 'Flash sale on fashion items starting now!', '/promotions', false, NULL),
-(9, 'order', 'Order Confirmed', 'Your order #ORD-20240112-000004 has been confirmed!', '/orders/4', true, CURRENT_TIMESTAMP - INTERVAL '3 days'),
-(9, 'message', 'New Message', 'Robert Home Decor replied to your message', '/messages', false, NULL),
-(10, 'order', 'Payment Pending', 'Please complete payment for order #ORD-20240114-000005', '/orders/5', false, NULL),
-(10, 'system', 'Welcome!', 'Welcome to Clone eBay! Start shopping now and enjoy exclusive deals.', '/', false, NULL);
+INSERT INTO notifications (user_id, type, title, body, link, is_read, read_at) VALUES
+('5', 'order', 'Order Delivered', 'Your order #ORD-20240105-000001 has been delivered successfully!', '/orders/1', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
+('5', 'promotion', 'New Year Sale!', 'Get 20% off on all electronics. Use code: NEWYEAR20', '/promotions', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+('6', 'shipping', 'Order Shipped', 'Your order #ORD-20240108-000002 is on the way!', '/orders/2', true, CURRENT_TIMESTAMP - INTERVAL '6 days'),
+('6', 'message', 'New Message', 'You have a new message from Jane Fashion Hub', '/messages', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+('7', 'order', 'Order Confirmed', 'Your order #ORD-20240110-000003 has been confirmed!', '/orders/3', true, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+('7', 'promotion', 'Flash Sale Alert!', 'Flash sale on fashion items starting now!', '/promotions', false, NULL),
+('9', 'order', 'Order Confirmed', 'Your order #ORD-20240112-000004 has been confirmed!', '/orders/4', true, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+('9', 'message', 'New Message', 'Robert Home Decor replied to your message', '/messages', false, NULL),
+('10', 'order', 'Payment Pending', 'Please complete payment for order #ORD-20240114-000005', '/orders/5', false, NULL),
+('10', 'system', 'Welcome!', 'Welcome to Clone eBay! Start shopping now and enjoy exclusive deals.', '/', false, NULL);
 
 -- ============================================
 -- WISHLISTS

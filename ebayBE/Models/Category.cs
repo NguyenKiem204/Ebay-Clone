@@ -17,6 +17,10 @@ public partial class Category
 
     public string? ImageUrl { get; set; }
 
+    public string? IconUrl { get; set; }
+
+    public int? DisplayOrder { get; set; }
+
     public bool? IsActive { get; set; }
 
     public DateTime? CreatedAt { get; set; }

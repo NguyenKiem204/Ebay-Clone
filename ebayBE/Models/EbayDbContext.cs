@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +20,8 @@ public partial class EbayDbContext : DbContext
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
     public virtual DbSet<Bid> Bids { get; set; }
+
+    public virtual DbSet<Cart> Carts { get; set; }
 
     public virtual DbSet<CartItem> CartItems { get; set; }
 
@@ -65,14 +67,7 @@ public partial class EbayDbContext : DbContext
 
     public virtual DbSet<Wishlist> Wishlists { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        // Configure Npgsql to handle DateTime UTC conversion
-        if (!optionsBuilder.IsConfigured)
-        {
-            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-        }
-    }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder){}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -205,17 +200,45 @@ public partial class EbayDbContext : DbContext
                 .HasConstraintName("bids_product_id_fkey");
         });
 
+        modelBuilder.Entity<Cart>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("carts_pkey");
+
+            entity.ToTable("carts");
+
+            entity.HasIndex(e => e.UserId, "carts_user_id_key").IsUnique();
+
+            entity.HasIndex(e => e.UserId, "idx_carts_user");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithOne(p => p.Cart)
+                .HasForeignKey<Cart>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("carts_user_id_fkey");
+        });
+
         modelBuilder.Entity<CartItem>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("cart_items_pkey");
 
             entity.ToTable("cart_items");
 
-            entity.HasIndex(e => new { e.UserId, e.ProductId }, "cart_items_user_id_product_id_key").IsUnique();
+            entity.HasIndex(e => new { e.CartId, e.ProductId }, "cart_items_cart_id_product_id_key").IsUnique();
 
-            entity.HasIndex(e => e.UserId, "idx_cart_user");
+            entity.HasIndex(e => e.CartId, "idx_cart_items_cart");
 
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CartId).HasColumnName("cart_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -228,15 +251,14 @@ public partial class EbayDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.CartId)
+                .HasConstraintName("cart_items_cart_id_fkey");
 
             entity.HasOne(d => d.Product).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.ProductId)
                 .HasConstraintName("cart_items_product_id_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.CartItems)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("cart_items_user_id_fkey");
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -259,6 +281,10 @@ public partial class EbayDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.DisplayOrder)
+                .HasDefaultValue(0)
+                .HasColumnName("display_order");
+            entity.Property(e => e.IconUrl).HasColumnName("icon_url");
             entity.Property(e => e.ImageUrl).HasColumnName("image_url");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
@@ -321,9 +347,10 @@ public partial class EbayDbContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("max_discount");
             entity.Property(e => e.MaxUsage).HasColumnName("max_usage");
-            entity.Property(e => e.MinPurchase)
+            entity.Property(e => e.MinOrderAmount)
                 .HasPrecision(10, 2)
-                .HasColumnName("min_purchase");
+                .HasDefaultValueSql("0")
+                .HasColumnName("min_order_amount");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.StartDate)
                 .HasColumnType("timestamp without time zone")
@@ -505,6 +532,7 @@ public partial class EbayDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_notifications_user");
 
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Body).HasColumnName("body");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -515,7 +543,6 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.Link)
                 .HasMaxLength(500)
                 .HasColumnName("link");
-            entity.Property(e => e.Message).HasColumnName("message");
             entity.Property(e => e.ReadAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("read_at");
@@ -551,15 +578,16 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AddressId).HasColumnName("address_id");
             entity.Property(e => e.BuyerId).HasColumnName("buyer_id");
+            entity.Property(e => e.CouponId).HasColumnName("coupon_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
-            entity.Property(e => e.Discount)
+            entity.Property(e => e.DiscountAmount)
                 .HasPrecision(10, 2)
                 .HasDefaultValueSql("0")
-                .HasColumnName("discount");
-            entity.Property(e => e.Notes).HasColumnName("notes");
+                .HasColumnName("discount_amount");
+            entity.Property(e => e.Note).HasColumnName("note");
             entity.Property(e => e.OrderDate)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -599,6 +627,11 @@ public partial class EbayDbContext : DbContext
                 .HasForeignKey(d => d.BuyerId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("orders_buyer_id_fkey");
+
+            entity.HasOne(d => d.Coupon).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.CouponId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("orders_coupon_id_fkey");
         });
 
         modelBuilder.Entity<OrderItem>(entity =>
@@ -705,6 +738,8 @@ public partial class EbayDbContext : DbContext
 
             entity.HasIndex(e => e.Slug, "idx_products_slug");
 
+            entity.HasIndex(e => e.Status, "idx_products_status");
+
             entity.HasIndex(e => e.Slug, "products_slug_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -740,12 +775,23 @@ public partial class EbayDbContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("price");
             entity.Property(e => e.SellerId).HasColumnName("seller_id");
+            entity.Property(e => e.ShippingFee)
+                .HasPrecision(10, 2)
+                .HasDefaultValueSql("0")
+                .HasColumnName("shipping_fee");
             entity.Property(e => e.Slug)
                 .HasMaxLength(255)
                 .HasColumnName("slug");
             entity.Property(e => e.StartingBid)
                 .HasPrecision(10, 2)
                 .HasColumnName("starting_bid");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'active'::character varying")
+                .HasColumnName("status");
+            entity.Property(e => e.Stock)
+                .HasDefaultValue(0)
+                .HasColumnName("stock");
             entity.Property(e => e.StoreId).HasColumnName("store_id");
             entity.Property(e => e.Title)
                 .HasMaxLength(255)
@@ -1087,6 +1133,9 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.PasswordResetToken)
                 .HasMaxLength(255)
                 .HasColumnName("password_reset_token");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .HasColumnName("phone");
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'buyer'::character varying")

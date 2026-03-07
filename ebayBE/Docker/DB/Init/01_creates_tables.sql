@@ -32,6 +32,7 @@ CREATE TABLE users (
     lockout_end TIMESTAMP,
 
     last_login TIMESTAMP,
+    phone VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -81,6 +82,8 @@ CREATE TABLE categories (
     description TEXT,
     parent_id INT REFERENCES categories(id) ON DELETE SET NULL,
     image_url TEXT,
+    icon_url TEXT,
+    display_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -126,6 +129,9 @@ CREATE TABLE products (
     weight DECIMAL(8,2), -- in kg
     dimensions VARCHAR(50), -- e.g., "10x20x30 cm"
     is_active BOOLEAN DEFAULT TRUE,
+    status VARCHAR(20) DEFAULT 'active',
+    stock INTEGER DEFAULT 0,
+    shipping_fee DECIMAL(10,2) DEFAULT 0,
     view_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -133,6 +139,7 @@ CREATE TABLE products (
     CONSTRAINT chk_condition CHECK (condition IN ('new', 'used', 'refurbished'))
 );
 
+CREATE INDEX idx_products_status ON products(status);
 CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_products_seller ON products(seller_id);
 CREATE INDEX idx_products_slug ON products(slug);
@@ -157,20 +164,58 @@ CREATE INDEX idx_inventory_product ON inventory(product_id);
 -- SHOPPING & ORDERS
 -- ============================================
 
--- Shopping Cart Table
+-- Shopping Carts Table
+CREATE TABLE carts (
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_carts_user ON carts(user_id);
+
+-- Shopping Cart Items Table
 CREATE TABLE cart_items (
     id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    cart_id INT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     quantity INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT chk_cart_quantity CHECK (quantity > 0),
-    UNIQUE(user_id, product_id)
+    UNIQUE(cart_id, product_id)
 );
 
-CREATE INDEX idx_cart_user ON cart_items(user_id);
+CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);
+
+-- ============================================
+-- COUPONS & DISCOUNTS
+-- ============================================
+
+CREATE TABLE coupons (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    discount_type VARCHAR(20) NOT NULL,
+    discount_value DECIMAL(10,2) NOT NULL,
+    min_order_amount DECIMAL(10,2) DEFAULT 0,
+    max_discount DECIMAL(10,2),
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    max_usage INT,
+    used_count INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    applicable_to VARCHAR(20) DEFAULT 'all', -- all, category, product
+    category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+    product_id INT REFERENCES products(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT chk_discount_type CHECK (discount_type IN ('percentage', 'fixed')),
+    CONSTRAINT chk_applicable CHECK (applicable_to IN ('all', 'category', 'product'))
+);
+
+CREATE INDEX idx_coupons_code ON coupons(code);
 
 -- Orders Table
 CREATE TABLE orders (
@@ -182,10 +227,11 @@ CREATE TABLE orders (
     subtotal DECIMAL(10,2) NOT NULL,
     shipping_fee DECIMAL(10,2) DEFAULT 0,
     tax DECIMAL(10,2) DEFAULT 0,
-    discount DECIMAL(10,2) DEFAULT 0,
     total_price DECIMAL(10,2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    notes TEXT,
+    coupon_id INT REFERENCES coupons(id) ON DELETE SET NULL,
+    discount_amount DECIMAL(10,2) DEFAULT 0,
+    note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -250,33 +296,6 @@ CREATE TABLE shipping_info (
 
 CREATE INDEX idx_shipping_order ON shipping_info(order_id);
 
--- ============================================
--- COUPONS & DISCOUNTS
--- ============================================
-
-CREATE TABLE coupons (
-    id SERIAL PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT,
-    discount_type VARCHAR(20) NOT NULL,
-    discount_value DECIMAL(10,2) NOT NULL,
-    min_purchase DECIMAL(10,2),
-    max_discount DECIMAL(10,2),
-    start_date TIMESTAMP NOT NULL,
-    end_date TIMESTAMP NOT NULL,
-    max_usage INT,
-    used_count INT DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
-    applicable_to VARCHAR(20) DEFAULT 'all', -- all, category, product
-    category_id INT REFERENCES categories(id) ON DELETE SET NULL,
-    product_id INT REFERENCES products(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT chk_discount_type CHECK (discount_type IN ('percentage', 'fixed')),
-    CONSTRAINT chk_applicable CHECK (applicable_to IN ('all', 'category', 'product'))
-);
-
-CREATE INDEX idx_coupons_code ON coupons(code);
 
 -- Coupon Usage Table
 CREATE TABLE coupon_usage (
@@ -417,7 +436,7 @@ CREATE TABLE notifications (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL,
     title VARCHAR(200) NOT NULL,
-    message TEXT NOT NULL,
+    body TEXT NOT NULL,
     link VARCHAR(500),
     is_read BOOLEAN DEFAULT FALSE,
     read_at TIMESTAMP,

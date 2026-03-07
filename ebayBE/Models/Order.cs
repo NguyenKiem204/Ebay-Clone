@@ -21,13 +21,15 @@ public partial class Order
 
     public decimal? Tax { get; set; }
 
-    public decimal? Discount { get; set; }
-
     public decimal TotalPrice { get; set; }
 
     public string Status { get; set; } = null!;
 
-    public string? Notes { get; set; }
+    public int? CouponId { get; set; }
+
+    public decimal? DiscountAmount { get; set; }
+
+    public string? Note { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
@@ -36,6 +38,8 @@ public partial class Order
     public virtual Address Address { get; set; } = null!;
 
     public virtual User Buyer { get; set; } = null!;
+
+    public virtual Coupon? Coupon { get; set; }
 
     public virtual ICollection<CouponUsage> CouponUsages { get; set; } = new List<CouponUsage>();
 

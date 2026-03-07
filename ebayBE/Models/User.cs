@@ -35,6 +35,8 @@ public partial class User
 
     public DateTime? LastLogin { get; set; }
 
+    public string? Phone { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
@@ -45,7 +47,7 @@ public partial class User
 
     public virtual ICollection<Bid> Bids { get; set; } = new List<Bid>();
 
-    public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public virtual Cart? Cart { get; set; }
 
     public virtual ICollection<CouponUsage> CouponUsages { get; set; } = new List<CouponUsage>();
 
