@@ -327,3 +327,10 @@ lerna-debug.log*
 *.user
 *.userosscache
 *.sln.docstates
+
+# local guild
+guild_ui
+seller_ui
+CODING_RULES_FE.md
+eBay_Clone_Buyer_Tasks.md
+eBay_Clone_UI_Screems.md

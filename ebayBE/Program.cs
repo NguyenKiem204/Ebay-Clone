@@ -1,9 +1,9 @@
 using System.Text;
 using ebay.Configuration;
-using ebay.Interfaces.Services;
 using ebay.Middlewares;
 using ebay.Models;
-using ebay.Services;
+using ebay.Services.Implementations;
+using ebay.Services.Interfaces;
 using ebay.Validators.Auth;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,12 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<ICouponService, CouponService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddHttpClient<IPaypalService, PaypalService>();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();

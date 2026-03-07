@@ -41,6 +41,12 @@ public partial class Product
 
     public bool? IsActive { get; set; }
 
+    public string? Status { get; set; }
+
+    public int? Stock { get; set; }
+
+    public decimal? ShippingFee { get; set; }
+
     public int? ViewCount { get; set; }
 
     public DateTime? CreatedAt { get; set; }

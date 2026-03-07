@@ -13,7 +13,7 @@ public partial class Notification
 
     public string Title { get; set; } = null!;
 
-    public string Message { get; set; } = null!;
+    public string Body { get; set; } = null!;
 
     public string? Link { get; set; }
 

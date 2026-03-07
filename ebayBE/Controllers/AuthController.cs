@@ -2,7 +2,7 @@ using System.Security.Claims;
 using ebay.Attributes;
 using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
-using ebay.Interfaces.Services;
+using ebay.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace ebay.Interfaces.Services
+namespace ebay.Services.Interfaces
 {
     public interface IJwtService
     {

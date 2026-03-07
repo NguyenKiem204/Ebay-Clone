@@ -1,6 +1,7 @@
-﻿using ebay.Interfaces.Services;
+﻿
+using ebay.Services.Interfaces;
 
-namespace ebay.Services
+namespace ebay.Services.Implementations
 {
     public class PasswordHasher : IPasswordHasher
     {

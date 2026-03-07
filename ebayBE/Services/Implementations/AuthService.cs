@@ -3,13 +3,14 @@ using ebay.Configuration;
 using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
 using ebay.Exceptions;
-using ebay.Interfaces.Services;
 using ebay.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace ebay.Services
+using ebay.Services.Interfaces;
+
+namespace ebay.Services.Implementations
 {
     public class AuthService : IAuthService
     {
@@ -60,14 +61,15 @@ namespace ebay.Services
             {
                 Username = normalizedUsername,
                 Email = normalizedEmail,
+                Phone = request.Phone,
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
-                Role = "Customer",
+                Role = "buyer",
                 IsActive = true,
                 IsEmailVerified = false,
                 EmailVerificationToken = GenerateSecureToken(),
-                EmailVerificationExpires = DateTime.UtcNow.AddHours(EMAIL_VERIFICATION_HOURS),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                EmailVerificationExpires = DateTime.Now.AddHours(EMAIL_VERIFICATION_HOURS),
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             await _context.Users.AddAsync(user);

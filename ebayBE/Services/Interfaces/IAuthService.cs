@@ -1,7 +1,7 @@
 ﻿using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
 
-namespace ebay.Interfaces.Services
+namespace ebay.Services.Interfaces
 {
     public interface IAuthService
     {

@@ -15,7 +15,7 @@ public partial class Coupon
 
     public decimal DiscountValue { get; set; }
 
-    public decimal? MinPurchase { get; set; }
+    public decimal? MinOrderAmount { get; set; }
 
     public decimal? MaxDiscount { get; set; }
 
@@ -40,6 +40,8 @@ public partial class Coupon
     public virtual Category? Category { get; set; }
 
     public virtual ICollection<CouponUsage> CouponUsages { get; set; } = new List<CouponUsage>();
+
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual Product? Product { get; set; }
 }

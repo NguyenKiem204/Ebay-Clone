@@ -5,12 +5,13 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using ebay.Configuration;
-using ebay.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace ebay.Services
+using ebay.Services.Interfaces;
+
+namespace ebay.Services.Implementations
 {
     public class JwtService : IJwtService
     {

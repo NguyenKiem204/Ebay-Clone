@@ -1,4 +1,4 @@
-﻿namespace ebay.Interfaces.Services
+﻿namespace ebay.Services.Interfaces
 {
     public interface IPasswordHasher
     {
