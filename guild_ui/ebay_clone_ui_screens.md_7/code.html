@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout - Step 7: Payment Method | eBay Clone</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary-red: #E53238;
+            --primary-blue: #0064D2;
+            --bg-light: #F7F7F7;
+            --text-main: #191919;
+            --text-secondary: #707070;
+            --ebay-yellow: #F5AF02;
+            --ebay-green: #86B817;
+            --border-gray: #DEDEDE;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #FFFFFF;
+            color: var(--text-main);
+        }
+        .ebay-logo-text-e { color: var(--primary-red); }
+        .ebay-logo-text-b { color: var(--primary-blue); }
+        .ebay-logo-text-a { color: var(--ebay-yellow); }
+        .ebay-logo-text-y { color: var(--ebay-green); }
+        .checkout-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .payment-option {
+            border: 1px solid var(--border-gray);
+            transition: all 0.2s ease;
+        }
+        .payment-option:hover {
+            border-color: var(--primary-blue);
+        }
+        .payment-option.active {
+            border-color: var(--primary-blue);
+            background-color: #F8FBFF;
+        }
+        .summary-card {
+            border: 1px solid var(--border-gray);
+            border-top: 4px solid var(--primary-blue);
+        }
+        .stepper-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<header class="border-b border-gray-200 py-4 bg-white sticky top-0 z-50">
+<div class="checkout-container px-4 flex justify-between items-center">
+<div class="flex items-center gap-8">
+<a class="flex items-baseline text-3xl font-bold tracking-tighter" href="/">
+<span class="ebay-logo-text-e">e</span><span class="ebay-logo-text-b">b</span><span class="ebay-logo-text-a">a</span><span class="ebay-logo-text-y">y</span>
+<span class="ml-1 text-xs font-normal text-[var(--text-secondary)]">Clone</span>
+</a>
+<h1 class="text-2xl font-bold">Checkout</h1>
+</div>
+<div class="hidden md:flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="stepper-dot bg-gray-200 text-gray-600">1</div>
+<span class="text-sm font-medium text-gray-500">Shipping</span>
+</div>
+<div class="h-[1px] w-8 bg-gray-200"></div>
+<div class="flex items-center gap-2">
+<div class="stepper-dot bg-[var(--primary-blue)] text-white">2</div>
+<span class="text-sm font-bold text-[var(--primary-blue)]">Payment</span>
+</div>
+<div class="h-[1px] w-8 bg-gray-200"></div>
+<div class="flex items-center gap-2">
+<div class="stepper-dot bg-gray-200 text-gray-600">3</div>
+<span class="text-sm font-medium text-gray-500">Review</span>
+</div>
+</div>
+<div class="text-sm text-[var(--text-secondary)] md:hidden">
+            Step 7: Payment Method
+        </div>
+</div>
+</header>
+<main class="bg-[var(--bg-light)] py-8 flex-grow">
+<div class="checkout-container px-4">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 space-y-6">
+<section class="bg-white rounded-lg p-6 shadow-sm">
+<h2 class="text-xl font-bold mb-6">Select payment method</h2>
+<div class="space-y-4">
+<label class="payment-option active flex items-start p-4 rounded-lg cursor-pointer relative">
+<input checked="" class="mt-1 text-[var(--primary-blue)] focus:ring-[var(--primary-blue)] h-4 w-4" name="payment_method" type="radio"/>
+<div class="ml-4 flex-grow">
+<div class="flex justify-between items-center mb-1">
+<span class="font-bold">Credit or Debit Card</span>
+<div class="flex gap-2">
+<img alt="Visa" class="h-4 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCKvZF5SWHJE-Hbf06ha6BZilGtCuQ7hdr5RVVJ9U_cjzyt2xkMVPU1m0XrlBesNaacroptYgrlULkT0P_L2AtGSI3t-V1jOBdIGANf1TNLFKZrDM8NlLdTZeX6_D2IVLsER9tvyLP7l1WuIXzzfKHLvPGLSs8T8xPOzii-7CW0GzKagB53ERJA8_5dKmvRqWiZfJFm6d5IPOp4R-a2v5EXywYC1kp-bwUlfZLYXLpHvHbq9hQEnjMNO1oqA9IKXWq2ZGlHQTUjZQ"/>
+<img alt="Mastercard" class="h-4 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgIkVOBpquQbk-SXxBpe3c8QE5wE8TTMuqfxVPRrxPUMKqgZ_r-sAqMua3Awc9VmSsPFB3EZcYXErBkThyJ5SmgR_oMbFxDhorRHlwyMXCP9H48KoXPHa1FRJmfUra7A_yp4P2uqo99IPMl6iGXP1O7MGc1GHCZ1pHk5ZNzKWqoYdetpoa8oDFFHi-aA0CJhS8V-AhRMfDpnusW3lKnTyvA5EQgieDz8GY3xqJyKcQoe1QDBdY9wKa6MkcXQoQwFy5N3X_8gQ4_2A"/>
+</div>
+</div>
+<p class="text-sm text-[var(--text-secondary)] mb-4">Safe and secure. Supports Visa, Mastercard, AMEX.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+<div class="col-span-2">
+<label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Card number</label>
+<div class="relative">
+<input class="w-full border-gray-300 rounded focus:ring-[var(--primary-blue)] focus:border-[var(--primary-blue)]" placeholder="XXXX XXXX XXXX XXXX" type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-2 text-gray-400">credit_card</span>
+</div>
+</div>
+<div>
+<label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Expiration date (MM/YY)</label>
+<input class="w-full border-gray-300 rounded focus:ring-[var(--primary-blue)] focus:border-[var(--primary-blue)]" placeholder="MM/YY" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Security code (CVV)</label>
+<input class="w-full border-gray-300 rounded focus:ring-[var(--primary-blue)] focus:border-[var(--primary-blue)]" placeholder="123" type="text"/>
+</div>
+</div>
+</div>
+</label>
+<label class="payment-option flex items-start p-4 rounded-lg cursor-pointer">
+<input class="mt-1 text-[var(--primary-blue)] focus:ring-[var(--primary-blue)] h-4 w-4" name="payment_method" type="radio"/>
+<div class="ml-4 flex-grow">
+<div class="flex justify-between items-center">
+<span class="font-bold">PayPal</span>
+<img alt="PayPal" class="h-5 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuUoRxSC4vDhCitb0t3VZI_poGXy0sZKqWkeCZSrNRSJf7PvPVn9iVnXdi34uGLLSQI5kCdaqtl1zEQMF7LKQV9GuxSQ3LzNH1-o4yWlVt7wrcw_L1CM6_ruZcT02IE87E-hMvwFxyx3Gn64WXDOz47yijzZPb3q70Mu0xg4gncl6FbcWdsqrdsCwqjQUOT61MwiSQeIiEvrQ-yETBUpDA6so4y28xGmhRBARNNY2vZl1Y44Bcrkze_EImGEA2PpO00CFpF9qupK8"/>
+</div>
+<p class="text-sm text-[var(--text-secondary)]">Pay quickly using your PayPal account.</p>
+</div>
+</label>
+<label class="payment-option flex items-start p-4 rounded-lg cursor-pointer">
+<input class="mt-1 text-[var(--primary-blue)] focus:ring-[var(--primary-blue)] h-4 w-4" name="payment_method" type="radio"/>
+<div class="ml-4 flex-grow">
+<div class="flex justify-between items-center">
+<span class="font-bold">Google Pay</span>
+<img alt="Google Pay" class="h-5 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4O0vDXE9rS54gY0FV3WAPPSm_zzarHQfhZAJ_Wjh9Kd_qzGGsHUfIyE5rOx3K6MReAKN_bjSWa0XCyKNwIxsTyLTHBMCRpl-WhA2qfFb5uOgbqsx89Mh6dtA4MQUodXyNRx7Ln1hSTbBM3YbCJ38_P5b7qCDnx9iX8W58FyJuDG1OjVD7yKwOpV-gxZw6GlOuJXn6F9nH9bg8ojniA2I7pea-VuZZB3mDe-jywnFEIb4al0RGjjgKwMqnUyip5kWoIZT7A0ntI_E"/>
+</div>
+<p class="text-sm text-[var(--text-secondary)]">One-tap payment with your Google account.</p>
+</div>
+</label>
+</div>
+</section>
+<section class="bg-white rounded-lg p-6 shadow-sm">
+<h2 class="text-lg font-bold mb-4">Add coupons</h2>
+<div class="flex gap-2">
+<input class="flex-grow border-gray-300 rounded focus:ring-[var(--primary-blue)] focus:border-[var(--primary-blue)]" placeholder="Enter code" type="text"/>
+<button class="px-6 py-2 border border-[var(--primary-blue)] text-[var(--primary-blue)] font-bold rounded-full hover:bg-blue-50 transition-colors">Apply</button>
+</div>
+</section>
+<section class="bg-white rounded-lg p-6 shadow-sm">
+<h2 class="text-lg font-bold mb-4">Add note to seller</h2>
+<textarea class="w-full border-gray-300 rounded focus:ring-[var(--primary-blue)] focus:border-[var(--primary-blue)] h-24 p-3" placeholder="Enter any special instructions for the seller..."></textarea>
+</section>
+<section class="bg-white rounded-lg p-6 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-green-600">verified_user</span>
+<h2 class="text-lg font-bold">Billing address</h2>
+</div>
+<p class="text-sm text-[var(--text-secondary)] mb-4">Same as shipping address: <span class="text-black font-medium">123 Le Loi Street, District 1, Ho Chi Minh City</span></p>
+<button class="text-[var(--primary-blue)] text-sm font-medium hover:underline">Change</button>
+</section>
+</div>
+<div class="lg:col-span-1">
+<div class="bg-white summary-card rounded-lg p-6 shadow-sm sticky top-24">
+<h2 class="text-xl font-bold mb-4">Order summary</h2>
+<div class="space-y-3 pb-4 border-b border-gray-200">
+<div class="flex justify-between text-sm">
+<span class="text-[var(--text-secondary)]">Items (2)</span>
+<span>$105.00</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-[var(--text-secondary)]">Shipping</span>
+<span class="text-green-600 font-medium">Free</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-[var(--text-secondary)]">Import charges (estimated)</span>
+<span>$10.50</span>
+</div>
+</div>
+<div class="pt-4 mb-6">
+<div class="flex justify-between items-baseline">
+<span class="text-lg font-bold">Order total</span>
+<span class="text-2xl font-bold text-[var(--primary-red)]">$115.50</span>
+</div>
+</div>
+<button class="w-full bg-[var(--primary-blue)] hover:bg-[#0052ad] text-white font-bold py-3 px-6 rounded-full transition-colors mb-4">
+                        Confirm and pay
+                    </button>
+<p class="text-[10px] text-center text-[var(--text-secondary)]">
+                        By placing your order, you agree to our Terms of Use and Privacy Policy.
+                    </p>
+<div class="mt-6 pt-6 border-t border-gray-100">
+<div class="flex items-center gap-3">
+<img alt="Guarantee" class="h-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXtFSAX_JArdYGpKiBpkKSA93IzouU_DnR-7PVn-X0KnJcEQj2mEm0ZXuUQiDuClEUu9bEyK7ly_ChXc96vM1QfgL_rSoDrskGvyPTawl97-5fta3uHwiitjPxQ2eVE2ONcK3bbQxDKKpvYfYPDe7IfauOKY5YvAGDVLRiRZkfpPnv2Z-37ESO5GGAyRvd6y9NaNDsCGGdrE8qciZpX5ryPilu2LKlzFw8vMZz2J7KZRiz6gnyc7WKRRaWUgYJVZqYd-YQX3v_NSM"/>
+<div>
+<p class="text-[11px] font-bold leading-tight">eBay Clone Money Back Guarantee</p>
+<p class="text-[10px] text-[var(--text-secondary)] leading-tight">Get the item you ordered or your money back.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="bg-white border-t border-gray-200 py-10 mt-auto">
+<div class="checkout-container px-4">
+<div class="flex flex-wrap justify-between items-start gap-8 mb-8">
+<div class="max-w-xs">
+<a class="flex items-baseline text-2xl font-bold tracking-tighter mb-4" href="/">
+<span class="ebay-logo-text-e">e</span><span class="ebay-logo-text-b">b</span><span class="ebay-logo-text-a">a</span><span class="ebay-logo-text-y">y</span>
+<span class="ml-1 text-xs font-normal text-[var(--text-secondary)]">Clone</span>
+</a>
+<p class="text-xs text-[var(--text-secondary)] leading-relaxed">
+                    This website is built for educational purposes and simulates a professional e-commerce interface.
+                </p>
+</div>
+<div class="flex gap-12">
+<div>
+<h4 class="text-xs font-bold uppercase mb-4">Support</h4>
+<ul class="text-xs space-y-2 text-[var(--text-secondary)]">
+<li><a class="hover:underline" href="#">Help Center</a></li>
+<li><a class="hover:underline" href="#">Order Status</a></li>
+<li><a class="hover:underline" href="#">Returns</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-xs font-bold uppercase mb-4">Legal</h4>
+<ul class="text-xs space-y-2 text-[var(--text-secondary)]">
+<li><a class="hover:underline" href="#">Terms</a></li>
+<li><a class="hover:underline" href="#">Privacy</a></li>
+<li><a class="hover:underline" href="#">Cookies</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[var(--text-secondary)] text-[10px]">
+<p>© 2025 eBay Clone Inc. All rights reserved.</p>
+<div class="flex gap-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">public</span> United States / English</span>
+</div>
+</div>
+</div>
+</footer>
+
+</body></html>

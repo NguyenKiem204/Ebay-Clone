@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>05. Shopping Cart</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary: #0053a0;
+            --accent: #E53238;
+            --success: #389728;
+            --bg-light: #F7F7F7;
+            --text-primary: #191919;
+            --text-secondary: #707070;
+            --border-color: #E5E5E5;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF;
+            color: var(--text-primary);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-done {
+            @apply flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-600;
+        }
+        .step-active {
+            @apply flex items-center justify-center w-8 h-8 rounded-full border-2 border-[var(--primary)] text-[var(--primary)] font-bold;
+        }
+        .sticky-sidebar {
+            position: sticky;
+            top: 80px;
+        }
+        input[type="checkbox"] {
+            @apply rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)];
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<header class="bg-white border-b border-[var(--border-color)] sticky top-0 z-50">
+<div class="container mx-auto px-4 h-16 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="text-3xl font-bold flex tracking-tighter">
+<span class="text-[#E53238]">e</span>
+<span class="text-[#0064D2]">b</span>
+<span class="text-[#F5AF02]">a</span>
+<span class="text-[#86B817]">y</span>
+</div>
+</div>
+<div class="flex items-center gap-6 text-sm">
+<span class="text-[var(--text-secondary)]">Hi, <span class="font-bold text-[var(--text-primary)]">John Doe</span>!</span>
+<a class="hover:underline" href="#">Daily Deals</a>
+<a class="hover:underline" href="#">Help &amp; Contact</a>
+<div class="flex items-center gap-1 cursor-pointer">
+<span class="material-symbols-outlined text-xl">shopping_cart</span>
+</div>
+</div>
+</div>
+</header>
+<main class="container mx-auto px-4 py-8 max-w-7xl">
+<div class="flex items-center justify-center mb-10 overflow-x-auto pb-4">
+<div class="flex items-center min-w-max">
+<div class="flex flex-col items-center">
+<div class="step-done"><span class="material-symbols-outlined text-sm text-gray-500">check</span></div>
+<span class="text-[10px] mt-2 text-[var(--text-secondary)]">Search</span>
+</div>
+<div class="w-12 h-0.5 bg-gray-200 -mt-6"></div>
+<div class="flex flex-col items-center">
+<div class="step-done"><span class="material-symbols-outlined text-sm text-gray-500">check</span></div>
+<span class="text-[10px] mt-2 text-[var(--text-secondary)]">Product</span>
+</div>
+<div class="w-12 h-0.5 bg-gray-200 -mt-6"></div>
+<div class="flex flex-col items-center">
+<div class="step-done"><span class="material-symbols-outlined text-sm text-gray-500">check</span></div>
+<span class="text-[10px] mt-2 text-[var(--text-secondary)]">Shipping</span>
+</div>
+<div class="w-12 h-0.5 bg-gray-200 -mt-6"></div>
+<div class="flex flex-col items-center">
+<div class="step-done"><span class="material-symbols-outlined text-sm text-gray-500">check</span></div>
+<span class="text-[10px] mt-2 text-[var(--text-secondary)]">Payment</span>
+</div>
+<div class="w-12 h-0.5 bg-[var(--primary)] -mt-6"></div>
+<div class="flex flex-col items-center">
+<div class="step-active">5</div>
+<span class="text-[10px] mt-2 font-bold text-[var(--primary)] uppercase tracking-wider">Cart</span>
+</div>
+</div>
+</div>
+<h1 class="text-3xl font-bold mb-8">Your shopping cart (3 items)</h1>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="lg:col-span-8 space-y-6">
+<div class="bg-white rounded-lg border border-[var(--border-color)] overflow-hidden">
+<div class="p-4 bg-[var(--bg-light)] border-b border-[var(--border-color)] flex items-center justify-between">
+<div class="flex items-center gap-3">
+<input checked="" class="w-5 h-5" type="checkbox"/>
+<span class="font-bold text-sm">Seller: <span class="underline cursor-pointer">TechGalaxy_Official</span></span>
+</div>
+</div>
+<div class="p-6 flex gap-6 border-b border-[var(--border-color)] last:border-b-0">
+<div class="flex items-start gap-4">
+<input checked="" class="w-5 h-5 mt-1" type="checkbox"/>
+<img alt="iPhone 15 Pro" class="w-32 h-32 object-contain bg-gray-50 rounded-md border" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnXRaer9x75zAvW5RCBfqsXio1_SE6YMHUCXNcreb7BMxH6hIIaQ9gSbk8fG3Jb0_B2lbTZxnbTqPMveMopmmv6H_xCsGjH1ECY49G6WCoXYpL-7l9q9L8vhlC8od5Ia6gklSxnJ_cKalMxpdXwKirskuXA1G3adOW4F7R7EbbZIEMBfp2lqxRCQDa-RUVP58zAyII9A7iutDp_ahGfJc1qppVaT8uqyKDsJ_ypWWMvbFh3AUYEdBWTBzsZWQoacXTK5bOizbV7Xw"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-medium text-lg text-[var(--text-primary)] hover:underline cursor-pointer leading-tight">Apple iPhone 15 Pro 256GB - Titanium Black - Unlocked</h3>
+<p class="text-sm text-[var(--text-secondary)] mt-2 italic">Condition: Brand New</p>
+<p class="text-sm text-[var(--text-secondary)]">Color: Black Titanium | Capacity: 256GB</p>
+</div>
+<div class="text-right">
+<p class="font-bold text-xl">$1,099.00</p>
+<p class="text-xs text-[var(--success)] font-medium mt-1">Free Shipping</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-6">
+<div class="flex items-center gap-6">
+<div class="flex items-center bg-white border border-[var(--border-color)] rounded-md">
+<label class="px-3 text-xs text-[var(--text-secondary)] font-medium">Qty</label>
+<select class="border-0 focus:ring-0 text-sm font-bold bg-transparent py-1 pr-8">
+<option>1</option>
+<option>2</option>
+<option>3</option>
+</select>
+</div>
+<div class="flex gap-4 text-sm font-medium">
+<button class="text-[var(--primary)] hover:underline">Remove</button>
+<button class="text-[var(--primary)] hover:underline">Save for later</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg border border-[var(--border-color)] overflow-hidden">
+<div class="p-4 bg-[var(--bg-light)] border-b border-[var(--border-color)] flex items-center justify-between">
+<div class="flex items-center gap-3">
+<input checked="" class="w-5 h-5" type="checkbox"/>
+<span class="font-bold text-sm">Seller: <span class="underline cursor-pointer">AudioPro_Store</span></span>
+</div>
+</div>
+<div class="p-6 flex gap-6">
+<div class="flex items-start gap-4">
+<input checked="" class="w-5 h-5 mt-1" type="checkbox"/>
+<img alt="Sony Headphones" class="w-32 h-32 object-contain bg-gray-50 rounded-md border" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkpZJqD5Qfazh6gA3wljllxNFCJhw-7I5fazev0KR2EBLbkYJRRpPxAjZeIOFTDvoVXf0fSOksJgjKWQVG4-98ALWGeYUX4l21zRmMNq2wIO86gQokIamYVUPfeJNt5w65rGsPxpjQz2YABK_jsqUposfRe6ty_bT3H7JzhpN7TzKtw4YeKZy7ssqD7NznqRnvXVJ3BpaURq9te_CZXDtgaogyZCeGqxbB-WBjEhpzHwIYe_Uc6mFkSCMUVTmO9xAud8D5AGBx5XU"/>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-medium text-lg text-[var(--text-primary)] hover:underline cursor-pointer leading-tight">Sony WH-1000XM5 Wireless Noise Canceling Headphones</h3>
+<p class="text-sm text-[var(--text-secondary)] mt-2 italic">Condition: Open Box</p>
+<p class="text-sm text-[var(--text-secondary)]">Color: Silver</p>
+</div>
+<div class="text-right">
+<p class="font-bold text-xl">$698.00</p>
+<p class="text-xs text-[var(--text-secondary)] mt-1">$349.00 each</p>
+<p class="text-xs text-[var(--success)] font-medium mt-1">Free Shipping</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-6">
+<div class="flex items-center gap-6">
+<div class="flex items-center bg-white border border-[var(--border-color)] rounded-md">
+<label class="px-3 text-xs text-[var(--text-secondary)] font-medium">Qty</label>
+<select class="border-0 focus:ring-0 text-sm font-bold bg-transparent py-1 pr-8">
+<option>1</option>
+<option selected="">2</option>
+<option>3</option>
+</select>
+</div>
+<div class="flex gap-4 text-sm font-medium">
+<button class="text-[var(--primary)] hover:underline">Remove</button>
+<button class="text-[var(--primary)] hover:underline">Save for later</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-4">
+<div class="bg-white border border-[var(--border-color)] p-6 rounded-lg sticky-sidebar shadow-sm">
+<h2 class="text-2xl font-bold mb-6">Order Summary</h2>
+<div class="space-y-4 mb-8">
+<div class="flex justify-between text-[var(--text-secondary)]">
+<span>Items (3)</span>
+<span>$1,797.00</span>
+</div>
+<div class="flex justify-between text-[var(--text-secondary)]">
+<span>Shipping</span>
+<span class="text-[var(--success)] font-medium">Free</span>
+</div>
+<div class="flex justify-between text-[var(--text-secondary)]">
+<span>Estimated Sales Tax</span>
+<span>$148.25</span>
+</div>
+<div class="border-t border-[var(--border-color)] pt-4 mt-4 flex justify-between items-end">
+<span class="text-xl font-bold">Total</span>
+<span class="text-2xl font-bold text-[var(--text-primary)]">$1,945.25</span>
+</div>
+</div>
+<button class="w-full bg-[var(--primary)] text-white font-bold py-4 rounded-full text-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center gap-2">
+                    Go to checkout
+                </button>
+<div class="mt-8 space-y-4 text-sm text-[var(--text-secondary)]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600">verified_user</span>
+<span class="font-medium text-[var(--text-primary)]">Money Back Guarantee</span>
+</div>
+<p class="text-xs">Get the item you ordered or get your money back. Covers your purchase price and original shipping.</p>
+</div>
+<div class="mt-8 pt-6 border-t border-[var(--border-color)]">
+<label class="block text-sm font-bold mb-2">Have a coupon?</label>
+<div class="flex gap-2">
+<input class="flex-1 border-[var(--border-color)] rounded-md text-sm px-3 py-2" placeholder="Enter code" type="text"/>
+<button class="px-4 py-2 border border-[var(--primary)] text-[var(--primary)] font-bold rounded-md hover:bg-blue-50 text-sm">Apply</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<section class="mt-16">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-2xl font-bold">Recommended for you</h2>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full border border-[var(--border-color)] flex items-center justify-center hover:bg-gray-50">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 rounded-full border border-[var(--border-color)] flex items-center justify-center hover:bg-gray-50">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+<div class="group cursor-pointer">
+<div class="aspect-square bg-[var(--bg-light)] rounded-lg mb-3 overflow-hidden border border-transparent group-hover:border-[var(--border-color)] transition-all">
+<img alt="Headphones" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtmnFFx0UbrNUbrzwkUDT65bAAOAZuax0uqr4HMqFhZJ9nN-18q0yLGef_-hflaLrqpb1dm6eR2fLEdGH_l33GrZHyTAfF02YhsavgRXZ5G4khND7nVhB6cS4jVKJKe43U338DjDwhPQDXg_jI-hq38lVt7sDSBrMv_HOwXfLNymwv3I-WgpXE-l_7NSrZGDakLJXLSEG82nTA9JDSKblv9A6DRH4VWFVU17eGygNzmS-WM15i9nF8RkCOstLechVSS7_Rql45qh4"/>
+</div>
+<h3 class="text-sm font-medium line-clamp-2 hover:underline">Wireless Noise Canceling Over-Ear Headphones - Multiple Colors</h3>
+<p class="font-bold text-lg mt-1">$129.99</p>
+<p class="text-xs text-[var(--text-secondary)]">Free shipping</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square bg-[var(--bg-light)] rounded-lg mb-3 overflow-hidden border border-transparent group-hover:border-[var(--border-color)] transition-all">
+<img alt="Watch" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJzMC1STk6xFAb0a-3OgKTa0e3HuVXj-ZX4s6P9CAsQ_QX0PgPlieKBi9PPIhZmEuTW1irvBsGEYa3SMjTw-VWV3YI05wQggHghsK5AcADl37NjtAf7MhaeOb_tle4YlHdFPkVbs8NRMh2pjCFDxNTl6tp-Lc7A4R086H2ovpLnykLZQKNxMYd3_EnNk34Zz14NSmzL61TyDm1abXlXCko1mSJN20fDyt00jqLYjIuaE9fYlHijkePnsSekTomeTH7HQqb264oAWM"/>
+</div>
+<h3 class="text-sm font-medium line-clamp-2 hover:underline">Modern Smart Watch with Heart Rate Monitor &amp; GPS</h3>
+<p class="font-bold text-lg mt-1">$199.00</p>
+<p class="text-xs text-[var(--text-secondary)]">Free shipping</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square bg-[var(--bg-light)] rounded-lg mb-3 overflow-hidden border border-transparent group-hover:border-[var(--border-color)] transition-all">
+<img alt="Camera" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAbnAunqDuxS5QMHO3C18Lo15Z1s7ksk553e8x9Y_Woas3MAqsH3X2Iu_f4dfMVXiY94ZooKWPiucbshJTCb3yEkSvY72Erh3fpYrd69c1-y764gvDEBGljCj8sYIpR4QtAZSrv46OpeRc0JV4hOYyxZtiMvFdoRoiNep0y4MsPWGdzlJQc-fXMvBlgspRfTahBGPlw1-3MqHEHkdh9aa7ftHPPTuuUYO6MFIKV9X4Xi8uKb2mrc2whyileXYXIuWfMjMY4LqYV8M"/>
+</div>
+<h3 class="text-sm font-medium line-clamp-2 hover:underline">Professional Digital Camera with 4K Video Capability</h3>
+<p class="font-bold text-lg mt-1">$849.00</p>
+<p class="text-xs text-[var(--text-secondary)]">Free shipping</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square bg-[var(--bg-light)] rounded-lg mb-3 overflow-hidden border border-transparent group-hover:border-[var(--border-color)] transition-all">
+<img alt="Glasses" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzV_EMbD643nK9V0as06e11Y_Y-wqjFScwDS0M9mte7zh2CLmdap9RsP4bx6-VO5NTa2jvNsc3ThNAhAvjUpO2Ncj0S3SQxIZmy3ZEmq1ZnIarcGdnyzGh_ZltdXgZVV-AnBjX-cGO3d3ohL-1yOswI7qH2zDsRYvJv6H6AAcoI0FlIdWal3FG9-Qxp1_Ng-ykMuLQ0N2DWHcSsfCJCo7h9gJU-2Ux6ZKHJHHKgRmgJg6VXpcwxPaRc2-cgpD_FiX1kc7wiMQhQ1g"/>
+</div>
+<h3 class="text-sm font-medium line-clamp-2 hover:underline">Premium Polarized Sunglasses for Outdoor Sports</h3>
+<p class="font-bold text-lg mt-1">$45.50</p>
+<p class="text-xs text-[var(--text-secondary)]">Free shipping</p>
+</div>
+<div class="group cursor-pointer hidden lg:block">
+<div class="aspect-square bg-[var(--bg-light)] rounded-lg mb-3 overflow-hidden border border-transparent group-hover:border-[var(--border-color)] transition-all">
+<img alt="Speaker" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAett1WThYeTutq1fH1GrN19coX9q2vXyKTFvm5gk7tjZwRiF3CNhF0rKE3gF_l7STgZjJYHECqVZm4VeMjhCAnpGiSmXAmYDOYLUC7XqpI38HPFqp1Nf40vD-IQaeTwgSnwyzgZ5SQiJpslMnomu4Gc-BekaSlZeZVS9da3urtx6olDEu1kVNgbaL0JV0ylhsmjVLKXcDF2cDR1CzEoCYEA9i9hqX6zIyhhSTcyW743fjEyFSwZ2baPZpy6pw2sIm-dHbqvE2P0gk"/>
+</div>
+<h3 class="text-sm font-medium line-clamp-2 hover:underline">Portable Bluetooth Speaker with Deep Bass &amp; Waterproof</h3>
+<p class="font-bold text-lg mt-1">$79.95</p>
+<p class="text-xs text-[var(--text-secondary)]">Free shipping</p>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-white border-t border-[var(--border-color)] mt-24 py-12">
+<div class="container mx-auto px-4 max-w-7xl">
+<div class="flex flex-wrap justify-center gap-x-12 gap-y-4 text-xs text-[var(--text-secondary)] mb-8">
+<a class="hover:underline" href="#">About</a>
+<a class="hover:underline" href="#">Privacy Policy</a>
+<a class="hover:underline" href="#">User Agreement</a>
+<a class="hover:underline" href="#">Contact Us</a>
+<a class="hover:underline" href="#">Accessibility</a>
+<a class="hover:underline" href="#">Site Map</a>
+</div>
+<p class="text-center text-xs text-gray-400">© 2025 Marketplace Inc. All rights reserved. Designated trademarks and brands are the property of their respective owners.</p>
+</div>
+</footer>
+
+</body></html>

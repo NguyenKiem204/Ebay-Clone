@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary-ebay: #E53238;
+            --secondary-ebay: #0064D2;
+            --bg-gray: #FFFFFF;
+            --text-main: #191919;
+            --text-sub: #707070;
+            --border-light: #e5e5e5;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+        }
+        .ebay-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        .filter-section-title {
+            @apply font-bold text-sm mb-2 mt-4 flex justify-between items-center cursor-pointer;
+        }
+        .filter-link {
+            @apply text-sm text-[var(--text-sub)] hover:underline block py-1;
+        }
+        .product-card:hover .product-title {
+            @apply text-[var(--secondary-ebay)] underline;
+        }
+        .price-slider-track {
+            height: 4px;
+            background: #ddd;
+            position: relative;
+            border-radius: 2px;
+        }
+        .price-slider-handle {
+            width: 18px;
+            height: 18px;
+            background: white;
+            border: 2px solid var(--secondary-ebay);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<header class="bg-white border-b border-[var(--border-light)] sticky top-0 z-50">
+<div class="ebay-container py-3 flex items-center gap-4">
+<div class="text-4xl font-bold flex tracking-tighter mr-4 cursor-pointer">
+<span class="text-[#E53238]">e</span>
+<span class="text-[#0064D2]">b</span>
+<span class="text-[#F5AF02]">a</span>
+<span class="text-[#86B817]">y</span>
+</div>
+<div class="flex-1 flex gap-2">
+<div class="relative flex-1">
+<div class="flex border-2 border-[#191919] rounded-sm overflow-hidden focus-within:border-[var(--secondary-ebay)]">
+<div class="flex items-center pl-4 bg-white">
+<span class="material-symbols-outlined text-gray-400">search</span>
+</div>
+<input class="w-full px-3 py-2 border-none focus:ring-0 text-[16px]" placeholder="Search for anything" type="text" value="iPhone"/>
+<div class="border-l border-gray-300 px-4 flex items-center bg-white cursor-pointer group">
+<span class="text-sm text-gray-600">All Categories</span>
+<span class="material-symbols-outlined text-gray-400 text-lg">expand_more</span>
+</div>
+</div>
+</div>
+<button class="bg-[var(--secondary-ebay)] text-white px-10 py-2 font-bold hover:bg-blue-700 transition-colors">Search</button>
+<button class="text-[12px] text-gray-500 hover:text-[var(--secondary-ebay)]">Advanced</button>
+</div>
+<div class="flex items-center gap-6 ml-4 text-sm">
+<div class="flex flex-col items-center cursor-pointer">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+</div>
+<div class="relative cursor-pointer">
+<span class="material-symbols-outlined text-2xl">shopping_cart</span>
+<span class="absolute -top-1 -right-1 bg-[var(--primary-ebay)] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">3</span>
+</div>
+<div class="flex items-center gap-1 cursor-pointer">
+<div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-gray-500">person</span>
+</div>
+<span class="font-medium">Hi, User!</span>
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</div>
+</div>
+</div>
+</header>
+<main class="ebay-container py-4">
+<nav class="flex text-[12px] text-[var(--text-sub)] mb-4 gap-2">
+<a class="hover:underline" href="#">Home</a>
+<span>&gt;</span>
+<a class="hover:underline" href="#">Cell Phones &amp; Accessories</a>
+<span>&gt;</span>
+<span class="font-bold text-black">Cell Phones &amp; Smartphones</span>
+</nav>
+<div class="flex justify-between items-center border-b border-[var(--border-light)] pb-4 mb-6">
+<h1 class="text-2xl font-normal"><span class="font-bold">1,248</span> results for <span class="font-bold">iPhone</span></h1>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1 px-4 py-1.5 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50">
+                Save this search
+                <span class="material-symbols-outlined text-lg">favorite</span>
+</button>
+<div class="flex items-center border border-gray-300 rounded overflow-hidden">
+<button class="px-3 py-1 bg-gray-100 border-r border-gray-300"><span class="material-symbols-outlined text-lg pt-1">grid_view</span></button>
+<button class="px-3 py-1 hover:bg-gray-50"><span class="material-symbols-outlined text-lg pt-1">view_list</span></button>
+</div>
+<div class="flex items-center gap-2">
+<label class="text-sm text-gray-600">Sort:</label>
+<select class="border-gray-300 rounded text-sm focus:ring-[var(--secondary-ebay)] focus:border-[var(--secondary-ebay)] pr-8">
+<option>Best Match</option>
+<option>Price + Shipping: lowest first</option>
+<option>Price + Shipping: highest first</option>
+<option>Newly Listed</option>
+</select>
+</div>
+</div>
+</div>
+<div class="flex gap-8">
+<aside class="w-[240px] flex-shrink-0">
+<div>
+<h3 class="font-bold text-sm mb-3">Category</h3>
+<ul class="space-y-1">
+<li><a class="text-sm font-bold text-black py-1 block" href="#">Cell Phones &amp; Smartphones</a></li>
+<li><a class="filter-link pl-3" href="#">Cell Phone Accessories</a></li>
+<li><a class="filter-link pl-3" href="#">Cell Phone Parts</a></li>
+</ul>
+</div>
+<div class="border-t border-[var(--border-light)] mt-4">
+<div class="filter-section-title">
+                    Price Range
+                    <span class="material-symbols-outlined text-lg">expand_less</span>
+</div>
+<div class="px-2 mt-4 mb-6">
+<div class="price-slider-track">
+<div class="absolute h-full bg-[var(--secondary-ebay)] left-[10%] right-[30%]"></div>
+<div class="price-slider-handle left-[10%]"></div>
+<div class="price-slider-handle left-[70%]"></div>
+</div>
+<div class="flex justify-between mt-4 items-center gap-2">
+<div class="relative flex-1">
+<span class="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
+<input class="w-full text-xs border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" value="100"/>
+</div>
+<span class="text-gray-400">-</span>
+<div class="relative flex-1">
+<span class="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
+<input class="w-full text-xs border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" value="850"/>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-[var(--border-light)] mt-4">
+<div class="filter-section-title">
+                    Condition
+                    <span class="material-symbols-outlined text-lg">expand_less</span>
+</div>
+<div class="space-y-2">
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input checked="" class="rounded border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" type="checkbox"/>
+                        New
+                    </label>
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input class="rounded border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" type="checkbox"/>
+                        Open box
+                    </label>
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input checked="" class="rounded border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" type="checkbox"/>
+                        Certified - Refurbished
+                    </label>
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input class="rounded border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" type="checkbox"/>
+                        Used
+                    </label>
+</div>
+</div>
+<div class="border-t border-[var(--border-light)] mt-4">
+<div class="filter-section-title">
+                    Item Location
+                    <span class="material-symbols-outlined text-lg">expand_less</span>
+</div>
+<div class="space-y-2">
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input checked="" class="border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" name="location" type="radio"/>
+                        US Only
+                    </label>
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input class="border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" name="location" type="radio"/>
+                        North America
+                    </label>
+<label class="flex items-center gap-2 text-sm cursor-pointer">
+<input class="border-gray-300 text-[var(--secondary-ebay)] focus:ring-[var(--secondary-ebay)]" name="location" type="radio"/>
+                        Worldwide
+                    </label>
+</div>
+</div>
+</aside>
+<div class="flex-1">
+<div class="grid grid-cols-4 gap-6">
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfJ9MgmLkFu5TeIZLpfmqPEFfcBXxK5inN9RzuNE2PZrFfnp2V7X46t9aaCTokMXYyKrnPQX22ZjFd7yZRG2CKQdsbLuAmEe8MvlX4EuP2dRN5oJc-1Qd5g_5k7YxWxvCZEbx5WyQiFiWdScENK6TAnTfgpsLtwwmv5yQjVmQjICsxYrcywTpqcYrplEBTgbg5XtSGEqfrU6-ZiOof4DXDjTS1YdLApoTXOyGOwEVmADhzKeY8uoUkvDfoGW_xXMDh88cghOL9Ws8"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">Apple iPhone 15 Pro 128GB Black Titanium - Unlocked - New</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star_half</span>
+</div>
+<span class="text-[11px] text-gray-500">(1,254)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$999.00</span>
+<span class="text-sm text-red-600 font-bold">15% OFF</span>
+</div>
+<p class="text-xs text-[var(--text-sub)] line-through">$1,175.00</p>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free shipping</p>
+<p class="text-[11px] text-gray-500">from United States</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUWLmMt4pscodsu1uiqK6zT35-xcQIwKjokQWn2Q5us9jgCXSB2qm7z6SynFAjA03mRrzO2QhIIa7IOzQaibKBcJEgKV0ZGYrcFxAf1eXm0mug4zGfzOOq_WTnc1ZoluOI-atV4Poi6zr4PFDvskHG-fTBGGqyp0ubB3A9aU_loNDUDKnzhRVLXV8uYLED90VUNTFe6n3EKD9vl-rRbY65KpmAywSs6JIRxojgjES8-hiv9kFAur4in9TNt0hVtEAiVN6RYLh3u18"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">Apple iPhone 15 Pro Max 256GB Natural Titanium</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+</div>
+<span class="text-[11px] text-gray-500">(842)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$1,199.00</span>
+</div>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free shipping</p>
+<p class="text-[11px] text-green-700 font-bold">Free returns</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfL0QiQ04RaPKBVLSfvq4VRrNOzhkufIrTEwiDHl7o1WYcoPaZ8KLnVF_ZnLcL4cRYaq-T4_smaQum6O5BdxM_GXPwox4pPT2FFotvZcT5KUMNiBdAt3y8EzKKneSYnO5kyyRn6np46TbrJCmnKxhi5EV6Pnp5YDARzNTweCqL-RY5VsIdaREidXYzYfhakl37496Y4MTIjUBf1pYx9mNBW6cJTDTFGzZPn5CPtRXHzRl9pMEU3PhnGRNiPem71lS_0w4BR6150Uk"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+<div class="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">SPONSORED</div>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">New Apple iPhone 15 - 128GB - Blue - Unlocked</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+</div>
+<span class="text-[11px] text-gray-500">(320)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$749.00</span>
+<span class="text-sm text-red-600 font-bold">10% OFF</span>
+</div>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free 3-day shipping</p>
+<p class="text-[11px] text-gray-500">from USA</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2cP-lLB_EE8M15wUZrlckr-0clB10roejuYucwJ8Rl6NQLV1XgS7k4Rb9nm5rmmTBrAooTKDKvuJaQbDr2-mJ4ISOvFAwOqR3EyNtLmCD_h1Sfb9HM5prPZqI6HlfI1XFqijD5SuBYMhbKthiZwY_yJFVFue7-SVUsMwRkqgrcc_zBRXfC7LMw9rlu-IuC5xY9om1tHyfVo-e3pcLsIRrWC74GBNFMEVcAN4H2TA_oKXKuvsj009GOXobTmBKc0Ba0OHY9ST445o"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">Apple iPhone 15 Pro 512GB White Titanium - Unlocked</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+</div>
+<span class="text-[11px] text-gray-500">(56)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$1,299.00</span>
+</div>
+<p class="text-[12px] font-bold text-gray-600 mt-2">+$15.50 shipping</p>
+<p class="text-[11px] text-red-600 font-bold">Almost gone</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMmbf1Z0CGOXW8QisbE7CTTpXWbgzScYmuI05Yhe-9cjMN3QJxwX8TOPA7BcU4d_dxPNjOHvteq6Zd3roqpTb7NU9ut-vt-RIybLMkf6VK7Aa5VzzD3bdvGgBw5R-8DdO5cv_BSu4y0S6ZQn6Qk202qG6DT1ekH2iLVowWW-lgS0-v6c0v7G31X6wvv73H2j-YYdpHBV6LXwHwe6TmuRmiAScubxsdTJ6UvKuzx6Hh0_uAoCy8qF-icoHAU4A6JHZOfs_a0gppXRU"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">Refurbished iPhone 15 Pro 256GB - All Colors</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star_half</span>
+</div>
+<span class="text-[11px] text-gray-500">(2,410)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$899.00</span>
+<span class="text-sm text-red-600 font-bold">20% OFF</span>
+</div>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free shipping</p>
+<p class="text-[11px] text-green-700 font-bold">1,000+ sold</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDprWykCkiHEd5oxO4KeppSHrHQAQ0Yj1jzYjKmyvsDpSNCF0a_-lPjfFq80CiazzcdlMzuUec4F3EzRbLaPKZNdIEvVUfDKCAdASVIKN7vJUlhZ0hG5x9dpTrViaLsZkOXapCB2_9m4ecUA0i9uToksp8Ph6jnCvLruWvQ2o7EKmiAdMF9UKSlHQYIxQhIIZ66IP7C2YsJPIJxQWNl8jNM2VVYjk39ZNEj78erJ9HsLjdbkYZ8Kjj_CzkfQGUPZIak9Z_xE_TKd-k"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">Apple iPhone 15 Pro Max - 1TB - Black Titanium</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+</div>
+<span class="text-[11px] text-gray-500">(15)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$1,599.00</span>
+</div>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free shipping</p>
+<p class="text-[11px] text-gray-500">from UK</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJygdHN0oiZthqGD-j0H-vxB9iIeWiwnRKEwQAe7sdvVN8Le8EXpmZ4fE5g22UpnMFF3tvnuKr5-ltXJ_6pjp8RdEW2odMAqDhfe0EimuT-psVxauOvrO_dpoYXhUOGBZ8kIzMGyQz5aze6dDXKnAN1rskNA0-lUDEf0mDhG74dQZYPbDHCnQOc4-iQCvKIkrHv9QgzP-U8lIjpmuwWMk5zgF1uexbEe8XWSCNQIXBuTVLLn8upqxKpYS_BQTr8vgJ9hvoNwNHvgs"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">MagSafe Case for iPhone 15 Pro - Clear - Apple Original</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+</div>
+<span class="text-[11px] text-gray-500">(8,902)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$49.00</span>
+<span class="text-sm text-red-600 font-bold">5% OFF</span>
+</div>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free shipping</p>
+<p class="text-[11px] text-green-700 font-bold">Last one</p>
+</div>
+<div class="product-card cursor-pointer group">
+<div class="aspect-square bg-[#F7F7F7] rounded overflow-hidden mb-3 relative">
+<img alt="iPhone" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkQF4_q9UeU6-i6UjPMgPp_OSIcuYdI_HcjkwU1XtnKjqos6OS9UpfNmjGOF_rrqj9lepUsxXev1TT324Eur85UwkfHkxMvf1UGcKdBjpKlT5h6UzXQqpQ5eX9bUhxmDJSC8vWoZ0Ro5rn8Py_GFur7zlHtOOmovi-qe5oZLKE8u3mHAS0XH22HmmYE65a_jmFhKysA3KXx0lTbngH3fdgMdYxi6-SYjauoT5cAMFFd-6PFUUVqnmTgG_MOcj5SvGG4cPSDo74d_4"/>
+<button class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined text-xl">favorite</span>
+</button>
+</div>
+<h3 class="product-title text-[15px] leading-tight line-clamp-2 mb-1">Tempered Glass Screen Protector for iPhone 15 Pro [3-Pack]</h3>
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm fill-current">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+</div>
+<span class="text-[11px] text-gray-500">(542)</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">$12.99</span>
+</div>
+<p class="text-[12px] font-bold text-blue-700 mt-2">Free shipping</p>
+<p class="text-[11px] text-green-700 font-bold">3,500+ sold</p>
+</div>
+</div>
+<div class="flex justify-center items-center gap-2 mt-12 pb-8">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--secondary-ebay)] text-white font-bold">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">3</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">4</button>
+<span class="mx-1">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">25</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<footer class="bg-white border-t border-[var(--border-light)] mt-16 pt-12 pb-8">
+<div class="ebay-container">
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
+<div>
+<h5 class="font-bold text-sm mb-4">Buy</h5>
+<ul class="text-xs space-y-2 text-[var(--text-sub)]">
+<li><a class="hover:underline" href="#">Registration</a></li>
+<li><a class="hover:underline" href="#">eBay Money Back Guarantee</a></li>
+<li><a class="hover:underline" href="#">Bidding &amp; buying help</a></li>
+<li><a class="hover:underline" href="#">Stores</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold text-sm mb-4">Sell</h5>
+<ul class="text-xs space-y-2 text-[var(--text-sub)]">
+<li><a class="hover:underline" href="#">Start selling</a></li>
+<li><a class="hover:underline" href="#">Learn to sell</a></li>
+<li><a class="hover:underline" href="#">Affiliates</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold text-sm mb-4">Stay connected</h5>
+<ul class="text-xs space-y-2 text-[var(--text-sub)]">
+<li><a class="hover:underline" href="#">eBay's Blogs</a></li>
+<li><a class="hover:underline" href="#">Facebook</a></li>
+<li><a class="hover:underline" href="#">Twitter</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold text-sm mb-4">About eBay</h5>
+<ul class="text-xs space-y-2 text-[var(--text-sub)]">
+<li><a class="hover:underline" href="#">Company info</a></li>
+<li><a class="hover:underline" href="#">News</a></li>
+<li><a class="hover:underline" href="#">Investors</a></li>
+<li><a class="hover:underline" href="#">Careers</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold text-sm mb-4">Help &amp; Contact</h5>
+<ul class="text-xs space-y-2 text-[var(--text-sub)]">
+<li><a class="hover:underline" href="#">Seller Center</a></li>
+<li><a class="hover:underline" href="#">Contact Us</a></li>
+<li><a class="hover:underline" href="#">eBay Returns</a></li>
+</ul>
+</div>
+</div>
+<div class="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] text-[var(--text-sub)]">
+<p>Copyright © 1995-2024 eBay Clone Inc. All Rights Reserved.</p>
+<div class="flex gap-4 mt-4 md:mt-0">
+<a class="hover:underline" href="#">Accessibility</a>
+<a class="hover:underline" href="#">User Agreement</a>
+<a class="hover:underline" href="#">Privacy</a>
+<a class="hover:underline" href="#">Payments Terms of Use</a>
+<a class="hover:underline" href="#">Cookies</a>
+<a class="hover:underline" href="#">Your Privacy Choices</a>
+</div>
+</div>
+</div>
+</footer>
+
+</body></html>
