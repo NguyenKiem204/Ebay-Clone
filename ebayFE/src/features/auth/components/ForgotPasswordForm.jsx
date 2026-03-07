@@ -69,11 +69,10 @@ export default function ForgotPasswordForm() {
                     id="forgot-email"
                     type="email"
                     autoComplete="email"
-                    className={`w-full px-4 py-3 border rounded-lg text-base outline-none transition-all ${
-                        errors.email
+                    className={`w-full px-4 py-3 border rounded-lg text-base outline-none transition-all ${errors.email
                             ? 'border-red-500 focus:ring-2 focus:ring-red-200'
                             : 'border-gray-400 focus:border-[#3665F3] focus:ring-2 focus:ring-[#3665F3]/20 hover:border-gray-600'
-                    }`}
+                        }`}
                     {...register("email")}
                 />
                 {errors.email && (

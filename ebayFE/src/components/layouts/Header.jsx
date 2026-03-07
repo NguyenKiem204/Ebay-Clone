@@ -26,7 +26,7 @@ export default function Header() {
                         <div className="relative flex items-center gap-1 group">
                             {isAuthenticated ? (
                                 <>
-                                    <button 
+                                    <button
                                         onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                         className="flex items-center gap-1 hover:underline focus:outline-none"
                                     >
@@ -37,8 +37,8 @@ export default function Header() {
                                     {/* User Dropdown Menu */}
                                     {isUserMenuOpen && (
                                         <>
-                                            <div 
-                                                className="fixed inset-0 z-40" 
+                                            <div
+                                                className="fixed inset-0 z-40"
                                                 onClick={() => setIsUserMenuOpen(false)}
                                             />
                                             <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-3 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -51,16 +51,16 @@ export default function Header() {
                                                         <p className="text-[11px] text-gray-500 truncate">{user?.email}</p>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="py-2">
-                                                    <Link 
-                                                        to="/profile" 
+                                                    <Link
+                                                        to="/profile"
                                                         onClick={() => setIsUserMenuOpen(false)}
                                                         className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
                                                     >
                                                         Edit profile info
                                                     </Link>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             logout();
                                                             setIsUserMenuOpen(false);

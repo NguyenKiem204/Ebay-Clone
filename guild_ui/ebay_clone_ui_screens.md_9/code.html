@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>09. Order Confirmation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary-red: #E53238;
+            --ebay-blue: #0064D2;
+            --ebay-green: #34A853;
+            --bg-gray: #F7F7F7;
+            --text-main: #191919;
+            --text-muted: #707070;
+            --border-color: #E5E5E5;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF;
+            color: var(--text-main);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .success-checkmark {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<header class="border-b border-[var(--border-color)] bg-white z-50">
+<div class="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<a class="text-3xl font-bold tracking-tighter" href="/">
+<span class="text-[#E53238]">eb</span><span class="text-[#0064D2]">ay</span>
+</a>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col text-xs text-right">
+<span>Hi, <span class="font-bold">John Doe</span></span>
+</div>
+<a class="text-sm hover:underline" href="#">Help &amp; Contact</a>
+</div>
+</div>
+</header>
+<main class="flex-1 max-w-[800px] mx-auto px-4 py-16 w-full">
+<div class="text-center">
+<div class="mb-6 inline-flex items-center justify-center w-24 h-24 bg-green-50 rounded-full">
+<span class="material-symbols-outlined success-checkmark text-[var(--ebay-green)] text-6xl">check_circle</span>
+</div>
+<h1 class="text-3xl font-bold mb-2">Thanks! Your order has been placed</h1>
+<p class="text-[var(--text-muted)] mb-8 text-lg">A confirmation email has been sent to your inbox.</p>
+<div class="bg-[var(--bg-gray)] rounded-2xl p-8 mb-10 border border-[var(--border-color)]">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+<div>
+<p class="text-xs uppercase tracking-widest text-[var(--text-muted)] font-bold mb-1">Order Number</p>
+<p class="text-xl font-mono font-bold text-[var(--ebay-blue)]">#EB-94205831</p>
+</div>
+<div>
+<p class="text-xs uppercase tracking-widest text-[var(--text-muted)] font-bold mb-1">Estimated Delivery</p>
+<p class="text-lg font-semibold text-[var(--ebay-green)]">May 28 - May 30, 2024</p>
+</div>
+<div>
+<p class="text-xs uppercase tracking-widest text-[var(--text-muted)] font-bold mb-1">Payment Method</p>
+<p class="text-sm">Credit Card (Ending in 4242)</p>
+</div>
+<div>
+<p class="text-xs uppercase tracking-widest text-[var(--text-muted)] font-bold mb-1">Order Date</p>
+<p class="text-sm font-semibold">May 24, 2024</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<a class="px-10 py-3 bg-[var(--ebay-blue)] text-white rounded-full font-bold hover:bg-blue-700 transition-colors shadow-sm" href="#">
+                    Track your order
+                </a>
+<a class="px-10 py-3 border border-[var(--ebay-blue)] text-[var(--ebay-blue)] rounded-full font-bold hover:bg-blue-50 transition-colors" href="/">
+                    Continue shopping
+                </a>
+</div>
+<div class="mt-16 pt-8 border-t border-[var(--border-color)] text-left">
+<h2 class="text-xl font-bold mb-6">What happens next?</h2>
+<div class="grid md:grid-cols-2 gap-8">
+<div class="flex gap-4">
+<div class="flex-shrink-0">
+<span class="material-symbols-outlined text-[var(--ebay-blue)]">mail</span>
+</div>
+<div>
+<p class="font-bold text-sm mb-1">Email Confirmation</p>
+<p class="text-sm text-[var(--text-muted)] leading-relaxed">We've sent a receipt and full order details to your registered email address.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex-shrink-0">
+<span class="material-symbols-outlined text-[var(--ebay-blue)]">local_shipping</span>
+</div>
+<div>
+<p class="font-bold text-sm mb-1">Shipping Updates</p>
+<p class="text-sm text-[var(--text-muted)] leading-relaxed">You'll receive a notification and tracking number as soon as your items ship.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="bg-white border-t border-[var(--border-color)] py-12 mt-auto">
+<div class="max-w-[1200px] mx-auto px-4">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-[var(--text-muted)]">
+<div class="flex flex-wrap justify-center gap-6">
+<a class="hover:underline" href="#">Privacy Policy</a>
+<a class="hover:underline" href="#">User Agreement</a>
+<a class="hover:underline" href="#">Cookies</a>
+<a class="hover:underline" href="#">AdChoice</a>
+<a class="hover:underline" href="#">Help &amp; Contact</a>
+</div>
+<p>© 2025 eBay Clone. All Rights Reserved.</p>
+</div>
+</div>
+</footer>
+
+</body></html>

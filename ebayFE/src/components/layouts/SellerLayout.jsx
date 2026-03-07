@@ -16,7 +16,7 @@ export default function SellerLayout() {
     }, [fetchStoreByUserId, isAuthenticated, user?.id]);
 
     if (authLoading) {
-// ... (giữ nguyên loader)
+        // ... (giữ nguyên loader)
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -50,8 +50,8 @@ export default function SellerLayout() {
                     <div className="bg-[#e7f8e8] border border-green-100 rounded-lg p-8 flex flex-col items-start gap-4">
                         <h1 className="text-3xl font-medium text-gray-900">You've signed out.</h1>
                         <p className="text-gray-700">Return to your account to enjoy buying and selling.</p>
-                        <Link 
-                            to="/login" 
+                        <Link
+                            to="/login"
                             className="inline-flex items-center gap-2 border border-gray-800 rounded-md px-6 py-2 h-11 font-medium hover:bg-gray-50 transition-colors"
                         >
                             Sign in again <span className="text-xl">→</span>

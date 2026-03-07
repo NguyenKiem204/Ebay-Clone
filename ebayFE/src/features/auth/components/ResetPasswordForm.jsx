@@ -49,11 +49,10 @@ export default function ResetPasswordForm() {
         }
     };
 
-    const inputBase = (hasError) => `w-full px-4 py-3 border rounded-lg text-base outline-none transition-all ${
-        hasError
+    const inputBase = (hasError) => `w-full px-4 py-3 border rounded-lg text-base outline-none transition-all ${hasError
             ? 'border-red-500 focus:ring-2 focus:ring-red-200'
             : 'border-gray-400 focus:border-[#3665F3] focus:ring-2 focus:ring-[#3665F3]/20 hover:border-gray-600'
-    }`;
+        }`;
 
     return (
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>

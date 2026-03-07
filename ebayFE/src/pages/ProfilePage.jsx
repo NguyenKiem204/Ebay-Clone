@@ -71,7 +71,7 @@ export default function ProfilePage() {
 
             <div className="container mx-auto px-4 py-10 max-w-7xl">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    
+
                     {/* Compact Sidebar */}
                     <div className="lg:col-span-3 space-y-6">
                         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-6 text-center">
@@ -90,7 +90,7 @@ export default function ProfilePage() {
                                 {profileData.firstName} {profileData.lastName}
                             </h2>
                             <p className="text-sm text-gray-500 font-medium mt-1">@{user.username}</p>
-                            
+
                             <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-[#3665F3]">
                                 <span>{user.role}</span>
                                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
@@ -107,11 +107,10 @@ export default function ProfilePage() {
                                             setActiveTab(item.id);
                                             setIsEditing(false);
                                         }}
-                                        className={`w-full flex items-center gap-3.5 px-6 py-4 rounded-xl text-sm font-bold transition-all ${
-                                            activeTab === item.id
+                                        className={`w-full flex items-center gap-3.5 px-6 py-4 rounded-xl text-sm font-bold transition-all ${activeTab === item.id
                                                 ? 'bg-[#3665F3] text-white shadow-md shadow-blue-200'
                                                 : 'text-gray-600 hover:bg-gray-50'
-                                        }`}
+                                            }`}
                                     >
                                         <Icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
                                         {item.label}
@@ -130,7 +129,7 @@ export default function ProfilePage() {
                                 <ChevronRight size={16} className="text-gray-300" />
                             </Link>
                         </nav>
-                        
+
                         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Account Stats</h3>
                             <div className="space-y-4">
@@ -174,7 +173,7 @@ export default function ProfilePage() {
                                                     <input
                                                         type="text"
                                                         value={profileData.firstName}
-                                                        onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
+                                                        onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
                                                         className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#3665F3]/10 focus:border-[#3665F3] outline-none transition-all font-medium"
                                                     />
                                                 </div>
@@ -183,7 +182,7 @@ export default function ProfilePage() {
                                                     <input
                                                         type="text"
                                                         value={profileData.lastName}
-                                                        onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
+                                                        onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
                                                         className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#3665F3]/10 focus:border-[#3665F3] outline-none transition-all font-medium"
                                                     />
                                                 </div>
@@ -213,7 +212,7 @@ export default function ProfilePage() {
                                                     <input
                                                         type="tel"
                                                         value={profileData.phone}
-                                                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                                                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                                                         placeholder="+84..."
                                                         className="w-full pl-12 pr-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#3665F3]/10 focus:border-[#3665F3] outline-none transition-all font-medium text-gray-900"
                                                     />
@@ -239,26 +238,26 @@ export default function ProfilePage() {
                                     ) : (
                                         <div className="space-y-12 animate-in fade-in duration-500">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                                <InfoCard 
-                                                    icon={User} 
-                                                    label="Account Name" 
-                                                    value={`${profileData.firstName} ${profileData.lastName}`} 
+                                                <InfoCard
+                                                    icon={User}
+                                                    label="Account Name"
+                                                    value={`${profileData.firstName} ${profileData.lastName}`}
                                                 />
-                                                <InfoCard 
-                                                    icon={Mail} 
-                                                    label="Email Address" 
-                                                    value={user.email} 
+                                                <InfoCard
+                                                    icon={Mail}
+                                                    label="Email Address"
+                                                    value={user.email}
                                                     verified={user.isEmailVerified}
                                                 />
-                                                <InfoCard 
-                                                    icon={Phone} 
-                                                    label="Contact Phone" 
-                                                    value={profileData.phone || 'Not linked'} 
+                                                <InfoCard
+                                                    icon={Phone}
+                                                    label="Contact Phone"
+                                                    value={profileData.phone || 'Not linked'}
                                                 />
-                                                <InfoCard 
-                                                    icon={Calendar} 
-                                                    label="Registered On" 
-                                                    value={new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} 
+                                                <InfoCard
+                                                    icon={Calendar}
+                                                    label="Registered On"
+                                                    value={new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                                 />
                                             </div>
 

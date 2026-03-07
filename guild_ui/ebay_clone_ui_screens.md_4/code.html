@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>04. Auction Item Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --ebay-red: #E53238;
+            --ebay-blue: #0064D2;
+            --ebay-bg: #F7F7F7;
+            --ebay-text: #333333;
+            --ebay-gray: #767676;
+            --ebay-success: #389728;
+            --ebay-border: #E0E0E0;
+            --ebay-orange: #f5af02;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: var(--ebay-text);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .auction-timer-digit {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<header class="bg-white border-b border-[var(--ebay-border)] sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<a class="text-3xl font-bold tracking-tighter" href="/">
+<span class="text-[#E53238]">eb</span><span class="text-[#0064D2]">ay</span><span class="text-[#F5AF02]">cl</span><span class="text-[#86B817]">one</span>
+</a>
+<div class="hidden md:flex items-center gap-4 text-sm">
+<button class="hover:text-[var(--ebay-blue)]">Shop by category</button>
+<div class="relative w-96">
+<input class="w-full border-2 border-black px-4 py-2 pr-10 focus:outline-none" placeholder="Search for anything" type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-gray-500">search</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6 text-sm">
+<span class="text-[var(--ebay-gray)] hidden sm:inline">Hi, <span class="font-bold text-[var(--ebay-text)]">User</span> ▼</span>
+<span class="text-[var(--ebay-gray)] cursor-pointer hover:underline">Watchlist</span>
+<span class="text-[var(--ebay-gray)] cursor-pointer hover:underline">My eBay ▼</span>
+<div class="relative cursor-pointer">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+<span class="absolute -top-1 -right-1 bg-[var(--ebay-red)] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">2</span>
+</div>
+<div class="relative cursor-pointer">
+<span class="material-symbols-outlined text-2xl">shopping_cart</span>
+</div>
+</div>
+</div>
+</header>
+<nav class="bg-white border-b border-[var(--ebay-border)] py-2">
+<div class="max-w-7xl mx-auto px-4">
+<ol class="flex items-center gap-2 text-xs text-[var(--ebay-gray)]">
+<li><a class="hover:underline" href="#">Home</a></li>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<li><a class="hover:underline" href="#">Electronics</a></li>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<li><a class="hover:underline" href="#">Computers &amp; Tablets</a></li>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<li class="font-bold text-[var(--ebay-text)] line-clamp-1">Premium Performance Laptop - Factory Sealed</li>
+</ol>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-4 py-8">
+<div class="flex items-center justify-center mb-10">
+<div class="flex items-center w-full max-w-3xl">
+<div class="flex flex-col items-center relative flex-1">
+<div class="w-8 h-8 rounded-full bg-[var(--ebay-success)] text-white flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="text-[10px] font-medium text-[var(--ebay-success)] uppercase">Search</span>
+<div class="absolute top-4 left-[calc(50%+16px)] w-full h-[2px] bg-[var(--ebay-success)]"></div>
+</div>
+<div class="flex flex-col items-center relative flex-1">
+<div class="w-8 h-8 rounded-full bg-[var(--ebay-success)] text-white flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="text-[10px] font-medium text-[var(--ebay-success)] uppercase">View Item</span>
+<div class="absolute top-4 left-[calc(50%+16px)] w-full h-[2px] bg-[var(--ebay-success)]"></div>
+</div>
+<div class="flex flex-col items-center relative flex-1">
+<div class="w-8 h-8 rounded-full bg-[var(--ebay-success)] text-white flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="text-[10px] font-medium text-[var(--ebay-success)] uppercase">Login</span>
+<div class="absolute top-4 left-[calc(50%+16px)] w-full h-[2px] bg-[var(--ebay-blue)]"></div>
+</div>
+<div class="flex flex-col items-center relative flex-1">
+<div class="w-8 h-8 rounded-full border-2 border-[var(--ebay-blue)] bg-white text-[var(--ebay-blue)] flex items-center justify-center mb-2 font-bold text-sm">
+                        4
+                    </div>
+<span class="text-[10px] font-bold text-[var(--ebay-blue)] uppercase">Bidding</span>
+<div class="absolute top-4 left-[calc(50%+16px)] w-full h-[2px] bg-[var(--ebay-border)]"></div>
+</div>
+<div class="flex flex-col items-center flex-1">
+<div class="w-8 h-8 rounded-full border-2 border-[var(--ebay-border)] bg-white text-[var(--ebay-gray)] flex items-center justify-center mb-2 font-bold text-sm">
+                        5
+                    </div>
+<span class="text-[10px] font-medium text-[var(--ebay-gray)] uppercase">Payment</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<div class="md:col-span-4 space-y-4">
+<div class="aspect-square bg-white border border-[var(--ebay-border)] rounded-lg overflow-hidden flex items-center justify-center group relative">
+<img alt="Product main image" class="w-full h-full object-contain p-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYLj7H4BRth0JgsYlakBQNUPTs9KBlx0JeoNdraNuZ9Q6GGu3w2oZJXC3fQ_z2qM80hhjrMpJY9MWKjjI9K3Q7NdEAoZS5OD5I8b0Y8BmRDnzV-MMUwW_nehJh_IuF_k7qW2WO96cdIxIEaNOK_CtUKrGItW9O0LIx9azvY398HrKmvJMoxFzGHleeqNG5jNDoI2QtSa-NM1DcAd-etvaeFP_7fzqinEsta-C_65N9WKdGqHbdG16H9GSveW3VqeRd1HQMwNA2puU"/>
+<button class="absolute bottom-4 right-4 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+</div>
+<div class="grid grid-cols-5 gap-2">
+<div class="aspect-square border-2 border-[var(--ebay-blue)] rounded cursor-pointer overflow-hidden p-1">
+<img alt="Thumb 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYLj7H4BRth0JgsYlakBQNUPTs9KBlx0JeoNdraNuZ9Q6GGu3w2oZJXC3fQ_z2qM80hhjrMpJY9MWKjjI9K3Q7NdEAoZS5OD5I8b0Y8BmRDnzV-MMUwW_nehJh_IuF_k7qW2WO96cdIxIEaNOK_CtUKrGItW9O0LIx9azvY398HrKmvJMoxFzGHleeqNG5jNDoI2QtSa-NM1DcAd-etvaeFP_7fzqinEsta-C_65N9WKdGqHbdG16H9GSveW3VqeRd1HQMwNA2puU"/>
+</div>
+<div class="aspect-square border border-[var(--ebay-border)] rounded cursor-pointer hover:border-[var(--ebay-blue)] transition-colors overflow-hidden p-1">
+<img alt="Thumb 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh4GCSsiFB2X_d42jvITkFo7b9M2ZknzoHC1Gd7yYOw9xw9aIo3wMnQlyhaLHsU_mGNZl-Lk95ydsZN9TZ2USBYcGLjv-wYPDFqWrpRcZ4TywqoZlftk4Wz55bZfViRzhAJ0ay1KBoT191ypOSraVlbYKW-ClYGKD8ndz_72f5yGtTu50sqbtQn9GJZLN-y2SdmhHOYcjtF9u2PwGQ-0ywGu-mvOhgcg_U-dldFC2uKSs4pu7U0IvVq7k5Q5WwOOFsTIPMbYxtdtE"/>
+</div>
+<div class="aspect-square border border-[var(--ebay-border)] rounded cursor-pointer hover:border-[var(--ebay-blue)] transition-colors overflow-hidden p-1 bg-gray-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-gray-400 text-sm">image</span>
+</div>
+<div class="aspect-square border border-[var(--ebay-border)] rounded cursor-pointer hover:border-[var(--ebay-blue)] transition-colors overflow-hidden p-1 bg-gray-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-gray-400 text-sm">image</span>
+</div>
+<div class="aspect-square border border-[var(--ebay-border)] rounded cursor-pointer hover:border-[var(--ebay-blue)] transition-colors overflow-hidden p-1 bg-gray-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-gray-400 text-sm">image</span>
+</div>
+</div>
+</div>
+<div class="md:col-span-5 space-y-6">
+<div>
+<h1 class="text-2xl font-bold leading-tight mb-2">High-End Multimedia Laptop 14" M3 Pro Chip - 16GB RAM | 512GB SSD | Space Gray</h1>
+<div class="flex items-center gap-4 text-sm">
+<span class="text-[var(--ebay-gray)]">Condition: <span class="font-bold text-[var(--ebay-text)]">New / Factory Sealed</span></span>
+<div class="h-4 w-px bg-[var(--ebay-border)]"></div>
+<span class="text-[var(--ebay-gray)] underline cursor-pointer">18 watchers</span>
+</div>
+</div>
+<div class="bg-gray-100 p-6 rounded-lg border border-[var(--ebay-border)] space-y-6">
+<div class="bg-white p-4 rounded-md border border-[var(--ebay-border)] shadow-sm">
+<div class="flex items-center gap-2 text-[var(--ebay-red)] mb-2 font-bold text-sm uppercase tracking-wide">
+<span class="material-symbols-outlined text-lg">schedule</span>
+<span>Time left:</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex flex-col items-center">
+<span class="text-3xl font-bold auction-timer-digit text-[var(--ebay-red)]">02</span>
+<span class="text-[10px] text-[var(--ebay-gray)] uppercase font-bold">Days</span>
+</div>
+<span class="text-2xl font-bold text-[var(--ebay-red)] mb-4">:</span>
+<div class="flex flex-col items-center">
+<span class="text-3xl font-bold auction-timer-digit text-[var(--ebay-red)]">05</span>
+<span class="text-[10px] text-[var(--ebay-gray)] uppercase font-bold">Hrs</span>
+</div>
+<span class="text-2xl font-bold text-[var(--ebay-red)] mb-4">:</span>
+<div class="flex flex-col items-center">
+<span class="text-3xl font-bold auction-timer-digit text-[var(--ebay-red)]">12</span>
+<span class="text-[10px] text-[var(--ebay-gray)] uppercase font-bold">Mins</span>
+</div>
+<span class="text-2xl font-bold text-[var(--ebay-red)] mb-4">:</span>
+<div class="flex flex-col items-center">
+<span class="text-3xl font-bold auction-timer-digit text-[var(--ebay-red)]">30</span>
+<span class="text-[10px] text-[var(--ebay-gray)] uppercase font-bold">Secs</span>
+</div>
+</div>
+</div>
+<div>
+<p class="text-sm font-bold text-[var(--ebay-gray)] mb-1">Current bid:</p>
+<div class="flex items-baseline gap-3">
+<span class="text-4xl font-black text-[var(--ebay-text)]">US $1,250.00</span>
+<span class="text-sm text-[var(--ebay-blue)] font-medium hover:underline cursor-pointer">[ 14 bids ]</span>
+</div>
+<p class="text-xs text-[var(--ebay-gray)] mt-1">Free shipping from USA</p>
+</div>
+<div class="space-y-4">
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="block text-sm font-bold">Place your bid</label>
+<span class="text-xs text-[var(--ebay-gray)]">Enter US $1,275.00 or more</span>
+</div>
+<div class="flex gap-2">
+<div class="relative flex-1">
+<span class="absolute left-3 top-2.5 text-gray-500 font-bold">US $</span>
+<input class="w-full pl-14 pr-4 py-3 border-2 border-gray-400 rounded-lg focus:ring-0 focus:border-[var(--ebay-blue)] font-bold text-lg" placeholder="1,275.00" type="number" value="1275.00"/>
+</div>
+<button class="bg-[var(--ebay-blue)] text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-colors shadow-md text-lg">
+                                    Place bid
+                                </button>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 py-2 bg-white border border-[var(--ebay-border)] rounded-full text-sm font-bold hover:bg-gray-50 transition-colors">
+                                + $10
+                            </button>
+<button class="flex-1 py-2 bg-white border border-[var(--ebay-border)] rounded-full text-sm font-bold hover:bg-gray-50 transition-colors">
+                                + $50
+                            </button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col p-4 border border-[var(--ebay-border)] rounded-lg">
+<span class="text-xs text-[var(--ebay-gray)] mb-1">Shipping:</span>
+<span class="font-bold">FREE Economy Shipping</span>
+<span class="text-xs text-[var(--ebay-gray)]">Ships from: California, United States</span>
+</div>
+<div class="flex flex-col p-4 border border-[var(--ebay-border)] rounded-lg">
+<span class="text-xs text-[var(--ebay-gray)] mb-1">Returns:</span>
+<span class="font-bold">30-day returns</span>
+<span class="text-xs text-[var(--ebay-gray)] text-[var(--ebay-success)]">Seller pays for return shipping</span>
+</div>
+</div>
+</div>
+<div class="md:col-span-3 space-y-6">
+<div class="border border-[var(--ebay-border)] rounded-lg bg-white overflow-hidden">
+<div class="bg-gray-50 px-4 py-3 border-b border-[var(--ebay-border)]">
+<h3 class="font-bold text-sm">Recent Bidders</h3>
+</div>
+<div class="p-0">
+<table class="w-full text-xs">
+<tbody class="divide-y divide-[var(--ebay-border)]">
+<tr class="hover:bg-gray-50">
+<td class="px-4 py-3 font-medium">b***4 (156)</td>
+<td class="px-4 py-3 text-right font-bold">$1,250.00</td>
+</tr>
+<tr class="hover:bg-gray-50">
+<td class="px-4 py-3 font-medium">j***s (42)</td>
+<td class="px-4 py-3 text-right font-bold">$1,225.00</td>
+</tr>
+<tr class="hover:bg-gray-50">
+<td class="px-4 py-3 font-medium">m***m (988)</td>
+<td class="px-4 py-3 text-right font-bold">$1,200.00</td>
+</tr>
+<tr class="hover:bg-gray-50">
+<td class="px-4 py-3 font-medium">a***9 (12)</td>
+<td class="px-4 py-3 text-right font-bold">$1,175.00</td>
+</tr>
+<tr class="hover:bg-gray-50">
+<td class="px-4 py-3 font-medium text-[var(--ebay-gray)] italic">... (10 more)</td>
+<td class="px-4 py-3 text-right text-[var(--ebay-blue)] font-bold cursor-pointer hover:underline">View all</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="border border-[var(--ebay-border)] rounded-lg p-4 bg-white space-y-4">
+<h3 class="font-bold text-sm">Seller Information</h3>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500">TD</div>
+<div>
+<p class="font-bold text-sm hover:underline cursor-pointer">TechDirect_Official</p>
+<p class="text-[10px] text-[var(--ebay-gray)] font-medium">99.8% Positive feedback</p>
+</div>
+</div>
+<div class="space-y-2">
+<button class="w-full text-[var(--ebay-blue)] text-xs font-bold border border-[var(--ebay-blue)] px-4 py-2 rounded-full hover:bg-blue-50">Contact seller</button>
+<button class="w-full text-xs font-bold border border-[var(--ebay-border)] px-4 py-2 rounded-full hover:bg-gray-50">See other items</button>
+</div>
+</div>
+<div class="space-y-2">
+<button class="w-full py-2.5 border border-[var(--ebay-border)] rounded-full text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50">
+<span class="material-symbols-outlined text-lg">favorite</span> Add to Watchlist
+                    </button>
+<button class="w-full py-2.5 border border-[var(--ebay-border)] rounded-full text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50">
+<span class="material-symbols-outlined text-lg">share</span> Share
+                    </button>
+</div>
+</div>
+</div>
+<div class="mt-12">
+<div class="border-b border-[var(--ebay-border)] flex gap-8">
+<button class="pb-4 text-sm font-bold border-b-2 border-black">Description</button>
+<button class="pb-4 text-sm font-medium text-[var(--ebay-gray)] hover:text-black">Shipping &amp; payments</button>
+<button class="pb-4 text-sm font-medium text-[var(--ebay-gray)] hover:text-black">Seller feedback (2,451)</button>
+</div>
+<div class="py-8 space-y-4 max-w-4xl">
+<h3 class="text-lg font-bold">Item Specifics</h3>
+<div class="grid grid-cols-2 gap-x-12 gap-y-4">
+<div class="flex text-sm"><span class="text-[var(--ebay-gray)] w-40 shrink-0">Brand:</span> <span class="font-medium">Generic Manufacturer</span></div>
+<div class="flex text-sm"><span class="text-[var(--ebay-gray)] w-40 shrink-0">Processor:</span> <span class="font-medium">M3 Pro Chip</span></div>
+<div class="flex text-sm"><span class="text-[var(--ebay-gray)] w-40 shrink-0">RAM Size:</span> <span class="font-medium">16 GB</span></div>
+<div class="flex text-sm"><span class="text-[var(--ebay-gray)] w-40 shrink-0">Storage Capacity:</span> <span class="font-medium">512 GB SSD</span></div>
+<div class="flex text-sm"><span class="text-[var(--ebay-gray)] w-40 shrink-0">Screen Size:</span> <span class="font-medium">14.2 in</span></div>
+<div class="flex text-sm"><span class="text-[var(--ebay-gray)] w-40 shrink-0">Release Year:</span> <span class="font-medium">2024</span></div>
+</div>
+<div class="mt-6">
+<p class="text-sm leading-relaxed text-[var(--ebay-gray)]">
+                        This is a brand new, factory-sealed laptop featuring the revolutionary M3 chip architecture. Purchased directly from authorized retailers. Full manufacturer warranty remains. Item will be shipped via insured express shipping to ensure safe delivery. Please review all photos and ask any questions before bidding. Good luck!
+                    </p>
+</div>
+</div>
+</div>
+</main>
+<footer class="mt-20 border-t border-[var(--ebay-border)] bg-white py-12">
+<div class="max-w-7xl mx-auto px-4">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+<div>
+<h3 class="font-bold mb-4">Buy</h3>
+<ul class="space-y-2 text-sm text-[var(--ebay-gray)]">
+<li class="hover:underline cursor-pointer">Fashion</li>
+<li class="hover:underline cursor-pointer">Electronics</li>
+<li class="hover:underline cursor-pointer">Home &amp; Garden</li>
+<li class="hover:underline cursor-pointer">Auction</li>
+</ul>
+</div>
+<div>
+<h3 class="font-bold mb-4">Sell</h3>
+<ul class="space-y-2 text-sm text-[var(--ebay-gray)]">
+<li class="hover:underline cursor-pointer">Start selling</li>
+<li class="hover:underline cursor-pointer">Seller Center</li>
+</ul>
+</div>
+<div>
+<h3 class="font-bold mb-4">About</h3>
+<ul class="space-y-2 text-sm text-[var(--ebay-gray)]">
+<li class="hover:underline cursor-pointer">About us</li>
+<li class="hover:underline cursor-pointer">Policies</li>
+<li class="hover:underline cursor-pointer">Help</li>
+</ul>
+</div>
+<div>
+<h3 class="font-bold mb-4">Stay Connected</h3>
+<ul class="space-y-2 text-sm text-[var(--ebay-gray)]">
+<li class="hover:underline cursor-pointer">Facebook</li>
+<li class="hover:underline cursor-pointer">Twitter</li>
+</ul>
+</div>
+</div>
+<div class="pt-8 border-t border-[var(--ebay-border)] flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[var(--ebay-gray)]">
+<p>© 2025 eBay Clone Inc. All rights reserved.</p>
+<div class="flex gap-6">
+<a class="hover:underline" href="#">Privacy Policy</a>
+<a class="hover:underline" href="#">Cookies</a>
+<a class="hover:underline" href="#">AdChoice</a>
+</div>
+</div>
+</div>
+</footer>
+
+</body></html>

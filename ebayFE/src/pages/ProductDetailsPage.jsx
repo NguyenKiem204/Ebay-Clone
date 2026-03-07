@@ -60,7 +60,7 @@ export default function ProductDetailsPage() {
                 {/* Right Column: Buy Box & Summary (Span 5) */}
                 <div className="md:col-span-5">
                     <ProductPurchaseOptions product={product} />
-                    
+
                     {/* Coupon Section */}
                     <ProductCouponSection coupons={product.activeCoupons} />
                 </div>

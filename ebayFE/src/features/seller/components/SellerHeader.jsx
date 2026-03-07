@@ -4,7 +4,7 @@ import useStoreStore from '../../../store/useStoreStore';
 import useAuthStore from '../../../store/useAuthStore';
 
 const SELLER_NAV_ITEMS = [
-// ... (giữ nguyên nav items)
+    // ... (giữ nguyên nav items)
     { label: 'Overview', path: '/seller' },
     { label: 'Orders', path: '/seller/orders' },
     { label: 'Listings', path: '/seller/listings' },
@@ -68,13 +68,13 @@ export default function SellerHeader() {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1 cursor-pointer">
                                 <span className="text-sm font-bold truncate max-w-[150px]">
-                                    {user?.role?.toLowerCase() === 'seller' 
-                                        ? (store?.storeName || user?.username) 
+                                    {user?.role?.toLowerCase() === 'seller'
+                                        ? (store?.storeName || user?.username)
                                         : (user?.username || 'My eBay')}
                                 </span>
                                 <ChevronDown size={14} />
                             </div>
-                            <button 
+                            <button
                                 onClick={logout}
                                 className="p-2 text-gray-400 hover:text-red-600 transition-colors border border-gray-200 rounded-md shadow-sm bg-gray-50/50"
                                 title="Sign out"
