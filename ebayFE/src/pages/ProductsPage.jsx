@@ -1,28 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductCard } from '../components/ui/ProductCard';
-import { mockProducts, mockCategories, mockAuctions } from '../lib/mockData';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import useProductStore from '../store/useProductStore';
+import useCategoryStore from '../store/useCategoryStore';
 
 export default function ProductsPage() {
     const [viewMode, setViewMode] = useState('grid');
     const location = useLocation();
     const navigate = useNavigate();
+    const {
+        searchResults: filteredProducts,
+        totalItems,
+        loading,
+        searchProducts
+    } = useProductStore();
+    const { categories, fetchCategories } = useCategoryStore();
+
     const queryParams = new URLSearchParams(location.search);
     const filter = queryParams.get('filter');
-    const category = queryParams.get('category');
+    const categorySlug = queryParams.get('category');
+    const keyword = queryParams.get('q');
+    const page = parseInt(queryParams.get('page') || '1');
 
-    // Merge products and auctions for filtering
-    const allItems = [
-        ...mockProducts.map(p => ({ ...p, listingType: 'buy_it_now' })),
-        ...mockAuctions.map(a => ({ ...a, listingType: 'auction', price: a.currentBid }))
-    ];
+    useEffect(() => {
+        const params = {
+            keyword,
+            categorySlug,
+            page,
+            pageSize: 20
+        };
+        if (filter === 'auctions') params.isAuction = true;
+        if (filter === 'deals') params.maxPrice = 1000000; // Example deal filter
 
-    let filteredProducts = allItems;
+        searchProducts(params);
+        if (categories.length === 0) fetchCategories();
+    }, [location.search, searchProducts, fetchCategories, categories.length]);
 
-    if (filter === 'auctions') {
-        filteredProducts = allItems.filter(p => p.listingType === 'auction');
-    } else if (category) {
-        filteredProducts = allItems.filter(p => p.category === category);
+    if (loading && filteredProducts.length === 0) {
+        return (
+            <div className="container mx-auto px-4 py-8 flex justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
     }
 
     return (
@@ -31,15 +50,16 @@ export default function ProductsPage() {
                 <Link to="/" className="hover:underline">Home</Link>
                 <span>&gt;</span>
                 <span className="font-bold text-black">
-                    {filter === 'auctions' ? 'Auctions' : (category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Search Results')}
+                    {filter === 'auctions' ? 'Auctions' : (categorySlug ? categorySlug.replace(/-/g, ' ') : 'Search Results')}
                 </span>
             </nav>
 
             <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
                 <h1 className="text-xl md:text-2xl font-normal">
-                    <span className="font-bold">{filteredProducts.length}</span> results
+                    <span className="font-bold">{totalItems}</span> results
                 </h1>
                 <div className="flex items-center gap-4">
+                    {/* ... (buttons remain same) */}
                     <button className="hidden sm:flex items-center gap-1 px-4 py-1.5 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50">
                         Save this search
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -68,11 +88,17 @@ export default function ProductsPage() {
 
                     <div className="flex items-center gap-2">
                         <label className="text-sm text-gray-600 hidden sm:block">Sort:</label>
-                        <select className="border-gray-300 border rounded text-sm focus:ring-secondary focus:border-secondary py-1.5 pl-3 pr-8">
-                            <option>Best Match</option>
-                            <option>Price: lowest first</option>
-                            <option>Price: highest first</option>
-                            <option>Newly Listed</option>
+                        <select
+                            className="border-gray-300 border rounded text-sm focus:ring-secondary focus:border-secondary py-1.5 pl-3 pr-8"
+                            onChange={(e) => {
+                                queryParams.set('sortBy', e.target.value);
+                                navigate(`?${queryParams.toString()}`);
+                            }}
+                        >
+                            <option value="newest">Newly Listed</option>
+                            <option value="price_asc">Price: lowest first</option>
+                            <option value="price_desc">Price: highest first</option>
+                            <option value="popular">Best Match</option>
                         </select>
                     </div>
                 </div>
@@ -83,54 +109,81 @@ export default function ProductsPage() {
                     <div>
                         <h3 className="font-bold text-sm mb-3">Category</h3>
                         <ul className="space-y-1">
-                            <li><Link className="text-sm font-bold text-black py-1 block" to="#">All Categories</Link></li>
-                            {mockCategories.map(cat => (
+                            <li><Link className="text-sm font-bold text-black py-1 block" to="/products">All Categories</Link></li>
+                            {categories.map(cat => (
                                 <li key={cat.id}>
-                                    <Link className="text-sm text-gray-600 hover:underline block py-1 pl-3" to={`?category=${cat.slug}`}>
+                                    <Link className={`text-sm hover:underline block py-1 pl-3 ${categorySlug === cat.slug ? 'font-bold text-blue-600' : 'text-gray-600'}`} to={`?category=${cat.slug}`}>
                                         {cat.name}
                                     </Link>
+                                    {cat.subCategories && cat.subCategories.length > 0 && categorySlug === cat.slug && (
+                                        <ul className="pl-4 space-y-1 mt-1">
+                                            {cat.subCategories.map(sub => (
+                                                <li key={sub.id}>
+                                                    <Link className="text-[13px] text-gray-500 hover:underline block py-1" to={`?category=${sub.slug}`}>
+                                                        {sub.name}
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    {/* Price Range */}
+                    {/* ... price range and listing type ... remains largely same but updated navigate */}
                     <div className="border-t border-gray-200 mt-4 pt-4">
                         <h3 className="font-bold text-sm mb-3 flex justify-between items-center cursor-pointer">
                             Price Range
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-                            </svg>
                         </h3>
-                        <div className="flex justify-between items-center gap-2">
-                            <div className="relative flex-1">
-                                <span className="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
-                                <input className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Min" />
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            queryParams.set('minPrice', formData.get('min'));
+                            queryParams.set('maxPrice', formData.get('max'));
+                            navigate(`?${queryParams.toString()}`);
+                        }} className="space-y-3">
+                            <div className="flex justify-between items-center gap-2">
+                                <div className="relative flex-1">
+                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">₫</span>
+                                    <input name="min" className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Min" />
+                                </div>
+                                <span className="text-gray-400">-</span>
+                                <div className="relative flex-1">
+                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">₫</span>
+                                    <input name="max" className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Max" />
+                                </div>
                             </div>
-                            <span className="text-gray-400">-</span>
-                            <div className="relative flex-1">
-                                <span className="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
-                                <input className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Max" />
-                            </div>
-                        </div>
-                        <button className="mt-3 w-full bg-gray-100 hover:bg-gray-200 text-sm py-1.5 rounded font-medium">Apply</button>
+                            <button type="submit" className="w-full bg-gray-100 hover:bg-gray-200 text-sm py-1.5 rounded font-medium">Apply</button>
+                        </form>
                     </div>
 
-                    {/* Listing Type */}
                     <div className="border-t border-gray-200 mt-4 pt-4">
-                        <h3 className="font-bold text-sm mb-3 flex justify-between items-center cursor-pointer">
-                            Listing Type
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-                            </svg>
-                        </h3>
+                        <h3 className="font-bold text-sm mb-3">Listing Type</h3>
                         <div className="space-y-2">
                             <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="checkbox" className="rounded border-gray-300 text-secondary focus:ring-secondary" checked={!filter || filter === 'buy_now'} readOnly />
-                                Buy It Now
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-gray-300 text-secondary focus:ring-secondary"
+                                    checked={!filter}
+                                    onChange={() => {
+                                        queryParams.delete('filter');
+                                        navigate(`?${queryParams.toString()}`);
+                                    }}
+                                />
+                                All Results
                             </label>
                             <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="checkbox" className="rounded border-gray-300 text-secondary focus:ring-secondary" checked={filter === 'auctions'} readOnly onClick={() => navigate(filter === 'auctions' ? '/products' : '/products?filter=auctions')} />
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-gray-300 text-secondary focus:ring-secondary"
+                                    checked={filter === 'auctions'}
+                                    onChange={() => {
+                                        if (filter === 'auctions') queryParams.delete('filter');
+                                        else queryParams.set('filter', 'auctions');
+                                        navigate(`?${queryParams.toString()}`);
+                                    }}
+                                />
                                 Auction
                             </label>
                         </div>
@@ -138,94 +191,104 @@ export default function ProductsPage() {
                 </aside>
 
                 <div className="flex-1">
-                    {viewMode === 'grid' ? (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                            {filteredProducts.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {filteredProducts.map((product) => (
-                                <div key={product.id} className="flex flex-col sm:flex-row bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                                    <div className="relative w-full sm:w-[200px] sm:flex-shrink-0 bg-gray-50 p-2">
-                                        {product.discount > 0 && (
-                                            <div className="absolute top-2 left-2 z-10 bg-primary leading-none text-white text-xs font-bold px-2 py-1 rounded">
-                                                -{product.discount}%
-                                            </div>
-                                        )}
-                                        <Link to={`/products/${product.id}`} className="block h-48 sm:h-full relative overflow-hidden">
-                                            <img
-                                                src={product.image}
-                                                alt={product.title}
-                                                className="absolute inset-0 w-full h-full object-contain mix-blend-multiply hover:scale-105 transition-transform duration-300"
-                                            />
-                                        </Link>
-                                    </div>
-                                    <div className="p-4 flex flex-col flex-1">
-                                        <Link to={`/products/${product.id}`} className="text-lg font-medium text-gray-800 hover:underline mb-1">
-                                            {product.title}
-                                        </Link>
-                                        <div className="flex items-center gap-1 mb-2">
-                                            <div className="flex text-yellow-400 text-xs shadow-sm">
-                                                {'★'.repeat(Math.round(product.rating || 4))}
-                                                {'☆'.repeat(5 - Math.round(product.rating || 4))}
-                                            </div>
-                                            <span className="text-xs text-gray-500">({product.reviews || 0} reviews)</span>
-                                        </div>
-
-                                        <div className="text-xs text-gray-600 mb-4">
-                                            <span className="font-semibold text-gray-800">Condition:</span> <span className="text-gray-600">{product.condition || 'New'}</span>
-                                        </div>
-
-                                        <div className="mt-auto flex flex-col sm:flex-row justify-between sm:items-end gap-4">
-                                            <div>
-                                                <div className="text-2xl font-bold text-gray-900">
-                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price * 25000)}
-                                                </div>
-                                                {product.originalPrice && product.originalPrice > product.price && (
-                                                    <div className="text-sm text-gray-500 line-through">
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice * 25000)}
-                                                    </div>
-                                                )}
-                                                <div className="text-xs font-semibold text-blue-700 mt-1">
-                                                    {product.isFreeShipping ? 'Free shipping' : '+$15.50 shipping'}
-                                                </div>
-                                                <div className="text-xs text-gray-500 mt-1">Seller: {product.seller || 'ebay_seller'}</div>
-                                            </div>
-
-                                            <div className="flex sm:flex-col gap-2">
-                                                <button className="flex-1 bg-secondary text-white font-medium px-6 py-2 rounded-full hover:bg-blue-700 transition">
-                                                    {product.listingType === 'auction' ? 'Bid now' : 'Add to cart'}
-                                                </button>
-                                                <button className="flex-1 bg-white border border-secondary text-secondary font-medium px-6 py-2 rounded-full hover:bg-blue-50 transition">
-                                                    Watch
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                    {filteredProducts.length > 0 ? (
+                        <>
+                            {viewMode === 'grid' ? (
+                                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                                    {filteredProducts.map((product) => (
+                                        <ProductCard key={product.id} product={product} />
+                                    ))}
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="flex flex-col gap-4">
+                                    {filteredProducts.map((product) => (
+                                        <div key={product.id} className="flex flex-col sm:flex-row bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                                            <div className="relative w-full sm:w-[200px] sm:flex-shrink-0 bg-gray-50 p-2">
+                                                <Link to={`/products/${product.id}`} className="block h-48 sm:h-full relative overflow-hidden">
+                                                    <img
+                                                        src={product.thumbnail}
+                                                        alt={product.title}
+                                                        className="absolute inset-0 w-full h-full object-contain mix-blend-multiply hover:scale-105 transition-transform duration-300"
+                                                    />
+                                                </Link>
+                                            </div>
+                                            <div className="p-4 flex flex-col flex-1">
+                                                <Link to={`/products/${product.id}`} className="text-lg font-medium text-gray-800 hover:underline mb-1">
+                                                    {product.title}
+                                                </Link>
+                                                <div className="flex items-center gap-1 mb-2">
+                                                    <div className="flex text-yellow-400 text-xs shadow-sm">
+                                                        {'★'.repeat(Math.round(product.rating || 5))}
+                                                        {'☆'.repeat(5 - Math.round(product.rating || 5))}
+                                                    </div>
+                                                    <span className="text-xs text-gray-500">({product.reviewCount || 0} reviews)</span>
+                                                </div>
+
+                                                <div className="text-xs text-gray-600 mb-4">
+                                                    <span className="font-semibold text-gray-800">Condition:</span> <span className="text-gray-600">{product.condition || 'New'}</span>
+                                                </div>
+
+                                                <div className="mt-auto flex flex-col sm:flex-row justify-between sm:items-end gap-4">
+                                                    <div>
+                                                        <div className="text-2xl font-bold text-gray-900">
+                                                            ₫{product.price.toLocaleString('vi-VN')}
+                                                        </div>
+                                                        <div className="text-xs font-semibold text-blue-700 mt-1">
+                                                            {product.shippingFee === 0 ? 'Free shipping' : `+₫${product.shippingFee.toLocaleString('vi-VN')} shipping`}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-1">Seller: {product.sellerName || 'ebay_seller'}</div>
+                                                    </div>
+
+                                                    <div className="flex sm:flex-col gap-2">
+                                                        <button className="flex-1 bg-secondary text-white font-medium px-6 py-2 rounded-full hover:bg-blue-700 transition">
+                                                            {product.isAuction ? 'Bid now' : 'Add to cart'}
+                                                        </button>
+                                                        <button className="flex-1 bg-white border border-secondary text-secondary font-medium px-6 py-2 rounded-full hover:bg-blue-50 transition">
+                                                            Watch
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Pagination */}
+                            <div className="flex justify-center items-center gap-2 mt-12 mb-8">
+                                <button
+                                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30"
+                                    disabled={page === 1}
+                                    onClick={() => {
+                                        queryParams.set('page', (page - 1).toString());
+                                        navigate(`?${queryParams.toString()}`);
+                                    }}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                    </svg>
+                                </button>
+                                <span className="font-medium text-sm">Page {page} of {Math.ceil(totalItems / 20) || 1}</span>
+                                <button
+                                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30"
+                                    disabled={page >= Math.ceil(totalItems / 20)}
+                                    onClick={() => {
+                                        queryParams.set('page', (page + 1).toString());
+                                        navigate(`?${queryParams.toString()}`);
+                                    }}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="text-center py-20">
+                            <h2 className="text-xl text-gray-600">No results found matching your criteria.</h2>
+                            <Link to="/products" className="text-blue-600 hover:underline mt-4 block">Clear all filters</Link>
                         </div>
                     )}
-
-                    <div className="flex justify-center items-center gap-2 mt-12 mb-8">
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                            </svg>
-                        </button>
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-white font-bold">1</button>
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">2</button>
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">3</button>
-                        <span className="mx-1">...</span>
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 font-medium">10</button>
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                            </svg>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

@@ -15,5 +15,7 @@ namespace ebay.Services.Interfaces
         Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request);
         Task ChangePasswordAsync(int userId, ChangePasswordRequestDto request);
         Task LogoutAsync(int userId, string ipAddress);
+        Task<object> GetProfileAsync(int userId);
+        Task UpdateProfileAsync(int userId, UpdateProfileRequestDto request);
     }
 }

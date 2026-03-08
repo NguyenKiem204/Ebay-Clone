@@ -5,6 +5,8 @@ namespace ebay.DTOs.Requests
     public class RegisterRequestDto
     {
         public string Username { get; set; } = null!;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
         public string Email { get; set; } = null!;
         
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]

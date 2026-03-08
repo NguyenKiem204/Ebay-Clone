@@ -1,23 +1,28 @@
-import axios from 'axios';
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-    withCredentials: true,
-});
+import api from '../../../lib/axios';
 
 export const checkoutService = {
     getShippingAddresses: async () => {
-        const response = await api.get('/user/addresses');
-        return response.data;
+        const response = await api.get('/api/Address');
+        return response.data; // ApiResponse<List<AddressResponseDto>>
     },
 
     placeOrder: async (orderData) => {
-        const response = await api.post('/orders', orderData);
+        const response = await api.post('/api/Order', orderData);
+        return response.data; // ApiResponse<OrderResponseDto>
+    },
+
+    validateCoupon: async (code, orderAmount) => {
+        const response = await api.post('/api/Coupon/validate', { code, orderAmount });
         return response.data;
     },
 
-    applyCoupon: async (code) => {
-        const response = await api.post('/promo/apply', { code });
+    createPaypalOrder: async (orderId) => {
+        const response = await api.post(`/api/Paypal/create-order/${orderId}`);
+        return response.data;
+    },
+
+    capturePaypalOrder: async (paypalOrderId) => {
+        const response = await api.post(`/api/Paypal/capture-order/${paypalOrderId}`);
         return response.data;
     }
 };

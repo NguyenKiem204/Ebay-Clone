@@ -47,6 +47,8 @@ public partial class Product
 
     public decimal? ShippingFee { get; set; }
 
+    public decimal? OriginalPrice { get; set; }
+
     public int? ViewCount { get; set; }
 
     public DateTime? CreatedAt { get; set; }

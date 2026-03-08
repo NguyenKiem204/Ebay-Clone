@@ -19,6 +19,8 @@ public partial class EbayDbContext : DbContext
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
+    public virtual DbSet<Banner> Banners { get; set; }
+
     public virtual DbSet<Bid> Bids { get; set; }
 
     public virtual DbSet<Cart> Carts { get; set; }
@@ -163,6 +165,51 @@ public partial class EbayDbContext : DbContext
                 .HasForeignKey(d => d.ChangedBy)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("audit_logs_changed_by_fkey");
+        });
+
+        modelBuilder.Entity<Banner>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("banners_pkey");
+
+            entity.ToTable("banners");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BgColor)
+                .HasMaxLength(20)
+                .HasColumnName("bg_color");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CtaText)
+                .HasMaxLength(50)
+                .HasColumnName("cta_text");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.DisplayOrder)
+                .HasDefaultValue(0)
+                .HasColumnName("display_order");
+            entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Items)
+                .HasColumnType("jsonb")
+                .HasColumnName("items");
+            entity.Property(e => e.LinkUrl).HasColumnName("link_url");
+            entity.Property(e => e.TextColor)
+                .HasMaxLength(20)
+                .HasColumnName("text_color");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasColumnName("title");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'single'::character varying")
+                .HasColumnName("type");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<Bid>(entity =>
@@ -771,6 +818,9 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.IsAuction)
                 .HasDefaultValue(false)
                 .HasColumnName("is_auction");
+            entity.Property(e => e.OriginalPrice)
+                .HasPrecision(10, 2)
+                .HasColumnName("original_price");
             entity.Property(e => e.Price)
                 .HasPrecision(10, 2)
                 .HasColumnName("price");
@@ -1112,6 +1162,9 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.FailedLoginAttempts)
                 .HasDefaultValue(0)
                 .HasColumnName("failed_login_attempts");
+            entity.Property(e => e.FirstName)
+                .HasMaxLength(100)
+                .HasColumnName("first_name");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
@@ -1121,6 +1174,9 @@ public partial class EbayDbContext : DbContext
             entity.Property(e => e.LastLogin)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("last_login");
+            entity.Property(e => e.LastName)
+                .HasMaxLength(100)
+                .HasColumnName("last_name");
             entity.Property(e => e.LockoutEnd)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("lockout_end");

@@ -49,23 +49,42 @@ namespace ebay.Controllers
             return int.Parse(userIdClaim);
         }
 
+        private void SetTokenCookie(string token)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Set to true in production
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddHours(24) // Should match token expiry
+            };
+            Response.Cookies.Append("accessToken", token, cookieOptions);
+        }
+
+        private void ClearTokenCookie()
+        {
+            Response.Cookies.Delete("accessToken");
+        }
+
         [HttpPost("register")]
-        [RateLimit("Register", 3, 1, RateLimitPeriod.Hour)]
+        [RateLimit("Register", 100, 1, RateLimitPeriod.Hour)]
         public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Register(
             [FromBody] RegisterRequestDto request)
         {
             _logger.LogInformation("Registration attempt for email: {Email}", request.Email);
             var result = await _authService.RegisterAsync(request, GetIpAddress());
+            SetTokenCookie(result.AccessToken);
             return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Đăng ký thành công"));
         }
 
         [HttpPost("login")]
-        [RateLimit("Login", 5, 15, RateLimitPeriod.Minute)]
+        [RateLimit("Login", 100, 15, RateLimitPeriod.Minute)]
         public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login(
             [FromBody] LoginRequestDto request)
         {
             _logger.LogInformation("Login attempt for email: {Email}", request.Email);
             var result = await _authService.LoginAsync(request, GetIpAddress());
+            SetTokenCookie(result.AccessToken);
             return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Đăng nhập thành công"));
         }
 
@@ -76,6 +95,7 @@ namespace ebay.Controllers
         {
             _logger.LogDebug("Refresh token attempt from IP: {IpAddress}", GetIpAddress());
             var result = await _authService.RefreshTokenAsync(request.RefreshToken, GetIpAddress());
+            SetTokenCookie(result.AccessToken);
             return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Refresh token thành công"));
         }
 
@@ -87,6 +107,7 @@ namespace ebay.Controllers
         {
             _logger.LogInformation("Token revocation request from user: {UserId}", GetCurrentUserId());
             await _authService.RevokeTokenAsync(request.RefreshToken, GetIpAddress());
+            ClearTokenCookie();
             return Ok(ApiResponse<object>.SuccessResponse(null, "Thu hồi token thành công"));
         }
 
@@ -99,6 +120,7 @@ namespace ebay.Controllers
             var userId = GetCurrentUserId();
             _logger.LogInformation("User logout: {UserId}", userId);
             await _authService.LogoutAsync(userId, GetIpAddress());
+            ClearTokenCookie();
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đăng xuất thành công"));
         }
 
@@ -186,22 +208,22 @@ namespace ebay.Controllers
         [HttpGet("me")]
         [Authorize]
         [RateLimit("GetCurrentUser", 100, 1, RateLimitPeriod.Minute)]
-        public ActionResult<ApiResponse<object>> GetCurrentUser()
+        public async Task<ActionResult<ApiResponse<object>>> GetCurrentUser()
         {
             var userId = GetCurrentUserId();
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
             _logger.LogDebug("Current user info retrieved for: {UserId}", userId);
+            
+            var profile = await _authService.GetProfileAsync(userId);
+            return Ok(ApiResponse<object>.SuccessResponse(profile, "Lấy thông tin user thành công"));
+        }
 
-            return Ok(ApiResponse<object>.SuccessResponse(new
-            {
-                userId,
-                username,
-                email,
-                role
-            }, "Lấy thông tin user thành công"));
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateProfileRequestDto request)
+        {
+            var userId = GetCurrentUserId();
+            await _authService.UpdateProfileAsync(userId, request);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Cập nhật hồ sơ thành công"));
         }
 
 

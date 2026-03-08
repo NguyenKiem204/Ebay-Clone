@@ -1,23 +1,6 @@
-import { useCart } from '../features/cart/hooks/useCart';
-import CartItem from '../features/cart/components/CartItem';
-import CartSummary from '../features/cart/components/CartSummary';
-import { mockProducts } from '../lib/mockData';
-import { useEffect } from 'react';
-import useAuthStore from '../store/useAuthStore';
-import { Link } from 'react-router-dom';
-
 export default function CartPage() {
-    const { items, subtotal, totalItems, removeItem, updateQuantity, addItem } = useCart();
+    const { items, subtotal, totalItems, removeItem, updateQuantity } = useCart();
     const { isAuthenticated } = useAuthStore();
-
-    // TEMPORARY: Seed cart with mock data if empty for demonstration
-    useEffect(() => {
-        if (items.length === 0) {
-            mockProducts.slice(0, 2).forEach(product => {
-                addItem(product, 1);
-            });
-        }
-    }, [addItem, items.length]);
 
     return (
         <div className="bg-[#f7f7f7] min-h-screen pb-12">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkoutService } from '../services/checkoutService';
 import { useCart } from '../../cart/hooks/useCart';
@@ -10,33 +10,77 @@ export const useCheckout = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const [shippingAddress, setShippingAddress] = useState({
-        name: 'Johnathan Doe',
-        phone: '+84 987 654 321',
-        street: '123 Nguyen Hue Street, District 1',
-        city: 'Ho Chi Minh City',
-        zip: '700000',
-        country: 'Vietnam',
-        isDefault: true
-    });
+    const [addresses, setAddresses] = useState([]);
+    const [selectedAddressId, setSelectedAddressId] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState('COD');
+    const [note, setNote] = useState('');
 
-    const [paymentMethod, setPaymentMethod] = useState('paypal');
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            try {
+                const response = await checkoutService.getShippingAddresses();
+                if (response.success) {
+                    setAddresses(response.data);
+                    const defaultAddr = response.data.find(a => a.isDefault) || response.data[0];
+                    if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+                }
+            } catch (err) {
+                console.error('Failed to fetch addresses', err);
+            }
+        };
+        fetchAddresses();
+    }, []);
+
+    const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
     const handlePlaceOrder = async () => {
+        if (!selectedAddressId) {
+            setError('Please select a shipping address');
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
             const orderData = {
-                items: items.map(item => ({ productId: item.id, quantity: item.quantity })),
-                shippingAddress,
-                paymentMethod,
-                total: subtotal * 1.08 // Subtotal + Tax
+                addressId: selectedAddressId,
+                paymentMethod: paymentMethod,
+                note: note
             };
-            await checkoutService.placeOrder(orderData);
-            clearCart();
-            navigate('/order-success');
+
+            const response = await checkoutService.placeOrder(orderData);
+
+            if (response.success) {
+                const order = response.data;
+
+                if (paymentMethod === 'PayPal') {
+                    // Simulate PayPal Flow
+                    console.log('Starting PayPal simulation for order:', order.id);
+                    const paypalResponse = await checkoutService.createPaypalOrder(order.id);
+
+                    if (paypalResponse.success) {
+                        const paypalOrderId = paypalResponse.data; // This is a mock string from BE
+
+                        // Fake a small delay for "payment gateway"
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const captureResponse = await checkoutService.capturePaypalOrder(paypalOrderId);
+                        if (!captureResponse.success) {
+                            throw new Error('PayPal payment failed simulation');
+                        }
+                    } else {
+                        throw new Error('Failed to initiate PayPal payment');
+                    }
+                }
+
+                // Success
+                clearCart();
+                navigate(`/order-success?id=${order.id}`);
+            } else {
+                setError(response.message || 'Failed to place order');
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to place order. Please try again.');
+            setError(err.response?.data?.message || err.message || 'An error occurred during checkout.');
         } finally {
             setIsLoading(false);
         }
@@ -49,10 +93,14 @@ export const useCheckout = () => {
         subtotal,
         isLoading,
         error,
-        shippingAddress,
-        setShippingAddress,
+        addresses,
+        selectedAddressId,
+        setSelectedAddressId,
+        selectedAddress,
         paymentMethod,
         setPaymentMethod,
+        note,
+        setNote,
         handlePlaceOrder
     };
 };

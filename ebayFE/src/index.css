@@ -9,7 +9,8 @@
 }
 
 /* Base resets */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background-color: var(--color-bg-light);
@@ -29,13 +30,47 @@ html, body {
   .text-primary {
     color: var(--color-primary);
   }
+
   .bg-primary {
     background-color: var(--color-primary);
   }
+
   .text-secondary {
     color: var(--color-secondary);
   }
+
   .bg-secondary {
     background-color: var(--color-secondary);
   }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }

@@ -13,14 +13,16 @@ export default function CheckoutPage() {
         subtotal,
         isLoading,
         error,
-        shippingAddress,
+        addresses,
+        selectedAddressId,
+        setSelectedAddressId,
+        selectedAddress,
         paymentMethod,
         setPaymentMethod,
         handlePlaceOrder
     } = useCheckout();
 
-    const tax = subtotal * 0.08;
-    const total = subtotal + tax;
+    const total = subtotal; // Assuming shipping is free for now
 
     return (
         <div className="bg-gray-50 min-h-screen pb-12">
@@ -54,7 +56,10 @@ export default function CheckoutPage() {
                     )}
 
                     <ShippingAddress
-                        address={shippingAddress}
+                        address={selectedAddress}
+                        addresses={addresses}
+                        selectedAddressId={selectedAddressId}
+                        setSelectedAddressId={setSelectedAddressId}
                         isEditing={step === 1}
                         onEdit={() => setStep(1)}
                         onContinue={() => setStep(2)}
@@ -71,7 +76,7 @@ export default function CheckoutPage() {
 
                     <CheckoutReview
                         items={items}
-                        isActive={step === 3}
+                        isActive={step >= 3}
                     />
                 </div>
 
@@ -82,15 +87,11 @@ export default function CheckoutPage() {
                         <div className="space-y-4 mb-6">
                             <div className="flex justify-between text-gray-600 text-sm">
                                 <span>Items ({items.length})</span>
-                                <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subtotal)}</span>
+                                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal)}</span>
                             </div>
                             <div className="flex justify-between text-gray-600 text-sm">
                                 <span>Shipping</span>
-                                <span className="text-green-600">Free</span>
-                            </div>
-                            <div className="flex justify-between text-gray-600 text-sm">
-                                <span>Estimated Tax</span>
-                                <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(tax)}</span>
+                                <span className="text-green-600 font-medium">Free</span>
                             </div>
                         </div>
 
@@ -98,16 +99,16 @@ export default function CheckoutPage() {
                             <span className="text-lg font-bold">Order Total</span>
                             <div className="text-right">
                                 <span className="text-2xl font-bold text-gray-900">
-                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
                                 </span>
                             </div>
                         </div>
 
                         <Button
                             onClick={handlePlaceOrder}
-                            disabled={step !== 3 || isLoading}
+                            disabled={step < 2 || isLoading || !selectedAddressId}
                             size="lg"
-                            className={`w-full font-bold text-lg py-4 shadow-md ${step !== 3 || isLoading ? 'bg-gray-300 pointer-events-none' : 'shadow-blue-500/20 bg-secondary hover:bg-blue-700'}`}
+                            className={`w-full font-bold text-lg py-4 shadow-md ${step < 2 || isLoading || !selectedAddressId ? 'bg-gray-300 pointer-events-none' : 'shadow-blue-500/20 bg-secondary hover:bg-blue-700'}`}
                         >
                             {isLoading ? 'Processing...' : 'Confirm and pay'}
                         </Button>

@@ -9,17 +9,17 @@
 -- Note: Passwords are hashed using BCrypt
 -- All passwords are: "Password123!"
 
-INSERT INTO users (username, email, password_hash, role, avatar_url, is_email_verified, is_active, phone) VALUES
-('admin_user', 'admin@ebay.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'admin', 'https://i.pravatar.cc/150?img=1', true, true, '0123456789'),
-('john_seller', 'john.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=2', true, true, '0123456788'),
-('jane_shop', 'jane.shop@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=3', true, true, '0123456787'),
-('mike_store', 'mike.store@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=4', true, true, '0123456786'),
-('sarah_buyer', 'sarah.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=5', true, true, '0901234567'),
-('david_buyer', 'david.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=6', true, true, '0912345678'),
-('emma_buyer', 'emma.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=7', true, true, '0923456789'),
-('robert_seller', 'robert.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=8', true, true, '0123456785'),
-('lisa_buyer', 'lisa.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=9', true, true, '0934567890'),
-('tom_buyer', 'tom.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=10', true, true, '0945678901');
+INSERT INTO users (username, first_name, last_name, email, password_hash, role, avatar_url, is_email_verified, is_active, phone) VALUES
+('admin_user', 'System', 'Admin', 'admin@ebay.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'admin', 'https://i.pravatar.cc/150?img=1', true, true, '0123456789'),
+('john_seller', 'John', 'Seller', 'john.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=2', true, true, '0123456788'),
+('jane_shop', 'Jane', 'Shop', 'jane.shop@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=3', true, true, '0123456787'),
+('mike_store', 'Mike', 'Store', 'mike.store@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=4', true, true, '0123456786'),
+('sarah_buyer', 'Sarah', 'Johnson', 'sarah.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=5', true, true, '0901234567'),
+('david_buyer', 'David', 'Smith', 'david.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=6', true, true, '0912345678'),
+('emma_buyer', 'Emma', 'Wilson', 'emma.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=7', true, true, '0923456789'),
+('robert_seller', 'Robert', 'Seller', 'robert.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=8', true, true, '0123456785'),
+('lisa_buyer', 'Lisa', 'Brown', 'lisa.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=9', true, true, '0934567890'),
+('tom_buyer', 'Tom', 'Davis', 'tom.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=10', true, true, '0945678901');
 
 -- ============================================
 -- ADDRESSES
@@ -38,27 +38,54 @@ INSERT INTO addresses (user_id, full_name, phone, street, city, state, postal_co
 -- CATEGORIES
 -- ============================================
 
+-- ============================================
+-- CATEGORIES
+-- ============================================
+
 INSERT INTO categories (name, slug, description, parent_id, image_url, is_active, display_order) VALUES
-('Electronics', 'electronics', 'Electronic devices and accessories', NULL, 'https://images.unsplash.com/photo-1498049794561-7780e7231661', true, 1),
-('Fashion', 'fashion', 'Clothing and fashion items', NULL, 'https://images.unsplash.com/photo-1445205170230-053b83016050', true, 2),
-('Home & Garden', 'home-garden', 'Home improvement and garden supplies', NULL, 'https://images.unsplash.com/photo-1484101403633-562f891dc89a', true, 3),
-('Sports & Outdoors', 'sports-outdoors', 'Sports equipment and outdoor gear', NULL, 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211', true, 4),
-('Books', 'books', 'Books and educational materials', NULL, 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d', true, 5),
-('Toys & Games', 'toys-games', 'Toys, games and entertainment', NULL, 'https://images.unsplash.com/photo-1558060370-d644479cb6f7', true, 6),
-('Health & Beauty', 'health-beauty', 'Health and beauty products', NULL, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571', true, 7),
+-- Top-level Categories (User Requested 7 First)
+('Laptops', 'laptops', 'High-performance laptops and notebooks', NULL, 'https://i.ebayimg.com/images/g/SwAAAeSwvwZpqvtW/s-l500.webp', true, 1),
+('Computer parts', 'computer-parts', 'Components and parts for computers', NULL, 'https://i.ebayimg.com/images/g/Dz0AAeSwpDhpqvtW/s-l500.webp', true, 2),
+('Smartphones', 'smartphones', 'Latest mobile phones and smartphones', NULL, 'https://i.ebayimg.com/images/g/Rp0AAeSw2yNpqvtW/s-l500.webp', true, 3),
+('Enterprise networking', 'enterprise-networking', 'Networking equipment for businesses', NULL, 'https://i.ebayimg.com/images/g/O~AAAeSwcIZpqvtW/s-l500.webp', true, 4),
+('Tablets and eBooks', 'tablets-ebooks', 'Tablets, iPads, and eBook readers', NULL, 'https://i.ebayimg.com/images/g/DaUAAeSwYXxpqvtW/s-l500.webp', true, 5),
+('Storage and blank media', 'storage-blank-media', 'Hard drives, SSDs, and storage solutions', NULL, 'https://i.ebayimg.com/images/g/JmMAAeSwUztpqvu5/s-l500.webp', true, 6),
+('Lenses and filters', 'lenses-filters', 'Camera lenses and filtering equipment', NULL, 'https://i.ebayimg.com/images/g/RusAAeSw0uxpqvtW/s-l500.webp', true, 7),
+-- Other Top-level Categories
 ('Automotive', 'automotive', 'Car parts and accessories', NULL, 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7', true, 8),
+('Fashion', 'fashion', 'Clothing and fashion items', NULL, 'https://images.unsplash.com/photo-1445205170230-053b83016050', true, 9),
+('Home & Garden', 'home-garden', 'Home improvement and garden supplies', NULL, 'https://images.unsplash.com/photo-1484101403633-562f891dc89a', true, 10),
+('Sports & Outdoors', 'sports-outdoors', 'Sports equipment and outdoor gear', NULL, 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211', true, 11),
+('Books', 'books', 'Books and educational materials', NULL, 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d', true, 12),
 
--- Sub-categories for Electronics
-('Laptops', 'laptops', 'Laptop computers', 1, 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853', true),
-('Smartphones', 'smartphones', 'Mobile phones and accessories', 1, 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9', true),
-('Cameras', 'cameras', 'Digital cameras and equipment', 1, 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd', true),
-('Audio', 'audio', 'Headphones, speakers, and audio equipment', 1, 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e', true),
+-- Sub-categories for Laptops (Parent 1)
+('Gaming Laptops', 'gaming-laptops', 'High-performance gaming laptops', 1, 'https://images.unsplash.com/photo-1603302576837-37561b2e2302', true, 0),
+('Business Laptops', 'business-laptops', 'Professional and business-oriented laptops', 1, 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853', true, 0),
+('MacBooks', 'macbooks', 'Apple MacBook Air and Pro', 1, 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8', true, 0),
 
--- Sub-categories for Fashion
-('Men''s Clothing', 'mens-clothing', 'Clothing for men', 2, 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891', true),
-('Women''s Clothing', 'womens-clothing', 'Clothing for women', 2, 'https://images.unsplash.com/photo-1483985988355-763728e1935b', true),
-('Shoes', 'shoes', 'Footwear for all', 2, 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2', true),
-('Accessories', 'accessories', 'Fashion accessories', 2, 'https://images.unsplash.com/photo-1523779917675-b6ed3a42a561', true);
+-- Sub-categories for Computer parts (Parent 2)
+('Processors (CPUs)', 'cpus', 'Intel and AMD processors', 2, 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea', true, 0),
+('Graphics Cards (GPUs)', 'gpus', 'NVIDIA and AMD graphics cards', 2, 'https://images.unsplash.com/photo-1591488320449-011701bb6704', true, 0),
+('Motherboards', 'motherboards', 'Desktop and server motherboards', 2, 'https://images.unsplash.com/photo-1518770660439-4636190af475', true, 0),
+
+-- Sub-categories for Smartphones (Parent 3)
+('iPhones', 'iphones', 'Apple iPhone models', 3, 'https://images.unsplash.com/photo-1592286927505-2fd6c44d0fb4', true, 0),
+('Android Phones', 'android-phones', 'Samsung, Google, and other Android devices', 3, 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9', true, 0),
+('Phone Accessories', 'phone-accessories', 'Cases, chargers, and more', 3, 'https://images.unsplash.com/photo-1601595225554-dfca2bb686a0', true, 0),
+
+-- Sub-categories for Fashion (Parent 9)
+('Men''s Clothing', 'mens-clothing', 'Clothing for men', 9, 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891', true, 0),
+('Women''s Clothing', 'womens-clothing', 'Clothing for women', 9, 'https://images.unsplash.com/photo-1483985988355-763728e1935b', true, 0),
+('Shoes', 'shoes', 'Footwear for all', 9, 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2', true, 0),
+
+-- Trending on eBay (7 Categories) - IDs 25 to 31
+('Tech', 'tech-trending', 'Trending tech and gadgets', NULL, 'https://i.ebayimg.com/images/g/EosAAeSw~Wxpqvvs/s-l500.webp', true, 13),
+('Motors', 'motors-trending', 'Trending automotive and parts', NULL, 'https://i.ebayimg.com/images/g/XjIAAeSwsrNpqvvs/s-l500.webp', true, 14),
+('Luxury', 'luxury-trending', 'Luxury watches, bags and more', NULL, 'https://i.ebayimg.com/images/g/FBUAAeSwpDhpqvvs/s-l500.webp', true, 15),
+('Collectibles and art', 'collectibles-art-trending', 'Art and rare collectibles', NULL, 'https://i.ebayimg.com/images/g/FvQAAeSwMcVpqvvs/s-l500.webp', true, 16),
+('Home and garden', 'home-garden-trending', 'Trending home improvement items', NULL, 'https://i.ebayimg.com/images/g/WnYAAeSwPsRpqvvs/s-l500.webp', true, 17),
+('Trading cards', 'trading-cards-trending', 'Popular trading cards and games', NULL, 'https://i.ebayimg.com/images/g/T6AAAeSwUotpqvvs/s-l500.webp', true, 18),
+('Health and beauty', 'health-beauty-trending', 'Trending health and beauty products', NULL, 'https://i.ebayimg.com/images/g/M48AAeSwTkFpqvvs/s-l500.webp', true, 19);
 
 -- ============================================
 -- STORES
@@ -74,43 +101,31 @@ INSERT INTO stores (seller_id, store_name, slug, description, banner_image_url, 
 -- PRODUCTS
 -- ============================================
 
-INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count, status, stock, shipping_fee) VALUES
--- Electronics
-('MacBook Pro 16" M3 Max', 'macbook-pro-16-m3-max', 'Latest MacBook Pro with M3 Max chip, 36GB RAM, 1TB SSD. Perfect for professionals.', 89990000, ARRAY['https://images.unsplash.com/photo-1517336714731-489689fd1ca8', 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853'], 9, 2, 1, false, 'new', 'Apple', 2.15, 1250, 'active', 15, 0),
-('iPhone 15 Pro Max 256GB', 'iphone-15-pro-max-256gb', 'Latest iPhone with titanium design, A17 Pro chip, amazing camera system.', 32990000, ARRAY['https://images.unsplash.com/photo-1592286927505-2fd6c44d0fb4', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9'], 10, 2, 1, false, 'new', 'Apple', 0.22, 2340, 'active', 50, 0),
-('Sony WH-1000XM5 Headphones', 'sony-wh-1000xm5-headphones', 'Industry-leading noise cancellation, exceptional sound quality, 30-hour battery life.', 8990000, ARRAY['https://images.unsplash.com/photo-1505740420928-5e560c06d30e', 'https://images.unsplash.com/photo-1524678606370-a47ad25cb82a'], 12, 2, 1, false, 'new', 'Sony', 0.25, 890, 'active', 30, 0),
-('Dell XPS 15 Laptop', 'dell-xps-15-laptop', 'Powerful laptop with Intel i7, 16GB RAM, 512GB SSD, perfect for work and creativity.', 45990000, ARRAY['https://images.unsplash.com/photo-1593642632823-8f785ba67e45', 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2'], 9, 2, 1, false, 'new', 'Dell', 1.83, 567, 'active', 20, 0),
-('Canon EOS R6 Camera', 'canon-eos-r6-camera', 'Full-frame mirrorless camera, 20MP, 4K video, perfect for photography enthusiasts.', 65990000, ARRAY['https://images.unsplash.com/photo-1502920917128-1aa500764cbd', 'https://images.unsplash.com/photo-1606980620778-59a1c1f2c100'], 11, 2, 1, true, 'new', 'Canon', 0.68, 445, 'active', 8, 0),
-
--- Fashion
-('Men''s Casual Shirt Blue', 'mens-casual-shirt-blue', 'Comfortable cotton shirt, perfect for casual wear. Available in multiple sizes.', 450000, ARRAY['https://images.unsplash.com/photo-1596755094514-f87e34085b2c', 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf'], 13, 3, 2, false, 'new', 'Zara', 0.30, 234, 'active', 100, 15000),
-('Women''s Summer Dress', 'womens-summer-dress', 'Light and breezy summer dress, perfect for hot weather. Beautiful floral pattern.', 890000, ARRAY['https://images.unsplash.com/photo-1595777457583-95e059d581b8', 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1'], 14, 3, 2, false, 'new', 'H&M', 0.25, 567, 'active', 75, 15000),
-('Nike Air Max Sneakers', 'nike-air-max-sneakers', 'Comfortable and stylish sneakers for everyday wear. Cushioned sole, breathable material.', 2990000, ARRAY['https://images.unsplash.com/photo-1542291026-7eec264c27ff', 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa'], 15, 3, 2, false, 'new', 'Nike', 0.80, 1890, 'active', 150, 25000),
-('Leather Wallet Brown', 'leather-wallet-brown', 'Genuine leather wallet with multiple card slots and cash compartment.', 350000, ARRAY['https://images.unsplash.com/photo-1627123424574-724758594e93', 'https://images.unsplash.com/photo-1591561954555-607968c989ab'], 16, 3, 2, false, 'new', 'Fossil', 0.15, 123, 'active', 200, 10000),
-('Designer Sunglasses', 'designer-sunglasses', 'UV protection, polarized lenses, stylish frame. Perfect for sunny days.', 1250000, ARRAY['https://images.unsplash.com/photo-1511499767150-a48a237f0083', 'https://images.unsplash.com/photo-1572635196237-14b3f281503f'], 16, 3, 2, false, 'new', 'Ray-Ban', 0.10, 345, 'active', 80, 10000),
-
--- Sports
-('Professional Yoga Mat', 'professional-yoga-mat', 'Non-slip, eco-friendly yoga mat. Perfect for all types of yoga and exercises.', 890000, ARRAY['https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f', 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b'], 4, 4, 3, false, 'new', 'Lululemon', 1.20, 456, 'active', 120, 20000),
-('Basketball Pro', 'basketball-pro', 'Official size basketball, indoor/outdoor use, excellent grip.', 650000, ARRAY['https://images.unsplash.com/photo-1546519638-68e109498ffc', 'https://images.unsplash.com/photo-1608245449230-4ac19066d2d0'], 4, 4, 3, false, 'new', 'Spalding', 0.62, 234, 'active', 45, 15000),
-('Tennis Racket Set', 'tennis-racket-set', 'Professional tennis racket with carrying case and 3 balls included.', 2450000, ARRAY['https://images.unsplash.com/photo-1622163642998-1ea32b0bbc67', 'https://images.unsplash.com/photo-1617882309324-a66b5163c742'], 4, 4, 3, false, 'new', 'Wilson', 0.35, 189, 'active', 30, 25000),
-
--- Home & Garden
-('Modern LED Desk Lamp', 'modern-led-desk-lamp', 'Adjustable LED desk lamp with touch control and USB charging port.', 450000, ARRAY['https://images.unsplash.com/photo-1513506003901-1e6a229e2d15', 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c'], 3, 8, 4, false, 'new', 'Philips', 0.65, 345, 'active', 60, 15000),
-('Ceramic Flower Vase', 'ceramic-flower-vase', 'Handmade ceramic vase, perfect for home decoration. Modern minimalist design.', 290000, ARRAY['https://images.unsplash.com/photo-1578500494198-246f612d3b3d', 'https://images.unsplash.com/photo-1610701596007-11502861dcfa'], 3, 8, 4, false, 'new', 'HomeDecor', 0.80, 123, 'active', 90, 10000),
-
--- Books
-('The Art of Computer Programming', 'art-of-computer-programming', 'Classic computer science book by Donald Knuth. Must-have for programmers.', 1250000, ARRAY['https://images.unsplash.com/photo-1544947950-fa07a98d237f', 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d'], 5, 2, 1, false, 'new', 'Addison-Wesley', 2.50, 567, 'active', 20, 30000),
-('Clean Code', 'clean-code', 'A Handbook of Agile Software Craftsmanship by Robert C. Martin.', 650000, ARRAY['https://images.unsplash.com/photo-1532012197267-da84d127e765', 'https://images.unsplash.com/photo-1589998059171-988d887df646'], 5, 2, 1, false, 'used', 'Prentice Hall', 0.75, 890, 'active', 50, 15000);
+-- Today's Deals (13 Products)
+INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count, status, stock, shipping_fee, original_price) VALUES
+('Bose QuietComfort Ultra Noise Cancelling Headphones, Certified Refurbished', 'bose-qc-ultra-refurbished', 'World-class noise cancellation, quieter than ever before. Breakthrough spatialized audio for more immersive listening.', 5636010, ARRAY['https://i.ebayimg.com/images/g/WssAAOSwlkZn~6zp/s-l500.webp'], 21, 2, 1, false, 'refurbished', 'Bose', 0.25, 450, 'active', 25, 0, 6003006),
+('Nintendo Switch OLED 64GB Game Console + 1 Year🛡️ Warranty', 'nintendo-switch-oled-64gb', 'Enjoy vivid colors and crisp contrast with a screen that makes colors pop.', 6552189, ARRAY['https://i.ebayimg.com/images/g/P-AAAeSwO7xpJxJI/s-l500.webp'], 5, 2, 1, false, 'new', 'Nintendo', 0.42, 890, 'active', 40, 0, 10485338),
+('Apple iPhone 16 128GB Unlocked Smartphone A3081 Good Condition', 'apple-iphone-16-128gb', 'The latest iPhone 16 with advanced camera features and A18 chip performance.', 13080786, ARRAY['https://i.ebayimg.com/images/g/RjAAAeSwciNozaQf/s-l500.webp'], 19, 2, 1, false, 'used', 'Apple', 0.17, 1200, 'active', 15, 0, 18376014),
+('Acer Nitro V 16" Gaming Laptop 16GB RAM 512GB SSD', 'acer-nitro-v-16-gaming', 'Powerful gaming performance with Ryzen 7 and RTX 40 series graphics.', 17065052, ARRAY['https://i.ebayimg.com/images/g/n~cAAeSwr4lpWBiQ/s-l500.webp'], 13, 2, 1, false, 'new', 'Acer', 2.50, 670, 'active', 10, 0, 21233078),
+('Acer PM161Q 15.6in Portable Monitor FHD 1920x1080', 'acer-pm161q-portable-monitor', 'Sleek and portable monitor for on-the-go productivity.', 1096794, ARRAY['https://i.ebayimg.com/images/g/WscAAeSw0e5pq1as/s-l500.webp'], 2, 2, 1, false, 'refurbished', 'Acer', 0.97, 320, 'active', 50, 0, 2621138),
+('Giraffe Tools Wet Dry Vacuum Cleaner with 30FT Retractable Hose', 'giraffe-tools-vacuum', 'Powerful wet/dry vacuum with a convenient retractable hose system.', 8257148, ARRAY['https://i.ebayimg.com/images/g/A~QAAeSwkONprEeb/s-l500.webp'], 10, 8, 4, false, 'new', 'Giraffe Tools', 12.00, 150, 'active', 20, 0, 12703304),
+('14K Yellow Gold Curb Cuban Necklace Bracelet Chain Real Gold', '14k-gold-cuban-necklace', 'Genuine 14K yellow gold Cuban link chain for a classic look.', 3932100, ARRAY['https://i.ebayimg.com/images/g/jgoAAOSwW6JoVEUF/s-l500.webp'], 9, 3, 2, false, 'new', 'Unbranded', 0.05, 560, 'active', 100, 0, NULL),
+('Samsung HW-B750F 5.1ch Bluetooth Soundbar with Wireless Subwoofer', 'samsung-soundbar-hw-b750f', 'Immersive 5.1 channel sound with powerful wireless bass.', 5714652, ARRAY['https://i.ebayimg.com/images/g/DsoAAOSw6jtoFS6e/s-l500.webp'], 21, 2, 1, false, 'new', 'Samsung', 8.50, 430, 'active', 30, 0, 15727089),
+('Saucony Unisex ProGrid Omni 9 Socktop Shoes', 'saucony-progrid-omni-9', 'Original heritage style with modern comfort technologies.', 2174451, ARRAY['https://i.ebayimg.com/images/g/5o8AAeSwnkFo-M-m/s-l500.webp'], 24, 3, 2, false, 'new', 'Saucony', 0.80, 210, 'active', 60, 0, 4063170),
+('Remote Control Lawn Mower 55°Climbing 459cc Local Warehouse', 'remote-lawn-mower-rc', 'Industrial grade remote control lawn mower for steep slopes.', 73372986, ARRAY['https://i.ebayimg.com/images/g/kXYAAeSwk0ppooOw/s-l500.webp'], 10, 8, 4, false, 'new', 'Unbranded', 150.00, 95, 'active', 5, 0, 83858586),
+('Men''s UA Under Armour 1/2 Zip Tech Muscle Pullover Long Sleeve', 'under-armour-tech-pullover', 'Quick-drying, ultra-soft tech fabric for a more natural feel.', 650107, ARRAY['https://i.ebayimg.com/images/g/9gQAAOSw0ZlkG3Jz/s-l500.webp'], 22, 3, 2, false, 'new', 'Under Armour', 0.30, 890, 'active', 200, 0, 812634),
+('Invicta Men''s Pro Diver 45mm Quartz Rubber Strap Watch', 'invicta-pro-diver-watch', 'Classic diving watch with reliable quartz movement and 100m water resistance.', 1048298, ARRAY['https://i.ebayimg.com/images/g/vwkAAeSwJaZpaRv9/s-l500.webp'], 9, 3, 2, false, 'new', 'Invicta', 0.15, 1400, 'active', 150, 0, 10354530),
+('NEW 2025 Golf Buddy Voice XL GPS Speaker Pre Loaded 40k course', 'golf-buddy-voice-xl', 'Talking GPS rangefinder with Bluetooth speaker integration.', 1800000, ARRAY['https://i.ebayimg.com/images/g/TXIAAeSwL4ppqY6v/s-l500.webp'], 11, 4, 3, false, 'new', 'Golf Buddy', 0.20, 120, 'active', 45, 0, 2200000);
 
 -- Bulk Generate 300 Products
-INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count, status, stock, shipping_fee)
+INSERT INTO products (title, slug, description, price, images, category_id, seller_id, store_id, is_auction, condition, brand, weight, view_count, status, stock, shipping_fee, original_price)
 SELECT 
     'Product ' || i, 
     'product-' || i || '-' || floor(random() * 10000), 
     'High quality product description for item ' || i || '. This is a sample product generated for testing the eBay clone buyer system.', 
     (random() * 5000000 + 100000)::DECIMAL(10,2), 
     ARRAY['https://picsum.photos/seed/p' || i || '/600/400', 'https://picsum.photos/seed/p' || i || 'b/600/400'], 
-    (i % 16) + 1, 
+    (i % 24) + 1, 
     CASE WHEN i % 4 = 0 THEN 2 WHEN i % 4 = 1 THEN 3 WHEN i % 4 = 2 THEN 4 ELSE 8 END, 
     (i % 4) + 1, 
     (random() < 0.15),
@@ -120,8 +135,9 @@ SELECT
     (random() * 5000)::INT,
     'active',
     (CASE WHEN random() < 0.3 THEN 0 ELSE (floor(random() * 5) * 10000 + 15000) END)::DECIMAL(10,2),
-    (random() * 100 + 5)::INT
-FROM generate_series(21, 320) s(i);
+    (random() * 100 + 5)::INT,
+    NULL
+FROM generate_series(34, 333) s(i);
 
 -- ============================================
 -- INVENTORY
@@ -152,7 +168,7 @@ INSERT INTO cart_items (cart_id, product_id, quantity) VALUES
 -- ORDERS
 -- ============================================
 
-INSERT INTO orders (buyer_id, address_id, order_date, subtotal, shipping_fee, tax, discount, total_price, status) VALUES
+INSERT INTO orders (buyer_id, address_id, order_date, subtotal, shipping_fee, tax, discount_amount, total_price, status) VALUES
 (5, 1, CURRENT_TIMESTAMP - INTERVAL '10 days', 33440000, 0, 3344000, 500000, 36284000, 'delivered'),
 (6, 3, CURRENT_TIMESTAMP - INTERVAL '7 days', 2990000, 50000, 299000, 0, 3339000, 'shipped'),
 (7, 4, CURRENT_TIMESTAMP - INTERVAL '5 days', 1340000, 30000, 134000, 0, 1504000, 'processing'),
@@ -433,6 +449,16 @@ SET
 -- GROUP BY p.id
 -- ORDER BY avg_rating DESC, review_count DESC
 -- LIMIT 10;
+
+-- ============================================
+-- BANNERS
+-- ============================================
+
+INSERT INTO banners (title, description, cta_text, image_url, link_url, bg_color, text_color, type, items, display_order, is_active) VALUES
+('Free shipping. Global shopping.', 'Shop internationally and enjoy free shipping on many items.', 'Shop now', 'https://i.ebayimg.com/images/g/OzMAAeSwlPBpEfM2/s-l960.webp', '/search?keyword=free+shipping', '#7E57C2', '#EDE7F6', 'single', NULL, 1, true),
+('Endless accessories. Epic prices.', 'Browse millions of upgrades for your ride.', 'Explore offers', 'https://i.ebayimg.com/images/g/J6UAAeSwzfpouXBe/s-l960.webp', '/category/automotive', '#0064D2', '#FFFFFF', 'single', NULL, 2, true),
+('Build an elite collection', 'Choose your next adventure from thousands of finds.', 'Shop now', NULL, '/search?keyword=collectibles', '#0064D2', '#FFFFFF', 'multi', '[{"title": "Lego", "image": "https://i.ebayimg.com/images/g/HI8AAeSwpUxotaQQ/s-l500.webp", "link": "/search?keyword=Lego"}, {"title": "Coins", "image": "https://i.ebayimg.com/images/g/65UAAeSwuolotaQU/s-l500.webp", "link": "/search?keyword=Coins"}, {"title": "Comic books", "image": "https://i.ebayimg.com/images/g/tnAAAeSww7RotaQY/s-l500.webp", "link": "/search?keyword=Comic+books"}]', 3, true),
+('It’s up to you', 'Customize your ride, your way, with a selection of parts on eBay.', 'Explore offers', 'https://i.ebayimg.com/images/g/fl4AAeSwV0hpndZs/s-l960.webp', '/category/automotive', '#0064D2', '#FFFFFF', 'single', NULL, 4, true);
 
 -- ============================================
 -- END OF SAMPLE DATA SCRIPT

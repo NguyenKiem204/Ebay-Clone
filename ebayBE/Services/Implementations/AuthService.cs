@@ -60,6 +60,8 @@ namespace ebay.Services.Implementations
             var user = new User
             {
                 Username = normalizedUsername,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
                 Email = normalizedEmail,
                 Phone = request.Phone,
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
@@ -413,6 +415,56 @@ namespace ebay.Services.Implementations
         // ============================================================================
         // PRIVATE HELPER METHODS
         // ============================================================================
+
+        public async Task<object> GetProfileAsync(int userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.Addresses)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) throw new NotFoundException("User không tồn tại");
+
+            var defaultAddress = user.Addresses.FirstOrDefault(a => a.IsDefault == true) 
+                               ?? user.Addresses.FirstOrDefault();
+
+            return new
+            {
+                user.Id,
+                user.Username,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                user.Phone,
+                user.AvatarUrl,
+                user.Role,
+                user.CreatedAt,
+                Address = defaultAddress == null ? null : new
+                {
+                    defaultAddress.Id,
+                    defaultAddress.FullName,
+                    defaultAddress.Phone,
+                    defaultAddress.Street,
+                    defaultAddress.City,
+                    defaultAddress.State,
+                    defaultAddress.PostalCode,
+                    defaultAddress.Country
+                }
+            };
+        }
+
+        public async Task UpdateProfileAsync(int userId, UpdateProfileRequestDto request)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) throw new NotFoundException("User không tồn tại");
+
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.Phone = request.Phone;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Profile updated for user: {UserId}", userId);
+        }
 
         private async Task<AuthResponseDto> GenerateAuthResponseAsync(User user, string ipAddress)
         {
