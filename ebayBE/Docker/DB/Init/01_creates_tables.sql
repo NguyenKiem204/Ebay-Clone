@@ -139,7 +139,7 @@ CREATE TABLE products (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT chk_condition CHECK (condition IN ('new', 'used', 'refurbished'))
+    CONSTRAINT chk_condition CHECK (condition IN ('new','used','refurbished','open box','pre-owned'))
 );
 
 CREATE INDEX idx_products_status ON products(status);
