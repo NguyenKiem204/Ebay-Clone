@@ -17,6 +17,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'buyer',
@@ -132,6 +134,7 @@ CREATE TABLE products (
     status VARCHAR(20) DEFAULT 'active',
     stock INTEGER DEFAULT 0,
     shipping_fee DECIMAL(10,2) DEFAULT 0,
+    original_price DECIMAL(10,2),
     view_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -486,6 +489,24 @@ CREATE TABLE wishlists (
 );
 
 CREATE INDEX idx_wishlists_user ON wishlists(user_id);
+
+-- Banners Table
+CREATE TABLE banners (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    cta_text VARCHAR(50),
+    image_url TEXT,
+    link_url TEXT,
+    bg_color VARCHAR(20),
+    text_color VARCHAR(20),
+    type VARCHAR(20) DEFAULT 'single', -- single, multi
+    items JSONB, -- For multi-item slides: [{"title": "...", "image": "...", "link": "..."}]
+    display_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ============================================
 -- FUNCTIONS & TRIGGERS

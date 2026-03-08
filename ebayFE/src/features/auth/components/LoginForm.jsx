@@ -16,7 +16,7 @@ const schema = yup.object({
 
 export default function LoginForm() {
     const navigate = useNavigate();
-    const setAuth = useAuthStore(state => state.setAuth);
+    const login = useAuthStore(state => state.login);
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -27,13 +27,11 @@ export default function LoginForm() {
     const onSubmit = async (data) => {
         setIsLoading(true);
         setError(null);
-        try {
-            const response = await authService.login(data);
-            setAuth(response.user, response.accessToken);
+        const result = await login(data.email, data.password);
+        if (result.success) {
             navigate('/');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.');
-        } finally {
+        } else {
+            setError(result.error);
             setIsLoading(false);
         }
     };

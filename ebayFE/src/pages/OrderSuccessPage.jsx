@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 
-import { useState } from 'react';
-
 export default function OrderSuccessPage() {
-    const [orderNumber] = useState(() => `EB${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`);
+    const [searchParams] = useSearchParams();
+    const orderId = searchParams.get('id');
+    const orderNumber = orderId ? `EB${orderId.padStart(8, '0')}` : 'EB00123456';
 
     return (
         <div className="container mx-auto px-4 py-16 max-w-3xl text-center">
@@ -35,12 +35,16 @@ export default function OrderSuccessPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button as={Link} to="/orders" variant="outline" size="lg" className="w-full sm:w-auto font-bold px-8">
-                    View Order
-                </Button>
-                <Button as={Link} to="/" variant="primary" size="lg" className="w-full sm:w-auto font-bold shadow-lg shadow-blue-500/20 px-8">
-                    Continue Shopping
-                </Button>
+                <Link to="/orders">
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto font-bold px-8">
+                        View Order
+                    </Button>
+                </Link>
+                <Link to="/">
+                    <Button variant="primary" size="lg" className="w-full sm:w-auto font-bold shadow-lg shadow-blue-500/20 px-8">
+                        Continue Shopping
+                    </Button>
+                </Link>
             </div>
         </div>
     );

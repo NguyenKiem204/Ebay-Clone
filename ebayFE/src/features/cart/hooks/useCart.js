@@ -5,13 +5,26 @@ import { cartService } from '../services/cartService';
 
 export const useCart = () => {
     const { items, addItem, removeItem, updateQuantity, clearCart, setCart } = useCartStore();
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, loading: authLoading } = useAuthStore();
 
     const fetchCart = useCallback(async () => {
         if (isAuthenticated) {
             try {
-                const remoteCart = await cartService.getCart();
-                setCart(remoteCart.items);
+                const response = await cartService.getCart();
+                if (response.success) {
+                    // Map backend CartItemResponseDto to frontend item structure
+                    const mappedItems = response.data.items.map(item => ({
+                        id: item.productId,
+                        title: item.productName,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image: item.productThumbnail,
+                        seller: item.sellerName,
+                        condition: 'New', // Default or map if available
+                        shippingPrice: 0 // Default or map if available
+                    }));
+                    setCart(mappedItems);
+                }
             } catch (error) {
                 console.error('Failed to fetch cart:', error);
             }
@@ -21,23 +34,43 @@ export const useCart = () => {
     // Sync guest cart with server on login
     useEffect(() => {
         const syncOnLogin = async () => {
-            if (isAuthenticated && items.length > 0) {
+            if (!authLoading && isAuthenticated && items.length > 0) {
                 try {
-                    const syncedCart = await cartService.syncCart(items);
-                    setCart(syncedCart.items);
+                    // Send minimal data for merging: List<AddToCartRequestDto>
+                    const guestItems = items.map(item => ({
+                        productId: item.id,
+                        quantity: item.quantity
+                    }));
+                    const response = await cartService.mergeCart(guestItems);
+                    if (response.success) {
+                        fetchCart(); // Fetch fresh cart from server after merge
+                    }
                 } catch (error) {
-                    console.error('Failed to sync cart:', error);
+                    console.error('Failed to merge cart:', error);
                 }
-            } else if (isAuthenticated) {
+            } else if (!authLoading && isAuthenticated) {
                 fetchCart();
             }
         };
 
         syncOnLogin();
-    }, [isAuthenticated]); // Only run when auth state changes
+    }, [isAuthenticated, authLoading]);
 
     const handleAddItem = async (product, quantity = 1) => {
-        addItem(product, quantity);
+        // Essential fields for cart display
+        const cartItem = {
+            id: product.id,
+            title: product.title || product.name,
+            price: product.price || 0,
+            image: product.thumbnail || product.imageUrl || product.image,
+            seller: product.sellerName || 'ebay_seller',
+            condition: product.condition || 'New',
+            shippingPrice: product.shippingFee || 0,
+            quantity
+        };
+
+        addItem(cartItem, quantity);
+
         if (isAuthenticated) {
             try {
                 await cartService.addToCart(product.id, quantity);

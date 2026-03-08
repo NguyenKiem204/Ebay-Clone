@@ -61,14 +61,12 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }) {
 
                             <div className="mb-4">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-[18px] font-bold text-gray-900">US ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(item.price / 25000)}</span>
+                                    <span className="text-[18px] font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</span>
                                 </div>
-                                <p className="text-[13px] text-gray-500">({new Intl.NumberFormat('en-US').format(item.price)} VND)</p>
                             </div>
 
                             <div className="flex items-center gap-1 text-[13px] text-gray-700">
-                                <span className="font-bold">+ US ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format((item.shippingPrice || 7760848) / 25000)}</span>
-                                <p className="text-gray-500">({new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 }).format(item.shippingPrice || 7760848)} VND)</p>
+                                <span className="font-bold">+{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.shippingPrice || 0)} shipping</span>
                             </div>
                             <p className="text-[13px] text-gray-500 mb-1">eBay International Shipping</p>
                         </div>

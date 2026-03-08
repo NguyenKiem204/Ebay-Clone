@@ -13,21 +13,21 @@ export default function CartSummary({ subtotal, totalItems }) {
             <div className="space-y-6 mb-10">
                 <div className="flex justify-between text-[15px] text-gray-900">
                     <span>Items ({totalItems})</span>
-                    <span>{new Intl.NumberFormat('en-US').format(subtotal)}.00 VND</span>
+                    <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-[15px] text-gray-900">
                     <div className="flex items-center gap-1">
                         <span>Shipping</span>
                         <Info size={16} className="text-gray-400 cursor-pointer" />
                     </div>
-                    <span>{new Intl.NumberFormat('en-US').format(shipping)}.00 VND</span>
+                    <span>FREE</span>
                 </div>
             </div>
 
             <div className="border-t border-gray-200 pt-6 mb-8 flex justify-between items-center">
                 <span className="text-[18px] font-bold text-gray-900">Subtotal</span>
                 <span className="text-[18px] font-bold text-gray-900">
-                    {new Intl.NumberFormat('en-US').format(total)}.00 VND
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal)}
                 </span>
             </div>
 

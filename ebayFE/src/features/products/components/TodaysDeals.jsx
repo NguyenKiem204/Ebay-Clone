@@ -1,9 +1,15 @@
 import { Link } from 'react-router-dom';
-import { ProductCard } from '../../../components/ui/ProductCard';
-import { mockProducts } from '../../../lib/mockData';
-import { Button } from '../../../components/ui/Button';
+import useProductStore from '../../../store/useProductStore';
 
 export function TodaysDeals() {
+    const { bestDeals, loading } = useProductStore();
+
+    if (loading && bestDeals.length === 0) {
+        return <div className="animate-pulse h-64 bg-gray-100 rounded-2xl mb-16"></div>;
+    }
+
+    if (!bestDeals || bestDeals.length === 0) return null;
+
     return (
         <section className="mb-16">
             <div className="flex flex-col mb-4">
@@ -18,8 +24,8 @@ export function TodaysDeals() {
                 </div>
             </div>
 
-            <div className="flex overflow-x-auto pb-6 gap-3 lg:gap-4 snap-x hide-scrollbar mb-8">
-                {mockProducts.map((product) => (
+            <div className="flex overflow-x-auto pb-6 gap-3 lg:gap-4 snap-x mb-8">
+                {bestDeals.map((product) => (
                     <div key={product.id} className="flex flex-col min-w-[160px] max-w-[160px] md:min-w-[210px] md:max-w-[210px] snap-start group pb-2">
                         <div className="relative w-full aspect-square rounded-2xl bg-[#EFEFEF] overflow-hidden mb-3 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow">
                             <button className="absolute top-2 right-2 z-10 w-9 h-9 bg-white/70 hover:bg-white backdrop-blur rounded-full flex items-center justify-center text-gray-900 transition-colors border border-gray-200 shadow-sm">
@@ -29,7 +35,7 @@ export function TodaysDeals() {
                             </button>
                             <Link to={`/products/${product.id}`} className="block w-full h-full">
                                 <img
-                                    src={product.image}
+                                    src={product.thumbnail}
                                     alt={product.title}
                                     className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -43,11 +49,11 @@ export function TodaysDeals() {
                             </h3>
                             <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
                                 <span className="font-bold text-[17px] text-gray-900">
-                                    ₫{product.price.toLocaleString('en-US')}
+                                    ₫{product.price.toLocaleString('vi-VN')}
                                 </span>
-                                {product.originalPrice && (
+                                {product.discountPrice && (
                                     <span className="text-gray-500 text-sm line-through">
-                                        ₫{product.originalPrice.toLocaleString('en-US')}
+                                        ₫{product.discountPrice.toLocaleString('vi-VN')}
                                     </span>
                                 )}
                             </div>

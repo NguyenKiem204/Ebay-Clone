@@ -21,31 +21,51 @@ namespace ebay.Services.Implementations
             var baseQuery = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
+                .Include(p => p.Reviews) // Include reviews for rating calculation
+                .Include(p => p.Bids)
                 .Where(p => p.IsActive == true && p.Status == "active");
 
             var latest = await baseQuery
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(10)
-                .Select(p => MapToDto(p))
                 .ToListAsync();
 
             var deals = await baseQuery
-                .OrderBy(p => p.Price)
-                .Take(10)
-                .Select(p => MapToDto(p))
+                .Where(p => p.OriginalPrice != null && p.OriginalPrice > p.Price)
+                .OrderByDescending(p => p.OriginalPrice != null ? (double)(p.OriginalPrice.Value - p.Price) / (double)p.OriginalPrice.Value : 0)
+                .Take(13)
                 .ToListAsync();
 
             var trending = await baseQuery
                 .OrderByDescending(p => p.ViewCount)
                 .Take(10)
-                .Select(p => MapToDto(p))
                 .ToListAsync();
+
+            var bannerEntities = await _context.Banners
+                .Where(b => b.IsActive == true)
+                .OrderBy(b => b.DisplayOrder ?? 0)
+                .ToListAsync();
+
+            var banners = bannerEntities.Select(b => new BannerResponseDto
+            {
+                Id = b.Id,
+                Title = b.Title,
+                Description = b.Description,
+                CtaText = b.CtaText,
+                ImageUrl = b.ImageUrl,
+                LinkUrl = b.LinkUrl,
+                BgColor = b.BgColor,
+                TextColor = b.TextColor,
+                Type = b.Type ?? "single",
+                Items = b.Items != null ? System.Text.Json.JsonSerializer.Deserialize<List<BannerItemDto>>(b.Items, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)) : null
+            }).ToList();
 
             return new LandingPageResponseDto
             {
-                LatestProducts = latest,
-                BestDeals = deals,
-                TrendingProducts = trending
+                Banners = banners,
+                LatestProducts = latest.Select(p => MapToDto(p)).ToList(),
+                BestDeals = deals.Select(p => MapToDto(p)).ToList(),
+                TrendingProducts = trending.Select(p => MapToDto(p)).ToList()
             };
         }
 
@@ -54,6 +74,8 @@ namespace ebay.Services.Implementations
             var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
                 .Where(p => p.IsActive == true && p.Status == "active")
                 .AsQueryable();
 
@@ -119,6 +141,8 @@ namespace ebay.Services.Implementations
             var product = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -135,6 +159,8 @@ namespace ebay.Services.Implementations
             var product = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
                 .FirstOrDefaultAsync(p => p.Slug == slug);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -168,6 +194,7 @@ namespace ebay.Services.Implementations
             Slug = p.Slug,
             Description = p.Description,
             Price = p.Price,
+            DiscountPrice = p.OriginalPrice,
             Thumbnail = p.Images != null && p.Images.Count > 0 ? p.Images[0] : null,
             Condition = p.Condition ?? "new",
             Status = p.Status ?? "active",
@@ -179,9 +206,11 @@ namespace ebay.Services.Implementations
             SellerName = p.Seller?.Username ?? "Unknown",
             IsAuction = p.IsAuction ?? false,
             AuctionEndTime = p.AuctionEndTime,
+            CurrentBid = p.Bids != null && p.Bids.Any() ? p.Bids.Max(b => b.Amount) : p.StartingBid,
+            BidCount = p.Bids?.Count ?? 0,
             CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
-            Rating = 5.0m, // Placeholder
-            ReviewCount = 0 // Placeholder
+            Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,
+            ReviewCount = p.Reviews?.Count ?? 0
         };
 
         private static CategoryResponseDto MapCategoryToDto(Category c, List<Category> all) => new CategoryResponseDto

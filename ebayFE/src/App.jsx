@@ -1,5 +1,8 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import useAuthStore from './store/useAuthStore';
+
+// ... (layouts and pages imports remain the same)
 
 // Layouts
 import MainLayout from './components/layouts/MainLayout';
@@ -165,5 +168,19 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
+  const { checkAuth, loading } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return <RouterProvider router={router} />;
 }
