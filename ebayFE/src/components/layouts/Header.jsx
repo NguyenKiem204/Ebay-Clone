@@ -2,14 +2,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ShoppingCart, ChevronDown } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import useCategoryStore from '../../store/useCategoryStore';
+import useCartStore from '../../features/cart/hooks/useCartStore';
 
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuthStore();
     const { categories } = useCategoryStore();
+    const totalItems = useCartStore((state) => state.totalItems);
     const queryParams = new URLSearchParams(location.search);
     const isAuctionsActive = location.pathname === '/products' && queryParams.get('filter') === 'auctions';
+    const isProductDetails = /^\/products\/[^/]+$/.test(location.pathname);
 
     return (
         <header className="bg-white">
@@ -47,7 +50,11 @@ export default function Header() {
                         </button>
                         <Link to="/cart" className="relative hover:bg-gray-100 p-1 rounded-full transition-colors">
                             <ShoppingCart size={22} strokeWidth={1.5} />
-                            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">1</span>
+                            {totalItems > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                    {totalItems}
+                                </span>
+                            )}
                         </Link>
                     </div>
                 </div>
@@ -111,25 +118,27 @@ export default function Header() {
             </div>
 
             {/* Bottom Bar (Categories) */}
-            <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-3 flex items-center justify-center gap-6 text-[13px] text-[#333] overflow-x-auto hide-scrollbar">
-                <Link to="#" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Saved</Link>
-                <Link
-                    to="/products?filter=auctions"
-                    className={`hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1 ${isAuctionsActive ? 'font-bold text-secondary' : ''}`}
-                >
-                    Auctions
-                </Link>
-                <Link to="/products?category=electronics" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Electronics</Link>
-                <Link to="/products?category=motors" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Motors</Link>
-                <Link to="/products?category=fashion" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Fashion</Link>
-                <Link to="/products?category=collectibles" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Collectibles and Art</Link>
-                <Link to="/products?category=sports" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Sports</Link>
-                <Link to="/products?category=health" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Health & Beauty</Link>
-                <Link to="/products?category=industrial" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Industrial equipment</Link>
-                <Link to="/products?category=home" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Home & Garden</Link>
-                <Link to="/products?filter=deals" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Deals</Link>
-                <Link to="/seller" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Sell</Link>
-            </div>
+            {!isProductDetails && (
+                <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-3 flex items-center justify-center gap-6 text-[13px] text-[#333] overflow-x-auto hide-scrollbar border-t border-gray-100">
+                    <Link to="#" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Saved</Link>
+                    <Link
+                        to="/products?filter=auctions"
+                        className={`hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1 ${isAuctionsActive ? 'font-bold text-secondary' : ''}`}
+                    >
+                        Auctions
+                    </Link>
+                    <Link to="/products?category=electronics" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Electronics</Link>
+                    <Link to="/products?category=motors" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Motors</Link>
+                    <Link to="/products?category=fashion" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Fashion</Link>
+                    <Link to="/products?category=collectibles" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Collectibles and Art</Link>
+                    <Link to="/products?category=sports" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Sports</Link>
+                    <Link to="/products?category=health" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Health & Beauty</Link>
+                    <Link to="/products?category=industrial" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Industrial equipment</Link>
+                    <Link to="/products?category=home" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Home & Garden</Link>
+                    <Link to="/products?filter=deals" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Deals</Link>
+                    <Link to="/seller" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Sell</Link>
+                </div>
+            )}
         </header>
     );
 }

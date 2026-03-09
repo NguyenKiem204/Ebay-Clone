@@ -171,6 +171,25 @@ namespace ebay.Services.Implementations
             return MapToDto(product);
         }
 
+        public async Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return new List<ProductResponseDto>();
+
+            var related = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .Where(p => p.Id != productId && p.IsActive == true && p.Status == "active" && p.CategoryId == product.CategoryId)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(count)
+                .Select(p => MapToDto(p))
+                .ToListAsync();
+
+            return related;
+        }
+
         public async Task<List<CategoryResponseDto>> GetCategoriesAsync()
         {
             var allCategories = await _context.Categories

@@ -167,6 +167,8 @@ const router = createBrowserRouter([
   }
 ]);
 
+import { Toaster } from 'react-hot-toast';
+
 export default function App() {
   const { checkAuth, loading } = useAuthStore();
 
@@ -182,5 +184,10 @@ export default function App() {
     );
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Toaster position="bottom-right" reverseOrder={false} />
+    </>
+  );
 }
