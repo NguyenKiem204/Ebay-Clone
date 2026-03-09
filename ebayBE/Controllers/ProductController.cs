@@ -50,5 +50,11 @@ namespace ebay.Controllers
             var data = await _productService.GetProductBySlugAsync(slug);
             return Ok(new ApiResponse<ProductResponseDto>(data));
         }
+        [HttpGet("{id:int}/related")]
+        public async Task<ActionResult<ApiResponse<List<ProductResponseDto>>>> GetRelated(int id, [FromQuery] int count = 10)
+        {
+            var data = await _productService.GetRelatedProductsAsync(id, count);
+            return Ok(new ApiResponse<List<ProductResponseDto>>(data));
+        }
     }
 }

@@ -1,9 +1,15 @@
+import { Link } from "react-router-dom";
+import { useCart } from "../features/cart/hooks/useCart";
+import useAuthStore from "../store/useAuthStore";
+import CartItem from "../features/cart/components/CartItem";
+import CartSummary from "../features/cart/components/CartSummary";
+
 export default function CartPage() {
     const { items, subtotal, totalItems, removeItem, updateQuantity } = useCart();
     const { isAuthenticated } = useAuthStore();
 
     return (
-        <div className="bg-[#f7f7f7] min-h-screen pb-12">
+        <div className="bg-white min-h-screen pb-12">
             <div className="container mx-auto px-4 py-6 max-w-7xl">
                 <div className="flex justify-between items-end mb-6">
                     <h1 className="text-[32px] font-bold text-gray-900 leading-none">Cart</h1>

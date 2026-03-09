@@ -38,9 +38,9 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }) {
                 <div className="w-full md:w-44 flex-shrink-0">
                     <div className="aspect-square bg-white flex items-center justify-center overflow-hidden">
                         <img
-                            src={item.image}
+                            src={item.thumbnail || item.imageUrl || (item.images && item.images[0]?.imageUrl) || item.image || 'https://via.placeholder.com/150'}
                             alt={item.title}
-                            className="w-full h-full object-contain mix-blend-multiply"
+                            className={`w-full h-full object-contain ${!item.thumbnail && !item.imageUrl && !(item.images?.[0]?.imageUrl) ? 'opacity-20' : 'mix-blend-multiply'}`}
                         />
                     </div>
                 </div>

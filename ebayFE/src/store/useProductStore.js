@@ -9,8 +9,19 @@ const useProductStore = create((set) => ({
     searchResults: [],
     totalItems: 0,
     currentProduct: null,
+    relatedProducts: [],
     loading: false,
     error: null,
+
+    fetchRelatedProducts: async (id) => {
+        try {
+            const response = await api.get(`/api/Product/${id}/related`);
+            const { data } = response.data;
+            set({ relatedProducts: data || [] });
+        } catch (error) {
+            console.error('Failed to fetch related products', error);
+        }
+    },
 
     fetchLandingPage: async () => {
         set({ loading: true });

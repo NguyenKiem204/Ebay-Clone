@@ -4,7 +4,7 @@ import Footer from './Footer';
 
 export default function SellerLayout() {
     return (
-        <div className="min-h-screen bg-[#f7f7f7] flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             {/* Top Minimal Nav (Like eBay Seller Hub) */}
             <div className="bg-white border-b border-gray-200">
                 <div className="max-w-[1400px] mx-auto px-4 h-10 flex justify-between items-center text-[12px] text-[#333]">
