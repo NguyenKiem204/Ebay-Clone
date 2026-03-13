@@ -1,4 +1,4 @@
-﻿using ebay.DTOs.Requests;
+using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
 
 namespace ebay.Services.Interfaces
@@ -17,5 +17,6 @@ namespace ebay.Services.Interfaces
         Task LogoutAsync(int userId, string ipAddress);
         Task<object> GetProfileAsync(int userId);
         Task UpdateProfileAsync(int userId, UpdateProfileRequestDto request);
+        Task UpgradeToSellerAsync(int userId);
     }
 }

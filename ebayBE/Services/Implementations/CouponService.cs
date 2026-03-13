@@ -1,3 +1,4 @@
+using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
 using ebay.Models;
 using ebay.Services.Interfaces;
@@ -76,6 +77,32 @@ namespace ebay.Services.Implementations
                     UsedAt = DateTime.UtcNow
                 });
             }
+        }
+
+        public async Task<Coupon> CreateCouponAsync(CreateCouponRequest request)
+        {
+            var coupon = new Coupon
+            {
+                Code = request.Code,
+                Description = request.Description,
+                DiscountType = request.DiscountType,
+                DiscountValue = request.DiscountValue,
+                MinOrderAmount = request.MinOrderAmount,
+                MaxDiscount = request.MaxDiscount,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                MaxUsage = request.MaxUsage,
+                ProductId = request.ProductId,
+                CategoryId = request.CategoryId,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UsedCount = 0
+            };
+
+            await _context.Coupons.AddAsync(coupon);
+            await _context.SaveChangesAsync();
+
+            return coupon;
         }
     }
 }

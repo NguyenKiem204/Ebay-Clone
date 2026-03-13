@@ -38,7 +38,9 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IBidService, BidService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddHttpClient<IPaypalService, PaypalService>();
 
 builder.Services.AddFluentValidationAutoValidation();
@@ -123,11 +125,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Bật Swagger cho mọi môi trường để dễ test
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "eBay API v1");
+    c.RoutePrefix = "swagger"; // Truy cập tại /swagger
+});
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<RateLimitingMiddleware>();
@@ -135,5 +139,6 @@ app.UseCors("AllowFrontend"); // Enable CORS before Auth
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStaticFiles(); // Cho phép truy cập ảnh từ thư mục wwwroot
 app.MapControllers();
 app.Run();

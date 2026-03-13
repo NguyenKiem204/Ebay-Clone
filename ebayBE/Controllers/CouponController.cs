@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
 using ebay.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +26,13 @@ namespace ebay.Controllers
         {
             var data = await _couponService.ValidateCouponAsync(request.Code, request.OrderAmount, GetUserId());
             return Ok(ApiResponse<CouponValidationResponseDto>.SuccessResponse(data));
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<object>>> Create([FromBody] CreateCouponRequest request)
+        {
+            var data = await _couponService.CreateCouponAsync(request);
+            return Ok(ApiResponse<object>.SuccessResponse(data, "Tạo mã giảm giá thành công"));
         }
     }
 
