@@ -11,14 +11,19 @@ namespace ebay.DTOs.Responses
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public decimal? DiscountPrice { get; set; }
+        public decimal? OriginalPrice { get; set; }
         public string? Thumbnail { get; set; }
+        public List<string>? Images { get; set; }
         public string Condition { get; set; } = null!;
+        public string? Brand { get; set; }
         public string Status { get; set; } = null!;
+        public bool IsActive { get; set; }
         public int Stock { get; set; }
         public decimal ShippingFee { get; set; }
         public int ViewCount { get; set; }
         public string CategoryName { get; set; } = null!;
         public int CategoryId { get; set; }
+        public int SellerId { get; set; }
         public string SellerName { get; set; } = null!;
         public decimal? Rating { get; set; } 
         public int ReviewCount { get; set; }

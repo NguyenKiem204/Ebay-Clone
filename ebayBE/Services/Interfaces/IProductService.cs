@@ -11,6 +11,13 @@ namespace ebay.Services.Interfaces
         Task<ProductResponseDto> GetProductBySlugAsync(string slug);
         Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10);
         Task<List<CategoryResponseDto>> GetCategoriesAsync();
+
+        // Seller product management
+        Task<PagedResponseDto<ProductResponseDto>> GetSellerProductsAsync(int sellerId, SellerProductSearchRequest request);
+        Task<ProductResponseDto> CreateProductAsync(int sellerId, CreateProductRequest request);
+        Task<ProductResponseDto> UpdateProductAsync(int sellerId, int productId, UpdateProductRequest request);
+        Task<ProductResponseDto> ToggleProductVisibilityAsync(int sellerId, int productId);
+        Task<bool> DeleteProductAsync(int sellerId, int productId);
     }
 
     public class PagedResponseDto<T>
