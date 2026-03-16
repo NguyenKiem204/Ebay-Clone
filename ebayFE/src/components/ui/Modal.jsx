@@ -60,3 +60,5 @@ export function Modal({ isOpen, onClose, title, children, className, size = 'md'
         </div>
     );
 }
+
+export default Modal;

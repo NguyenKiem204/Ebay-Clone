@@ -8,6 +8,7 @@ import SimilarItemsList from '../components/product/SimilarItemsList';
 import RelatedItems from '../components/product/RelatedItems';
 import AboutThisItem from '../components/product/AboutThisItem';
 import SellerSection from '../components/product/SellerSection/SellerSection';
+import ProductCouponSection from '../components/product/ProductCouponSection';
 
 export default function ProductDetailsPage() {
     const { id } = useParams();
@@ -59,6 +60,9 @@ export default function ProductDetailsPage() {
                 {/* Right Column: Buy Box & Summary (Span 5) */}
                 <div className="md:col-span-5">
                     <ProductPurchaseOptions product={product} />
+                    
+                    {/* Coupon Section */}
+                    <ProductCouponSection coupons={product.activeCoupons} />
                 </div>
             </div>
 

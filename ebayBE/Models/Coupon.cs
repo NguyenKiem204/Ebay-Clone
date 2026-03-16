@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ebay.Models;
@@ -25,6 +25,10 @@ public partial class Coupon
 
     public int? MaxUsage { get; set; }
 
+    public int MaxUsagePerUser { get; set; }
+
+    public string CouponType { get; set; } = null!;
+
     public int? UsedCount { get; set; }
 
     public bool? IsActive { get; set; }
@@ -35,6 +39,8 @@ public partial class Coupon
 
     public int? ProductId { get; set; }
 
+    public int? StoreId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual Category? Category { get; set; }
@@ -43,5 +49,7 @@ public partial class Coupon
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual Product? Product { get; set; }
+    public virtual Store? Store { get; set; }
+
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

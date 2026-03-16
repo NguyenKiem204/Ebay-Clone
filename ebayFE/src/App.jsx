@@ -28,6 +28,7 @@ const SellerEditListingPage = lazy(() => import('./pages/seller/SellerEditListin
 const SellerInventoryPage = lazy(() => import('./pages/seller/SellerInventoryPage'));
 const SellerMarketingPage = lazy(() => import('./pages/seller/SellerMarketingPage'));
 const SellerStorePage = lazy(() => import('./pages/seller/SellerStorePage'));
+const CouponProductsPage = lazy(() => import('./pages/CouponProductsPage'));
 
 // Auth Pages (Lazy Loaded)
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -59,6 +60,10 @@ const router = createBrowserRouter([
       {
         path: 'products/:id',
         element: <Suspense fallback={<PageLoader />}><ProductDetailsPage /></Suspense>,
+      },
+      {
+        path: 'coupons/:id',
+        element: <Suspense fallback={<PageLoader />}><CouponProductsPage /></Suspense>,
       },
       {
         path: 'cart',

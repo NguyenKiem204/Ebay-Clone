@@ -32,6 +32,7 @@ namespace ebay.DTOs.Responses
         public decimal? CurrentBid { get; set; }
         public int BidCount { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<CouponResponseDto>? ActiveCoupons { get; set; }
     }
 
     public class BannerResponseDto
