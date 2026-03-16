@@ -3,12 +3,15 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../lib/axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 const schema = yup.object({
-    password: yup.string().required('Password is required').min(8, 'Password must be at least 8 characters'),
+    newPassword: yup.string()
+        .required('Password is required')
+        .min(8, 'Password must be at least 8 characters'),
     confirmPassword: yup.string()
-        .oneOf([yup.ref('password'), null], 'Passwords must match')
+        .oneOf([yup.ref('newPassword'), null], 'Passwords must match')
         .required('Confirm password is required'),
 }).required();
 
@@ -18,6 +21,8 @@ export default function ResetPasswordForm() {
     const token = searchParams.get('token');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(schema)
@@ -32,9 +37,9 @@ export default function ResetPasswordForm() {
         setIsLoading(true);
         setError(null);
         try {
-            await axios.post('http://localhost:5000/api/auth/reset-password', {
+            await api.post('/api/Auth/reset-password', {
                 token,
-                password: data.password
+                newPassword: data.newPassword
             });
             navigate('/login?reset=true');
         } catch (err) {
@@ -44,46 +49,81 @@ export default function ResetPasswordForm() {
         }
     };
 
+    const inputBase = (hasError) => `w-full px-4 py-3 border rounded-lg text-base outline-none transition-all ${
+        hasError
+            ? 'border-red-500 focus:ring-2 focus:ring-red-200'
+            : 'border-gray-400 focus:border-[#3665F3] focus:ring-2 focus:ring-[#3665F3]/20 hover:border-gray-600'
+    }`;
+
     return (
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm text-center">
-                    {error}
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+                    <svg className="w-5 h-5 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>{error}</span>
                 </div>
             )}
 
-            <div className="space-y-4">
-                <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <div>
+                <label htmlFor="reset-password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    New password
+                </label>
+                <div className="relative">
                     <input
-                        id="password"
-                        type="password"
-                        {...register("password")}
-                        className={`appearance-none relative block w-full px-4 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm bg-gray-50 focus:bg-white`}
-                        placeholder="Enter new password"
+                        id="reset-password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        className={`${inputBase(errors.newPassword)} pr-12`}
+                        {...register("newPassword")}
                     />
-                    {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+                        tabIndex={-1}
+                    >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
                 </div>
+                {errors.newPassword && (
+                    <p className="mt-1.5 text-sm text-red-600">{errors.newPassword.message}</p>
+                )}
+            </div>
 
-                <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <div>
+                <label htmlFor="reset-confirm-password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Confirm new password
+                </label>
+                <div className="relative">
                     <input
-                        id="confirmPassword"
-                        type="password"
+                        id="reset-confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        className={`${inputBase(errors.confirmPassword)} pr-12`}
                         {...register("confirmPassword")}
-                        className={`appearance-none relative block w-full px-4 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm bg-gray-50 focus:bg-white`}
-                        placeholder="Confirm new password"
                     />
-                    {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>}
+                    <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+                        tabIndex={-1}
+                    >
+                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
                 </div>
+                {errors.confirmPassword && (
+                    <p className="mt-1.5 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                )}
             </div>
 
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 border border-transparent text-sm font-bold rounded-full text-white bg-secondary hover:bg-blue-700 transition-all shadow-md disabled:opacity-70"
+                className="w-full py-3.5 bg-[#3665F3] text-white font-medium text-base rounded-full hover:bg-[#382aef] transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
             >
-                {isLoading ? 'Resetting...' : 'Reset Password'}
+                {isLoading ? 'Resetting...' : 'Reset password'}
             </button>
         </form>
     );
