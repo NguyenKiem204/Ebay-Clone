@@ -18,7 +18,11 @@ const personalSchema = yup.object({
     password: yup.string()
         .required('Password is required')
         .min(8, 'At least 8 characters')
-        .max(128, 'Password must not exceed 128 characters'),
+        .max(128, 'Password must not exceed 128 characters')
+        .matches(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+        .matches(/[a-z]/, 'Password must contain at least 1 lowercase letter')
+        .matches(/[0-9]/, 'Password must contain at least 1 number')
+        .matches(/[@$!%*?&]/, 'Password must contain at least 1 special character (@$!%*?&)'),
 }).required();
 
 const businessSchema = yup.object({
@@ -27,7 +31,11 @@ const businessSchema = yup.object({
     password: yup.string()
         .required('Password is required')
         .min(8, 'At least 8 characters')
-        .max(128, 'Password must not exceed 128 characters'),
+        .max(128, 'Password must not exceed 128 characters')
+        .matches(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+        .matches(/[a-z]/, 'Password must contain at least 1 lowercase letter')
+        .matches(/[0-9]/, 'Password must contain at least 1 number')
+        .matches(/[@$!%*?&]/, 'Password must contain at least 1 special character (@$!%*?&)'),
 }).required();
 
 export default function RegisterForm({ accountType, onAccountTypeChange }) {
@@ -126,7 +134,7 @@ export default function RegisterForm({ accountType, onAccountTypeChange }) {
                 password: data.password,
                 confirmPassword: data.password,
                 firstName: accountType === 'personal' ? data.firstName : data.businessName,
-                lastName: accountType === 'personal' ? data.lastName : '',
+                lastName: accountType === 'personal' ? data.lastName : '.', // Backend requires lastName, added dot for business
             };
             const result = await authRegister(payload);
 
@@ -135,11 +143,25 @@ export default function RegisterForm({ accountType, onAccountTypeChange }) {
                 setShowOtp(true);
                 toast.success('Registration successful! Please check your email for the OTP code.');
             } else {
-                toast.error(result.error || 'Registration failed');
+                // Try to extract detailed error messages from the backend validation
+                if (result.error?.errors) {
+                    const errorMessages = Object.values(result.error.errors).flat().join('. ');
+                    setError(errorMessages);
+                } else {
+                    setError(result.error || 'Registration failed');
+                }
+                toast.error('Registration failed');
             }
         } catch (err) {
+            console.error('Registration error:', err);
+            const backendError = err.response?.data?.errors;
+            if (backendError) {
+                const message = Object.values(backendError).flat().join('. ');
+                setError(message);
+            } else {
+                setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            }
             toast.error('An error occurred during registration');
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
             setIsLoading(false);
         }
