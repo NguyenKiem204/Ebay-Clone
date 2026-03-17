@@ -20,7 +20,7 @@ CREATE TABLE users (
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     role VARCHAR(20) NOT NULL DEFAULT 'buyer',
     avatar_url TEXT,
     is_email_verified BOOLEAN DEFAULT FALSE,
@@ -35,6 +35,8 @@ CREATE TABLE users (
 
     last_login TIMESTAMP,
     phone VARCHAR(20),
+    external_provider VARCHAR(50),
+    external_provider_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -1182,7 +1182,14 @@ public partial class EbayDbContext : DbContext
                 .HasColumnName("lockout_end");
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
+                .IsRequired(false)
                 .HasColumnName("password_hash");
+            entity.Property(e => e.ExternalProvider)
+                .HasMaxLength(50)
+                .HasColumnName("external_provider");
+            entity.Property(e => e.ExternalProviderId)
+                .HasMaxLength(255)
+                .HasColumnName("external_provider_id");
             entity.Property(e => e.PasswordResetExpires)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("password_reset_expires");
