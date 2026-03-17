@@ -1,24 +1,32 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import RegisterForm from '../../features/auth/components/RegisterForm';
 
 export default function RegisterPage() {
+    const [accountType, setAccountType] = useState('personal');
+
     return (
-        <div className="min-h-[calc(100vh-theme(spacing.16))] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-                <div className="text-center">
-                    <Link to="/" className="text-4xl font-bold tracking-tighter inline-block mb-6">
-                        <span className="text-primary">e</span>
-                        <span className="text-secondary">b</span>
-                        <span className="text-yellow-500">a</span>
-                        <span className="text-green-600">y</span>
-                    </Link>
-                    <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Create an account</h2>
-                    <p className="text-sm text-gray-600">
-                        Already have an account? <Link to="/login" className="font-medium text-secondary hover:text-blue-800 hover:underline transition-colors">Sign in</Link>
-                    </p>
+        <div className="w-full max-w-5xl mx-auto px-4 py-10">
+            <div className="flex flex-col lg:flex-row items-stretch gap-10">
+                {/* Left side - Hero image */}
+                <div className="hidden lg:block lg:w-1/2">
+                    <div className="w-full h-full min-h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-[#F5AF02] via-[#E53238] to-[#0064D2]">
+                        <img
+                            src={accountType === 'personal' ? '/images/register-personal.jpg' : '/images/register-business.jpg'}
+                            alt={accountType === 'personal' ? 'eBay community' : 'eBay business'}
+                            className="w-full h-full object-cover rounded-2xl transition-opacity duration-300"
+                            key={accountType}
+                        />
+                    </div>
                 </div>
 
-                <RegisterForm />
+                {/* Right side - Form */}
+                <div className="w-full lg:w-1/2 flex flex-col justify-center">
+                    <h1 className="text-[28px] font-bold text-gray-900 mb-6">
+                        Create an account
+                    </h1>
+
+                    <RegisterForm accountType={accountType} onAccountTypeChange={setAccountType} />
+                </div>
             </div>
         </div>
     );
