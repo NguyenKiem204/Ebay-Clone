@@ -54,7 +54,7 @@ namespace ebay.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // Set to true in production
+                Secure = false, // Set to true ONLY in production with HTTPS
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddHours(24) // Should match token expiry
             };
@@ -73,8 +73,13 @@ namespace ebay.Controllers
         {
             _logger.LogInformation("Registration attempt for email: {Email}", request.Email);
             var result = await _authService.RegisterAsync(request, GetIpAddress());
-            SetTokenCookie(result.AccessToken);
-            return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Đăng ký thành công"));
+            
+            if (!string.IsNullOrEmpty(result.AccessToken))
+            {
+                SetTokenCookie(result.AccessToken);
+            }
+
+            return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Đăng ký thành công. Vui lòng kiểm tra email để nhận mã OTP."));
         }
 
         [HttpPost("login")]
@@ -84,6 +89,18 @@ namespace ebay.Controllers
         {
             _logger.LogInformation("Login attempt for email: {Email}", request.Email);
             var result = await _authService.LoginAsync(request, GetIpAddress());
+            SetTokenCookie(result.AccessToken);
+            return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Đăng nhập thành công"));
+        }
+
+        [HttpPost("social-login")]
+        [RateLimit("SocialLogin", 100, 15, RateLimitPeriod.Minute)]
+        public async Task<ActionResult<ApiResponse<AuthResponseDto>>> SocialLogin(
+            [FromBody] SocialLoginRequestDto request)
+        {
+            _logger.LogInformation("Social login attempt for email: {Email}, provider: {Provider}", 
+                request.Email, request.Provider);
+            var result = await _authService.SocialLoginAsync(request, GetIpAddress());
             SetTokenCookie(result.AccessToken);
             return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Đăng nhập thành công"));
         }
@@ -125,6 +142,39 @@ namespace ebay.Controllers
         }
 
 
+        [HttpPost("verify-otp")]
+        [RateLimit("VerifyOtp", 10, 1, RateLimitPeriod.Minute)]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyOtp(
+            [FromBody] VerifyOtpRequestDto request)
+        {
+            _logger.LogInformation("OTP verification attempt for: {Email}", request.Email);
+            var result = await _authService.VerifyOtpAsync(request.Email, request.Otp);
+
+            if (!result)
+            {
+                _logger.LogWarning("OTP verification failed for: {Email}", request.Email);
+                return BadRequest(ApiResponse<object>.ErrorResponse("Mã OTP không hợp lệ hoặc đã hết hạn"));
+            }
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Xác thực email thành công"));
+        }
+
+        [HttpPost("resend-otp")]
+        [RateLimit("ResendOtp", 5, 1, RateLimitPeriod.Hour)]
+        public async Task<ActionResult<ApiResponse<object>>> ResendOtp(
+            [FromBody] ResendOtpRequestDto request)
+        {
+            _logger.LogInformation("Resend OTP request for: {Email}", request.Email);
+            var result = await _authService.ResendOtpAsync(request.Email);
+
+            if (!result)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("Không thể gửi lại mã OTP. Tài khoản có thể đã được xác thực."));
+            }
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Mã OTP mới đã được gửi"));
+        }
+
         [HttpGet("verify-email")]
         [RateLimit("VerifyEmail", 10, 1, RateLimitPeriod.Hour)]
         public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromQuery] string token)
@@ -159,33 +209,48 @@ namespace ebay.Controllers
 
 
         [HttpPost("forgot-password")]
-        [RateLimit("ForgotPassword", 3, 1, RateLimitPeriod.Hour)]
+        [RateLimit("ForgotPassword", 5, 1, RateLimitPeriod.Hour)]
         public async Task<ActionResult<ApiResponse<object>>> ForgotPassword(
             [FromBody] ForgotPasswordRequestDto request)
         {
             _logger.LogInformation("Password reset request for email: {Email}", request.Email);
-            await _authService.SendPasswordResetEmailAsync(request.Email);
-            return Ok(ApiResponse<object>.SuccessResponse(null, "Nếu email tồn tại, link reset mật khẩu đã được gửi"));
+            var result = await _authService.ForgotPasswordAsync(request.Email);
+            
+            // Always return success to prevent user enumeration
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Nếu tài khoản tồn tại, mã OTP đã được gửi về email"));
+        }
+
+
+        [HttpPost("verify-reset-otp")]
+        [RateLimit("VerifyResetOtp", 10, 1, RateLimitPeriod.Minute)]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyResetOtp(
+            [FromBody] VerifyOtpRequestDto request)
+        {
+            _logger.LogInformation("Password reset OTP verification attempt for: {Email}", request.Email);
+            var result = await _authService.VerifyResetOtpAsync(request.Email, request.Otp);
+
+            if (!result)
+            {
+                _logger.LogWarning("Password reset OTP verification failed for: {Email}", request.Email);
+                return BadRequest(ApiResponse<object>.ErrorResponse("Mã OTP không hợp lệ hoặc đã hết hạn"));
+            }
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Xác thực mã OTP thành công, bạn có thể đặt lại mật khẩu"));
         }
 
 
         [HttpPost("reset-password")]
-        [RateLimit("ResetPassword", 5, 1, RateLimitPeriod.Hour)]
+        [RateLimit("ResetPassword", 10, 1, RateLimitPeriod.Minute)]
         public async Task<ActionResult<ApiResponse<object>>> ResetPassword(
             [FromBody] ResetPasswordRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.Token))
-            {
-                return BadRequest(ApiResponse<object>.ErrorResponse("Token không được để trống"));
-            }
-
-            _logger.LogInformation("Password reset attempt with token");
-            var result = await _authService.ResetPasswordAsync(request);
+            _logger.LogInformation("Password reset attempt for email: {Email}", request.Email);
+            var result = await _authService.ResetPasswordAsync(request.Email, request.Otp, request.NewPassword);
 
             if (!result)
             {
-                _logger.LogWarning("Password reset failed - invalid or expired token");
-                return BadRequest(ApiResponse<object>.ErrorResponse("Token không hợp lệ hoặc đã hết hạn"));
+                _logger.LogWarning("Password reset failed for: {Email}", request.Email);
+                return BadRequest(ApiResponse<object>.ErrorResponse("Mã OTP không hợp lệ hoặc đã hết hạn"));
             }
 
             return Ok(ApiResponse<object>.SuccessResponse(null, "Đặt lại mật khẩu thành công"));
