@@ -104,8 +104,8 @@ export default function SellerEditListingPage() {
     };
 
     const handleSubmit = async () => {
-        if (!formData.title.trim()) {
-            setNotification({ type: 'error', message: 'Vui lòng nhập tiêu đề sản phẩm' });
+        if (!formData.title.trim() || formData.title.trim().length < 10) {
+            setNotification({ type: 'error', message: 'Tiêu đề sản phẩm phải có ít nhất 10 ký tự' });
             return;
         }
         if (!formData.isAuction && (!formData.price || parseFloat(formData.price) <= 0)) {

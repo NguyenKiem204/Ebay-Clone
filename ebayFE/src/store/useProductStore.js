@@ -171,6 +171,30 @@ const useProductStore = create((set) => ({
             const errorMsg = error.response?.data?.message || 'Failed to delete product';
             return { success: false, error: errorMsg };
         }
+    },
+
+    bulkDeleteProducts: async (ids) => {
+        set({ sellerLoading: true });
+        try {
+            const response = await api.post('/api/Product/bulk-delete', ids);
+            set({ sellerLoading: false });
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            set({ sellerLoading: false });
+            return { success: false, error: error.response?.data?.message || 'Failed to delete products' };
+        }
+    },
+
+    bulkUpdateProductsStatus: async (ids, status) => {
+        set({ sellerLoading: true });
+        try {
+            const response = await api.patch('/api/Product/bulk-status', { ids, status });
+            set({ sellerLoading: false });
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            set({ sellerLoading: false });
+            return { success: false, error: error.response?.data?.message || 'Failed to update products status' };
+        }
     }
 }));
 

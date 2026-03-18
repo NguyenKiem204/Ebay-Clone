@@ -18,6 +18,7 @@ namespace ebay.DTOs.Requests
         public int? AuctionDurationDays { get; set; } // 3, 5, 7, 10, 30
         public decimal? Weight { get; set; }
         public string? Dimensions { get; set; }
+        public string? Status { get; set; } // active, draft
         public List<IFormFile>? Images { get; set; }
     }
 }

@@ -11,11 +11,13 @@ namespace ebay.Services.Implementations
     {
         private readonly EbayDbContext _context;
         private readonly IFileService _fileService;
+        private readonly ILogger<ProductService> _logger;
 
-        public ProductService(EbayDbContext context, IFileService fileService)
+        public ProductService(EbayDbContext context, IFileService fileService, ILogger<ProductService> logger)
         {
             _context = context;
             _fileService = fileService;
+            _logger = logger;
         }
 
         public async Task<LandingPageResponseDto> GetLandingPageProductsAsync()
@@ -78,7 +80,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
-                .Where(p => p.IsActive == true && p.Status == "active")
+                .Where(p => (p.IsActive ?? true) && p.Status == "active" && (p.Stock ?? 0) > 0)
                 .AsQueryable();
 
             // Filters
@@ -223,10 +225,13 @@ namespace ebay.Services.Implementations
             // Filter by status
             if (!string.IsNullOrWhiteSpace(request.Status))
             {
-                query = request.Status.ToLower() switch
+                var status = request.Status.ToLower();
+                query = status switch
                 {
-                    "active" => query.Where(p => p.IsActive == true),
-                    "hidden" => query.Where(p => p.IsActive == false),
+                    "active" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) > 0 && (p.IsActive ?? true)),
+                    "draft" => query.Where(p => p.Status == "draft"),
+                    "out_of_stock" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) == 0),
+                    "ended" => query.Where(p => p.Status == "ended"),
                     _ => query
                 };
             }
@@ -256,6 +261,20 @@ namespace ebay.Services.Implementations
 
         public async Task<ProductResponseDto> CreateProductAsync(int sellerId, CreateProductRequest request)
         {
+            _logger.LogInformation("Creating product for seller {SellerId}: {Title}", sellerId, request.Title);
+            
+            // Check listing limits
+            var user = await _context.Users.FindAsync(sellerId);
+            if (user != null && user.Role.ToLower() == "buyer")
+            {
+                var currentCount = await _context.Products.CountAsync(p => p.SellerId == sellerId);
+                if (currentCount >= 10)
+                {
+                    _logger.LogWarning("Buyer {SellerId} reached listing limit (10)", sellerId);
+                    throw new BadRequestException("Tài khoản Buyer chỉ được đăng tối đa 10 sản phẩm. Vui lòng nâng cấp lên Seller để đăng không giới hạn.");
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(request.Title))
                 throw new BadRequestException("Tiêu đề sản phẩm không được để trống");
 
@@ -265,10 +284,20 @@ namespace ebay.Services.Implementations
             // Get seller's store
             var store = await _context.Stores.FirstOrDefaultAsync(s => s.SellerId == sellerId);
 
+            // Map condition to allowed DB values: 'new','used','refurbished','open box','pre-owned'
+            string normalizedCondition = (request.Condition ?? "new").ToLower();
+            if (normalizedCondition.Contains("new")) normalizedCondition = "new";
+            else if (normalizedCondition.Contains("used")) normalizedCondition = "used";
+            else if (normalizedCondition.Contains("refurbished")) normalizedCondition = "refurbished";
+            else if (normalizedCondition.Contains("open")) normalizedCondition = "open box";
+            else if (normalizedCondition.Contains("pre")) normalizedCondition = "pre-owned";
+            else normalizedCondition = "new"; // Fallback
+
             // Upload images
             var imageUrls = new List<string>();
             if (request.Images != null && request.Images.Count > 0)
             {
+                _logger.LogInformation("Uploading {Count} images for new product", request.Images.Count);
                 foreach (var image in request.Images.Take(24)) // Max 24 images
                 {
                     var url = await _fileService.SaveFileAsync(image, "products");
@@ -286,7 +315,7 @@ namespace ebay.Services.Implementations
                 CategoryId = request.CategoryId,
                 SellerId = sellerId,
                 StoreId = store?.Id,
-                Condition = request.Condition ?? "New",
+                Condition = normalizedCondition,
                 Brand = request.Brand,
                 Stock = request.Stock,
                 ShippingFee = request.ShippingFee,
@@ -299,8 +328,8 @@ namespace ebay.Services.Implementations
                     ? DateTime.UtcNow.AddDays(request.AuctionDurationDays.Value)
                     : null,
                 Images = imageUrls,
-                IsActive = true,
-                Status = "active",
+                IsActive = request.Status?.ToLower() == "draft" ? false : true,
+                Status = string.IsNullOrEmpty(request.Status) ? "active" : request.Status.ToLower(),
                 ViewCount = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -308,6 +337,7 @@ namespace ebay.Services.Implementations
 
             await _context.Products.AddAsync(product);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully created product {ProductId} with slug {Slug}", product.Id, product.Slug);
 
             // Reload with includes
             var created = await _context.Products
@@ -322,6 +352,8 @@ namespace ebay.Services.Implementations
 
         public async Task<ProductResponseDto> UpdateProductAsync(int sellerId, int productId, UpdateProductRequest request)
         {
+            _logger.LogInformation("Updating product {ProductId} for seller {SellerId}", productId, sellerId);
+            
             var product = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
@@ -330,14 +362,21 @@ namespace ebay.Services.Implementations
                 .FirstOrDefaultAsync(p => p.Id == productId);
 
             if (product == null)
+            {
+                _logger.LogWarning("Product {ProductId} not found for update", productId);
                 throw new NotFoundException("Sản phẩm không tồn tại");
+            }
 
             if (product.SellerId != sellerId)
+            {
+                _logger.LogError("Seller {SellerId} attempted to update product {ProductId} owned by {OwnerId}", sellerId, productId, product.SellerId);
                 throw new ForbiddenException("Bạn không có quyền chỉnh sửa sản phẩm này");
+            }
 
             // Update fields if provided
             if (!string.IsNullOrWhiteSpace(request.Title) && request.Title != product.Title)
             {
+                _logger.LogInformation("Updating product title from '{OldTitle}' to '{NewTitle}'", product.Title, request.Title);
                 product.Title = request.Title;
                 product.Slug = GenerateSlug(request.Title);
             }
@@ -377,6 +416,7 @@ namespace ebay.Services.Implementations
                     {
                         if (!request.ExistingImages.Contains(oldImage))
                         {
+                            _logger.LogInformation("Deleting removed image: {Url}", oldImage);
                             _fileService.DeleteFile(oldImage);
                         }
                     }
@@ -392,6 +432,7 @@ namespace ebay.Services.Implementations
             // Upload new images
             if (request.NewImages != null && request.NewImages.Count > 0)
             {
+                _logger.LogInformation("Uploading {Count} new images for product {ProductId}", request.NewImages.Count, productId);
                 var remainingSlots = 24 - updatedImages.Count;
                 foreach (var newImage in request.NewImages.Take(remainingSlots))
                 {
@@ -404,12 +445,15 @@ namespace ebay.Services.Implementations
             product.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully updated product {ProductId}", productId);
 
             return MapToDto(product);
         }
 
         public async Task<ProductResponseDto> ToggleProductVisibilityAsync(int sellerId, int productId)
         {
+            _logger.LogInformation("Toggling visibility for product {ProductId} by seller {SellerId}", productId, sellerId);
+            
             var product = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
@@ -424,15 +468,19 @@ namespace ebay.Services.Implementations
                 throw new ForbiddenException("Bạn không có quyền thay đổi trạng thái sản phẩm này");
 
             product.IsActive = !(product.IsActive ?? true);
+            product.Status = (product.IsActive ?? true) ? "active" : "ended";
             product.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Product {ProductId} visibility set to {IsActive}, Status to {Status}", productId, product.IsActive, product.Status);
 
             return MapToDto(product);
         }
 
         public async Task<bool> DeleteProductAsync(int sellerId, int productId)
         {
+            _logger.LogInformation("Deleting product {ProductId} by seller {SellerId}", productId, sellerId);
+            
             var product = await _context.Products
                 .FirstOrDefaultAsync(p => p.Id == productId);
 
@@ -445,6 +493,7 @@ namespace ebay.Services.Implementations
             // Delete product images from filesystem
             if (product.Images != null)
             {
+                _logger.LogInformation("Deleting {Count} images for product {ProductId}", product.Images.Count, productId);
                 foreach (var imageUrl in product.Images)
                 {
                     _fileService.DeleteFile(imageUrl);
@@ -452,6 +501,60 @@ namespace ebay.Services.Implementations
             }
 
             _context.Products.Remove(product);
+            var result = await _context.SaveChangesAsync() > 0;
+            
+            if (result)
+                _logger.LogInformation("Successfully deleted product {ProductId}", productId);
+            else
+                _logger.LogWarning("Failed to delete product {ProductId} from database", productId);
+            
+            return result;
+        }
+
+        public async Task<bool> BulkDeleteProductsAsync(int sellerId, List<int> productIds)
+        {
+            _logger.LogInformation("Bulk deleting {Count} products by seller {SellerId}", productIds.Count, sellerId);
+            
+            var products = await _context.Products
+                .Where(p => productIds.Contains(p.Id) && p.SellerId == sellerId)
+                .ToListAsync();
+
+            if (!products.Any()) return false;
+
+            foreach (var product in products)
+            {
+                if (product.Images != null)
+                {
+                    foreach (var imageUrl in product.Images)
+                    {
+                        _fileService.DeleteFile(imageUrl);
+                    }
+                }
+            }
+
+            _context.Products.RemoveRange(products);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> BulkUpdateStatusAsync(int sellerId, List<int> productIds, string status)
+        {
+            _logger.LogInformation("Bulk updating status to {Status} for {Count} products by seller {SellerId}", status, productIds.Count, sellerId);
+            
+            var products = await _context.Products
+                .Where(p => productIds.Contains(p.Id) && p.SellerId == sellerId)
+                .ToListAsync();
+
+            if (!products.Any()) return false;
+
+            foreach (var product in products)
+            {
+                product.Status = status.ToLower();
+                product.UpdatedAt = DateTime.UtcNow;
+                
+                if (product.Status == "active") product.IsActive = true;
+                else if (product.Status == "draft" || product.Status == "ended") product.IsActive = false;
+            }
+
             return await _context.SaveChangesAsync() > 0;
         }
 

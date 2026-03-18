@@ -68,10 +68,10 @@ export default function SellerCreateListingPage() {
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (status = 'active') => {
         // Basic validation
-        if (!formData.title.trim()) {
-            setNotification({ type: 'error', message: 'Vui lòng nhập tiêu đề sản phẩm' });
+        if (!formData.title.trim() || formData.title.trim().length < 10) {
+            setNotification({ type: 'error', message: 'Tiêu đề sản phẩm phải có ít nhất 10 ký tự' });
             return;
         }
         if (!formData.isAuction && (!formData.price || parseFloat(formData.price) <= 0)) {
@@ -94,6 +94,8 @@ export default function SellerCreateListingPage() {
         data.append('Stock', parseInt(formData.stock) || 1);
         data.append('ShippingFee', parseFloat(formData.shippingFee) || 0);
         data.append('IsAuction', formData.isAuction);
+        data.append('Status', status);
+
         if (formData.isAuction) {
             data.append('StartingBid', parseFloat(formData.startingBid) || 0);
             data.append('AuctionDurationDays', parseInt(formData.auctionDurationDays));
@@ -105,7 +107,7 @@ export default function SellerCreateListingPage() {
 
         const result = await createProduct(data);
         if (result.success) {
-            toast.success(result.message || 'Đăng bán sản phẩm thành công!');
+            toast.success(status === 'draft' ? 'Đã lưu bản nháp!' : 'Đăng bán sản phẩm thành công!');
             navigate('/seller/listings');
         } else {
             setNotification({
@@ -425,7 +427,14 @@ export default function SellerCreateListingPage() {
                         Cancel
                     </button>
                     <button
-                        onClick={handleSubmit}
+                        onClick={() => handleSubmit('draft')}
+                        disabled={sellerLoading}
+                        className="px-8 py-2.5 bg-white border border-secondary text-secondary font-bold rounded-full hover:bg-blue-50 transition-all shadow-sm"
+                    >
+                        Save as draft
+                    </button>
+                    <button
+                        onClick={() => handleSubmit('active')}
                         disabled={sellerLoading}
                         className="px-10 py-2.5 bg-secondary text-white font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-secondary/10 flex items-center gap-2 disabled:opacity-50"
                     >

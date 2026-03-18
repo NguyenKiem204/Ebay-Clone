@@ -18,6 +18,8 @@ namespace ebay.Services.Interfaces
         Task<ProductResponseDto> UpdateProductAsync(int sellerId, int productId, UpdateProductRequest request);
         Task<ProductResponseDto> ToggleProductVisibilityAsync(int sellerId, int productId);
         Task<bool> DeleteProductAsync(int sellerId, int productId);
+        Task<bool> BulkDeleteProductsAsync(int sellerId, List<int> productIds);
+        Task<bool> BulkUpdateStatusAsync(int sellerId, List<int> productIds, string status);
     }
 
     public class PagedResponseDto<T>

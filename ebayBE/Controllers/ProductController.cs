@@ -99,12 +99,34 @@ namespace ebay.Controllers
             return Ok(ApiResponse<ProductResponseDto>.SuccessResponse(data, message));
         }
 
-        [HttpDelete("{id:int}")]
+        [HttpDelete("{id}")]
         [Authorize(Roles = "seller,admin")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteProduct(int id)
         {
-            await _productService.DeleteProductAsync(GetUserId(), id);
-            return Ok(ApiResponse<bool>.SuccessResponse(true, "Xoá sản phẩm thành công"));
+            var result = await _productService.DeleteProductAsync(GetUserId(), id);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Xoá sản phẩm thành công"));
+        }
+
+        [HttpPost("bulk-delete")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<bool>>> BulkDelete([FromBody] List<int> ids)
+        {
+            var result = await _productService.BulkDeleteProductsAsync(GetUserId(), ids);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, $"Đã xoá {ids.Count} sản phẩm"));
+        }
+
+        [HttpPatch("bulk-status")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<bool>>> BulkUpdateStatus([FromBody] BulkStatusRequest request)
+        {
+            var result = await _productService.BulkUpdateStatusAsync(GetUserId(), request.Ids, request.Status);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, $"Đã cập nhật trạng thái {request.Ids.Count} sản phẩm"));
+        }
+
+        public class BulkStatusRequest
+        {
+            public List<int> Ids { get; set; } = null!;
+            public string Status { get; set; } = null!;
         }
     }
 }
