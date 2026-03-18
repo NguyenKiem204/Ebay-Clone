@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ebay.Models;
@@ -15,7 +15,11 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
+
+    public string? ExternalProvider { get; set; }
+
+    public string? ExternalProviderId { get; set; }
 
     public string Role { get; set; } = null!;
 
