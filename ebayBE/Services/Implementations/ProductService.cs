@@ -147,6 +147,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.Coupons)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -155,7 +156,9 @@ namespace ebay.Services.Implementations
             product.ViewCount = (product.ViewCount ?? 0) + 1;
             await _context.SaveChangesAsync();
 
-            return MapToDto(product);
+            var dto = MapToDto(product);
+            dto.ActiveCoupons = await GetActiveCouponsForProductAsync(product);
+            return dto;
         }
 
         public async Task<ProductResponseDto> GetProductBySlugAsync(string slug)
@@ -165,6 +168,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.Coupons)
                 .FirstOrDefaultAsync(p => p.Slug == slug);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -172,7 +176,35 @@ namespace ebay.Services.Implementations
             product.ViewCount = (product.ViewCount ?? 0) + 1;
             await _context.SaveChangesAsync();
 
-            return MapToDto(product);
+            var dto = MapToDto(product);
+            dto.ActiveCoupons = await GetActiveCouponsForProductAsync(product);
+            return dto;
+        }
+
+        private async Task<List<CouponResponseDto>> GetActiveCouponsForProductAsync(Product product)
+        {
+            var now = DateTime.UtcNow;
+            var coupons = await _context.Coupons
+                .Where(c => c.IsActive == true && 
+                           c.StartDate <= now && 
+                           c.EndDate >= now &&
+                           c.StoreId == product.StoreId)
+                .Where(c => c.ApplicableTo == "all" || 
+                           (c.ApplicableTo == "category" && c.CategoryId == product.CategoryId) ||
+                           (c.ApplicableTo == "product" && c.Products.Any(p => p.Id == product.Id)))
+                .ToListAsync();
+
+            return coupons.Select(c => new CouponResponseDto
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Description = c.Description,
+                DiscountType = c.DiscountType,
+                DiscountValue = c.DiscountValue,
+                MinOrderAmount = c.MinOrderAmount,
+                EndDate = c.EndDate,
+                ApplicableTo = c.ApplicableTo
+            }).ToList();
         }
 
         public async Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10)
@@ -571,7 +603,7 @@ namespace ebay.Services.Implementations
             return str;
         }
 
-        private static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
+        public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
         {
             Id = p.Id,
             Title = p.Title,

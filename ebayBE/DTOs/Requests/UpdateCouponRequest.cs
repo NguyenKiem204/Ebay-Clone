@@ -1,12 +1,12 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ebay.DTOs.Requests
 {
-    public class CreateCouponRequest
+    public class UpdateCouponRequest
     {
-        [Required]
-        [StringLength(50)]
-        public string Code { get; set; } = null!;
+        public string? Code { get; set; }
         public string? Description { get; set; }
         [Required]
         public string DiscountType { get; set; } = null!; // "percentage" or "fixed"
@@ -29,5 +29,6 @@ namespace ebay.DTOs.Requests
         [Required]
         public int? StoreId { get; set; }
         public List<int?>? ProductIds { get; set; }
+        public bool IsActive { get; set; }
     }
 }

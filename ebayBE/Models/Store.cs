@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ebay.Models;
@@ -26,6 +26,8 @@ public partial class Store
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+
+    public virtual ICollection<Coupon> Coupons { get; set; } = new List<Coupon>();
 
     public virtual User Seller { get; set; } = null!;
 }
