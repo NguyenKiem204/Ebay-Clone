@@ -7,6 +7,10 @@ namespace ebay.DTOs.Requests
         public string? CouponCode { get; set; }
         public string? Note { get; set; }
         public List<int>? SelectedCartItemIds { get; set; } // If null, checkout all
+
+        // Buy It Now direct properties
+        public int? BuyItNowProductId { get; set; }
+        public int? BuyItNowQuantity { get; set; }
     }
 }
 

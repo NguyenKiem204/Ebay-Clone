@@ -3,17 +3,29 @@ import api from '../lib/axios';
 
 const useCategoryStore = create((set) => ({
     categories: [],
+    navGroups: [], // new state
     loading: false,
     error: null,
 
     fetchCategories: async () => {
         set({ loading: true });
         try {
-            const response = await api.get('/api/Product/categories');
+            const response = await api.get('/api/Category');
             const { data } = response.data;
             set({ categories: data, loading: false });
         } catch (error) {
             set({ error: 'Failed to fetch categories', loading: false });
+        }
+    },
+
+    fetchNavGroups: async () => {
+        set({ loading: true });
+        try {
+            const response = await api.get('/api/Category/nav');
+            const { data } = response.data;
+            set({ navGroups: data, loading: false });
+        } catch (error) {
+            set({ error: 'Failed to fetch nav groups', loading: false });
         }
     }
 }));

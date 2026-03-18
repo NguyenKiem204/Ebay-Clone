@@ -48,7 +48,7 @@ builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IBidService, BidService>();
-builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddHttpClient<IPaypalService, PaypalService>();
 
 builder.Services.AddFluentValidationAutoValidation();
@@ -142,6 +142,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<AntiSpamMiddleware>();
 app.UseMiddleware<RateLimitingMiddleware>();
 app.UseCors("AllowFrontend"); // Enable CORS before Auth
 app.UseHttpsRedirection();

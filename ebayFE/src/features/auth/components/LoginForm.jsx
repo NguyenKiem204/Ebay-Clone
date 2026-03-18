@@ -1,4 +1,4 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -15,11 +15,14 @@ const schema = yup.object({
 
 export default function LoginForm() {
     const navigate = useNavigate();
+    const location = useLocation();
     const login = useAuthStore(state => state.login);
     const socialLogin = useAuthStore(state => state.socialLogin);
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    const redirectUrl = new URLSearchParams(location.search).get('redirect') || '/';
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(schema)
@@ -46,7 +49,7 @@ export default function LoginForm() {
                 };
 
                 await socialLogin(socialData);
-                navigate('/');
+                navigate(redirectUrl);
             } catch (err) {
                 console.error('Google Auth Error:', err);
                 setError('Xác thực với Google thất bại. Vui lòng thử lại.');
@@ -77,7 +80,7 @@ export default function LoginForm() {
 
         try {
             await socialLogin(mockData);
-            navigate('/');
+            navigate(redirectUrl);
         } catch (err) {
             setError(err.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập bằng ' + provider);
         } finally {
@@ -90,7 +93,7 @@ export default function LoginForm() {
         setError(null);
         const result = await login(data.email, data.password);
         if (result.success) {
-            navigate('/');
+            navigate(redirectUrl);
         } else {
             setError(result.error);
             setIsLoading(false);

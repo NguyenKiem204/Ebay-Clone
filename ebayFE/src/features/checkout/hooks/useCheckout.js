@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { checkoutService } from '../services/checkoutService';
 import { useCart } from '../../cart/hooks/useCart';
+import api from '../../../lib/axios';
 
 export const useCheckout = () => {
     const navigate = useNavigate();
-    const { items, subtotal, clearCart } = useCart();
+    const [searchParams] = useSearchParams();
+    const isBuyItNow = searchParams.get('buyItNow') === '1';
+    const buyItNowProductId = searchParams.get('productId');
+    const initialQuantity = parseInt(searchParams.get('quantity') || '1');
+
+    const { items: cartItems, subtotal: cartSubtotal, clearCart, updateQuantity: updateCartQuantity } = useCart();
+    
+    const [buyItNowItem, setBuyItNowItem] = useState(null);
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -14,6 +22,32 @@ export const useCheckout = () => {
     const [selectedAddressId, setSelectedAddressId] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const [note, setNote] = useState('');
+
+    // Fetch Buy It Now Item
+    useEffect(() => {
+        if (isBuyItNow && buyItNowProductId) {
+            const fetchProduct = async () => {
+                try {
+                    const response = await api.get(`/api/Product/${buyItNowProductId}`);
+                    if (response.data?.success) {
+                        const product = response.data.data;
+                        setBuyItNowItem({
+                            id: product.id,
+                            title: product.name || product.title,
+                            price: product.price,
+                            image: product.thumbnail || product.imageUrl || (product.images?.[0]?.imageUrl),
+                            seller: product.sellerName || 'ebay_seller',
+                            soldCount: product.soldCount ?? 0,
+                            quantity: initialQuantity
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch product for buy it now', err);
+                }
+            };
+            fetchProduct();
+        }
+    }, [isBuyItNow, buyItNowProductId, initialQuantity]);
 
     useEffect(() => {
         const fetchAddresses = async () => {
@@ -48,6 +82,11 @@ export const useCheckout = () => {
                 note: note
             };
 
+            if (isBuyItNow && buyItNowItem) {
+                orderData.buyItNowProductId = buyItNowItem.id;
+                orderData.buyItNowQuantity = buyItNowItem.quantity;
+            }
+
             const response = await checkoutService.placeOrder(orderData);
 
             if (response.success) {
@@ -74,7 +113,9 @@ export const useCheckout = () => {
                 }
 
                 // Success
-                clearCart();
+                if (!isBuyItNow) {
+                    clearCart();
+                }
                 navigate(`/order-success?id=${order.id}`);
             } else {
                 setError(response.message || 'Failed to place order');
@@ -83,6 +124,17 @@ export const useCheckout = () => {
             setError(err.response?.data?.message || err.message || 'An error occurred during checkout.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const items = isBuyItNow ? (buyItNowItem ? [buyItNowItem] : []) : cartItems;
+    const subtotal = isBuyItNow ? (buyItNowItem ? buyItNowItem.price * buyItNowItem.quantity : 0) : cartSubtotal;
+
+    const updateQuantity = (id, newQuantity) => {
+        if (isBuyItNow && buyItNowItem && buyItNowItem.id === id) {
+            setBuyItNowItem(prev => ({ ...prev, quantity: newQuantity }));
+        } else {
+            updateCartQuantity(id, newQuantity);
         }
     };
 
@@ -101,6 +153,7 @@ export const useCheckout = () => {
         setPaymentMethod,
         note,
         setNote,
+        updateQuantity,
         handlePlaceOrder
     };
 };

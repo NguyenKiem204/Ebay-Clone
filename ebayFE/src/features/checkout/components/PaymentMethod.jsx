@@ -1,3 +1,5 @@
+import { Button } from '../../../components/ui/Button';
+
 export default function PaymentMethod({ method, isEditing, onEdit, onSelect, onContinue, isActive }) {
     if (!isActive && !isEditing) {
         return (

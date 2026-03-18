@@ -12,12 +12,14 @@ namespace ebay.Services.Implementations
         private readonly EbayDbContext _context;
         private readonly IFileService _fileService;
         private readonly ILogger<ProductService> _logger;
+        private readonly ICategoryService _categoryService;
 
-        public ProductService(EbayDbContext context, IFileService fileService, ILogger<ProductService> logger)
+        public ProductService(EbayDbContext context, IFileService fileService, ILogger<ProductService> logger, ICategoryService categoryService)
         {
             _context = context;
             _fileService = fileService;
             _logger = logger;
+            _categoryService = categoryService;
         }
 
         public async Task<LandingPageResponseDto> GetLandingPageProductsAsync()
@@ -25,8 +27,9 @@ namespace ebay.Services.Implementations
             var baseQuery = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
-                .Include(p => p.Reviews) // Include reviews for rating calculation
+                .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.OrderItems)
                 .Where(p => p.IsActive == true && p.Status == "active");
 
             var latest = await baseQuery
@@ -80,6 +83,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.OrderItems)
                 .Where(p => (p.IsActive ?? true) && p.Status == "active" && (p.Stock ?? 0) > 0)
                 .AsQueryable();
 
@@ -95,9 +99,50 @@ namespace ebay.Services.Implementations
                 query = query.Where(p => p.CategoryId == request.CategoryId.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(request.CategorySlug))
+            if (request.CategorySlugs != null && request.CategorySlugs.Any())
             {
-                query = query.Where(p => p.Category != null && p.Category.Slug == request.CategorySlug);
+                var expandedSlugs = new HashSet<string>();
+                var navGroups = await _categoryService.GetNavGroupsAsync();
+                var categoriesTree = await _categoryService.GetCategoryTreeAsync();
+                
+                // Helper to flatten categories
+                List<CategoryResponseDto> Flatten(List<CategoryResponseDto> tree)
+                {
+                    var res = new List<CategoryResponseDto>();
+                    foreach (var c in tree)
+                    {
+                        res.Add(c);
+                        if (c.SubCategories?.Any() == true) res.AddRange(Flatten(c.SubCategories));
+                    }
+                    return res;
+                }
+                var allFlattened = Flatten(categoriesTree);
+
+                foreach (var slug in request.CategorySlugs)
+                {
+                    // If it's a NavGroup (e.g., "electronics"), add all its categories
+                    var group = navGroups.FirstOrDefault(g => g.Slug == slug);
+                    if (group != null)
+                    {
+                        var groupFlat = Flatten(group.Categories);
+                        foreach (var c in groupFlat) expandedSlugs.Add(c.Slug);
+                        continue;
+                    }
+
+                    // Otherwise, find the category and add it + its subcategories
+                    var cat = allFlattened.FirstOrDefault(c => c.Slug == slug);
+                    if (cat != null)
+                    {
+                        var catFlat = Flatten(new List<CategoryResponseDto> { cat });
+                        foreach (var c in catFlat) expandedSlugs.Add(c.Slug);
+                    }
+                    else
+                    {
+                        expandedSlugs.Add(slug); // Fallback
+                    }
+                }
+
+                query = query.Where(p => p.Category != null && expandedSlugs.Contains(p.Category.Slug));
             }
 
             if (!string.IsNullOrWhiteSpace(request.Condition))
@@ -148,6 +193,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
                 .Include(p => p.Coupons)
+                .Include(p => p.OrderItems)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -169,6 +215,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
                 .Include(p => p.Coupons)
+                .Include(p => p.OrderItems)
                 .FirstOrDefaultAsync(p => p.Slug == slug);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -217,6 +264,8 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.Coupons)
+                .Include(p => p.OrderItems)
                 .Where(p => p.Id != productId && p.IsActive == true && p.Status == "active" && p.CategoryId == product.CategoryId)
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(count)
@@ -603,6 +652,21 @@ namespace ebay.Services.Implementations
             return str;
         }
 
+        private static CategoryResponseDto MapCategoryToDto(Category c, List<Category> all) => new CategoryResponseDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Slug = c.Slug,
+            IconUrl = c.IconUrl,
+            ImageUrl = c.ImageUrl,
+            DisplayOrder = c.DisplayOrder ?? 0,
+            ParentId = c.ParentId,
+            SubCategories = all
+                .Where(sub => sub.ParentId == c.Id)
+                .Select(sub => MapCategoryToDto(sub, all))
+                .ToList()
+        };
+
         public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
         {
             Id = p.Id,
@@ -629,24 +693,10 @@ namespace ebay.Services.Implementations
             AuctionEndTime = p.AuctionEndTime,
             CurrentBid = p.Bids != null && p.Bids.Any() ? p.Bids.Max(b => b.Amount) : p.StartingBid,
             BidCount = p.Bids?.Count ?? 0,
+            SoldCount = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
             CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
             Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,
             ReviewCount = p.Reviews?.Count ?? 0
-        };
-
-        private static CategoryResponseDto MapCategoryToDto(Category c, List<Category> all) => new CategoryResponseDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            Slug = c.Slug,
-            IconUrl = c.IconUrl,
-            ImageUrl = c.ImageUrl,
-            DisplayOrder = c.DisplayOrder ?? 0,
-            ParentId = c.ParentId,
-            SubCategories = all
-                .Where(sub => sub.ParentId == c.Id)
-                .Select(sub => MapCategoryToDto(sub, all))
-                .ToList()
         };
     }
 }

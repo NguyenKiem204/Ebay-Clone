@@ -5,11 +5,15 @@ import { Heart, Info } from 'lucide-react';
 import useCartStore from '../../features/cart/hooks/useCartStore';
 import toast from 'react-hot-toast';
 import AddToCartModal from './AddToCartModal';
+import useAuthStore from '../../store/useAuthStore';
+import GuestCheckoutModal from './GuestCheckoutModal';
 
 export default function ProductPurchaseOptions({ product }) {
     const [quantity, setQuantity] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
     const addItem = useCartStore((state) => state.addItem);
+    const { isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
 
     const handleAddToCart = () => {
@@ -18,13 +22,23 @@ export default function ProductPurchaseOptions({ product }) {
     };
 
     const handleBuyItNow = () => {
-        addItem(product, quantity);
-        navigate('/cart');
+        // Do not add to cart! Bypass directly to checkout
+        if (isAuthenticated) {
+            navigate(`/checkout?buyItNow=1&productId=${product.id}&quantity=${quantity}`);
+        } else {
+            setIsGuestModalOpen(true);
+        }
     };
 
     return (
         <div className="w-full">
             {/* Modal */}
+            <GuestCheckoutModal 
+                isOpen={isGuestModalOpen}
+                onClose={() => setIsGuestModalOpen(false)}
+                product={product}
+                quantity={quantity}
+            />
             <AddToCartModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

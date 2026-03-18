@@ -31,6 +31,7 @@ namespace ebay.DTOs.Responses
         public DateTime? AuctionEndTime { get; set; }
         public decimal? CurrentBid { get; set; }
         public int BidCount { get; set; }
+        public int SoldCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<CouponResponseDto>? ActiveCoupons { get; set; }
     }
