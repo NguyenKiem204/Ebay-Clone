@@ -10,7 +10,6 @@ namespace ebay.Services.Interfaces
         Task<ProductResponseDto> GetProductByIdAsync(int id);
         Task<ProductResponseDto> GetProductBySlugAsync(string slug);
         Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10);
-        Task<List<CategoryResponseDto>> GetCategoriesAsync();
     }
 
     public class PagedResponseDto<T>

@@ -24,18 +24,37 @@ namespace ebay.Services.Implementations
             var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == request.AddressId && a.UserId == userId);
             if (address == null) throw new BadRequestException("Địa chỉ giao hàng không hợp lệ");
 
-            // 2. Get Cart Items
-            var cartItemsQuery = _context.CartItems
-                .Include(ci => ci.Product)
-                .Where(ci => ci.Cart.UserId == userId);
+            // 2. Get Cart Items OR Buy It Now Item
+            var cartItems = new List<CartItem>();
 
-            if (request.SelectedCartItemIds != null && request.SelectedCartItemIds.Any())
+            if (request.BuyItNowProductId.HasValue && request.BuyItNowQuantity.HasValue)
             {
-                cartItemsQuery = cartItemsQuery.Where(ci => request.SelectedCartItemIds.Contains(ci.Id));
+                var product = await _context.Products.Include(p => p.Images).FirstOrDefaultAsync(p => p.Id == request.BuyItNowProductId.Value);
+                if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
+                
+                // Create a temporary in-memory cart item for processing
+                cartItems.Add(new CartItem 
+                { 
+                    ProductId = product.Id, 
+                    Product = product, 
+                    Quantity = request.BuyItNowQuantity.Value 
+                });
             }
+            else
+            {
+                var cartItemsQuery = _context.CartItems
+                    .Include(ci => ci.Product)
+                        .ThenInclude(p => p.Images)
+                    .Where(ci => ci.Cart.UserId == userId);
 
-            var cartItems = await cartItemsQuery.ToListAsync();
-            if (!cartItems.Any()) throw new BadRequestException("Giỏ hàng trống");
+                if (request.SelectedCartItemIds != null && request.SelectedCartItemIds.Any())
+                {
+                    cartItemsQuery = cartItemsQuery.Where(ci => request.SelectedCartItemIds.Contains(ci.Id));
+                }
+
+                cartItems = await cartItemsQuery.ToListAsync();
+                if (!cartItems.Any()) throw new BadRequestException("Giỏ hàng hoặc lựa chọn trống");
+            }
 
             // 3. Start Transaction
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -123,7 +142,10 @@ namespace ebay.Services.Implementations
                 });
 
                 // 9. Clear Cart Items
-                _context.CartItems.RemoveRange(cartItems);
+                if (!request.BuyItNowProductId.HasValue)
+                {
+                    _context.CartItems.RemoveRange(cartItems);
+                }
 
                 // 10. Notification
                 await _context.Notifications.AddAsync(new Notification

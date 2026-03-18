@@ -4,7 +4,7 @@ namespace ebay.DTOs.Requests
     {
         public string? Keyword { get; set; }
         public int? CategoryId { get; set; }
-        public string? CategorySlug { get; set; }
+        public List<string>? CategorySlugs { get; set; }
         public string? Condition { get; set; } // new, used, refurbished
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }

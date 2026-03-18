@@ -30,12 +30,6 @@ namespace ebay.Controllers
             return Ok(new ApiResponse<PagedResponseDto<ProductResponseDto>>(data));
         }
 
-        [HttpGet("categories")]
-        public async Task<ActionResult<ApiResponse<List<CategoryResponseDto>>>> GetCategories()
-        {
-            var data = await _productService.GetCategoriesAsync();
-            return Ok(new ApiResponse<List<CategoryResponseDto>>(data));
-        }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ApiResponse<ProductResponseDto>>> GetById(int id)

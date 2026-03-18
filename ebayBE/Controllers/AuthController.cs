@@ -15,11 +15,13 @@ namespace ebay.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(IAuthService authService, ILogger<AuthController> logger, IConfiguration configuration)
         {
             _authService = authService;
             _logger = logger;
+            _configuration = configuration;
         }
 
         private string GetIpAddress()
@@ -280,6 +282,54 @@ namespace ebay.Controllers
             
             var profile = await _authService.GetProfileAsync(userId);
             return Ok(ApiResponse<object>.SuccessResponse(profile, "Lấy thông tin user thành công"));
+        }
+
+        [HttpPost("verify-captcha")]
+        [AllowAnonymous]
+        [RateLimit("VerifyCaptcha", 10, 1, RateLimitPeriod.Minute)]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyCaptcha([FromBody] CaptchaRequestDto request)
+        {
+            string secret = _configuration["HCaptchaSecret"];
+            if (string.IsNullOrEmpty(secret))
+            {
+                _logger.LogError("HCaptchaSecret missing in appsettings.json.");
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Lỗi cấu hình server."));
+            }
+
+            if (string.IsNullOrEmpty(request.Token))
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("Token hCaptcha bị trống."));
+            }
+
+            using var client = new HttpClient();
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("secret", secret),
+                new KeyValuePair<string, string>("response", request.Token)
+            });
+
+            try
+            {
+                var hcaptchaResponse = await client.PostAsync("https://hcaptcha.com/siteverify", content);
+                var jsonString = await hcaptchaResponse.Content.ReadAsStringAsync();
+                
+                using var jsonDocument = System.Text.Json.JsonDocument.Parse(jsonString);
+                var success = jsonDocument.RootElement.TryGetProperty("success", out var successProp) && successProp.GetBoolean();
+
+                if (success)
+                {
+                    _logger.LogInformation("hCaptcha verified successfully for IP: {IP}", GetIpAddress());
+                    return Ok(ApiResponse<object>.SuccessResponse(null, "Xác minh captcha thành công."));
+                }
+                
+                _logger.LogWarning("hCaptcha verification failed. Response: {Response}", jsonString);
+                return BadRequest(ApiResponse<object>.ErrorResponse("Xác minh thất bại. Vui lòng thử lại."));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while verifying hCaptcha.");
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Lỗi kết nối tới máy chủ xác minh."));
+            }
         }
 
         [HttpPut("profile")]

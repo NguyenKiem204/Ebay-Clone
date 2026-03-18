@@ -3,6 +3,7 @@ import { ProductCard } from '../components/ui/ProductCard';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useProductStore from '../store/useProductStore';
 import useCategoryStore from '../store/useCategoryStore';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 
 export default function ProductsPage() {
     const [viewMode, setViewMode] = useState('grid');
@@ -14,23 +15,67 @@ export default function ProductsPage() {
         loading,
         searchProducts
     } = useProductStore();
-    const { categories, fetchCategories } = useCategoryStore();
+    const { categories, fetchCategories, navGroups } = useCategoryStore();
+    const { handleSecureAction } = useRequireAuth();
 
     const queryParams = new URLSearchParams(location.search);
     const filter = queryParams.get('filter');
-    const categorySlug = queryParams.get('category');
+    const categoryQuery = queryParams.get('category');
+    const navCategorySlugs = queryParams.getAll('categorySlugs');
     const keyword = queryParams.get('q');
     const page = parseInt(queryParams.get('page') || '1');
+    const sortBy = queryParams.get('sortBy');
+    const minPrice = queryParams.get('minPrice');
+    const maxPrice = queryParams.get('maxPrice');
+
+    const activeCategory = categoryQuery || (navCategorySlugs.length === 1 ? navCategorySlugs[0] : '');
+
+    const getCategoryName = (slug) => {
+        if (!slug) return '';
+        const group = navGroups?.find(g => g.slug === slug);
+        if (group) return group.name;
+        
+        const findInTree = (cats) => {
+            if (!cats) return null;
+            for (let c of cats) {
+                if (c.slug === slug) return c.name;
+                if (c.subCategories) {
+                    const found = findInTree(c.subCategories);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        
+        const catName = findInTree(categories);
+        if (catName) return catName;
+        
+        return slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
+
+    const displayCategoryName = filter === 'auctions' ? 'Auctions' : getCategoryName(activeCategory) || 'Search Results';
 
     useEffect(() => {
-        const params = {
-            keyword,
-            categorySlug,
-            page,
-            pageSize: 20
-        };
-        if (filter === 'auctions') params.isAuction = true;
-        if (filter === 'deals') params.maxPrice = 1000000; // Example deal filter
+        const params = new URLSearchParams();
+        if (keyword) params.append('Keyword', keyword);
+        params.append('Page', page.toString());
+        params.append('PageSize', '20');
+
+        if (filter === 'auctions') params.append('Condition', 'auctions'); // Or however auction is handled
+        if (filter === 'deals') params.append('MaxPrice', '1000000');
+        
+        if (sortBy) params.append('SortBy', sortBy);
+        if (minPrice) params.append('MinPrice', minPrice);
+        if (maxPrice && filter !== 'deals') params.append('MaxPrice', maxPrice);
+
+        const allSlugs = [...navCategorySlugs];
+        if (categoryQuery && !allSlugs.includes(categoryQuery)) {
+            allSlugs.push(categoryQuery);
+        }
+
+        allSlugs.forEach(slug => {
+            params.append('CategorySlugs', slug);
+        });
 
         searchProducts(params);
         if (categories.length === 0) fetchCategories();
@@ -50,7 +95,7 @@ export default function ProductsPage() {
                 <Link to="/" className="hover:underline">Home</Link>
                 <span>&gt;</span>
                 <span className="font-bold text-black">
-                    {filter === 'auctions' ? 'Auctions' : (categorySlug ? categorySlug.replace(/-/g, ' ') : 'Search Results')}
+                    {displayCategoryName}
                 </span>
             </nav>
 
@@ -60,7 +105,10 @@ export default function ProductsPage() {
                 </h1>
                 <div className="flex items-center gap-4">
                     {/* ... (buttons remain same) */}
-                    <button className="hidden sm:flex items-center gap-1 px-4 py-1.5 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50">
+                    <button 
+                        onClick={() => handleSecureAction(() => {})} 
+                        className="hidden sm:flex items-center gap-1 px-4 py-1.5 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50"
+                    >
                         Save this search
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -112,10 +160,10 @@ export default function ProductsPage() {
                             <li><Link className="text-sm font-bold text-black py-1 block" to="/products">All Categories</Link></li>
                             {categories.map(cat => (
                                 <li key={cat.id}>
-                                    <Link className={`text-sm hover:underline block py-1 pl-3 ${categorySlug === cat.slug ? 'font-bold text-blue-600' : 'text-gray-600'}`} to={`?category=${cat.slug}`}>
+                                    <Link className={`text-sm hover:underline block py-1 pl-3 ${activeCategory === cat.slug ? 'font-bold text-blue-600' : 'text-gray-600'}`} to={`?category=${cat.slug}`}>
                                         {cat.name}
                                     </Link>
-                                    {cat.subCategories && cat.subCategories.length > 0 && categorySlug === cat.slug && (
+                                    {cat.subCategories && cat.subCategories.length > 0 && activeCategory === cat.slug && (
                                         <ul className="pl-4 space-y-1 mt-1">
                                             {cat.subCategories.map(sub => (
                                                 <li key={sub.id}>

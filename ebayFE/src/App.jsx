@@ -34,6 +34,7 @@ const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('./pages/auth/VerifyEmailPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
+const SecurityMeasurePage = lazy(() => import('./pages/auth/SecurityMeasurePage'));
 
 // Skeleton Loader component
 const PageLoader = () => (
@@ -64,10 +65,6 @@ const router = createBrowserRouter([
         element: <Suspense fallback={<PageLoader />}><CartPage /></Suspense>,
       },
       {
-        path: 'checkout',
-        element: <Suspense fallback={<PageLoader />}><CheckoutPage /></Suspense>,
-      },
-      {
         path: 'order-success',
         element: <Suspense fallback={<PageLoader />}><OrderSuccessPage /></Suspense>,
       },
@@ -78,6 +75,14 @@ const router = createBrowserRouter([
       {
         path: 'orders',
         element: <Suspense fallback={<PageLoader />}><OrdersPage /></Suspense>,
+      },
+      {
+        path: 'saved',
+        element: <Suspense fallback={<PageLoader />}><div className="p-8 text-center text-xl">Saved Items Page (Under Construction)</div></Suspense>,
+      },
+      {
+        path: 'watchlist',
+        element: <Suspense fallback={<PageLoader />}><div className="p-8 text-center text-xl">Watchlist Page (Under Construction)</div></Suspense>,
       },
     ],
   },
@@ -90,6 +95,10 @@ const router = createBrowserRouter([
         element: <Suspense fallback={<PageLoader />}><LoginPage /></Suspense>
       }
     ]
+  },
+  {
+    path: '/checkout',
+    element: <Suspense fallback={<PageLoader />}><CheckoutPage /></Suspense>
   },
   {
     path: '/register',
@@ -128,6 +137,16 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Suspense fallback={<PageLoader />}><ResetPasswordPage /></Suspense>
+      }
+    ]
+  },
+  {
+    path: '/verify',
+    element: <AuthLayout />,
+    children: [
+      {
+        index: true,
+        element: <Suspense fallback={<PageLoader />}><SecurityMeasurePage /></Suspense>
       }
     ]
   },

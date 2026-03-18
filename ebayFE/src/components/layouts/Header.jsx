@@ -1,14 +1,21 @@
+import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ShoppingCart, ChevronDown } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import useCategoryStore from '../../store/useCategoryStore';
 import useCartStore from '../../features/cart/hooks/useCartStore';
+import { useRequireAuth } from '../../hooks/useRequireAuth';
 
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuthStore();
-    const { categories } = useCategoryStore();
+    const { categories, navGroups, fetchNavGroups } = useCategoryStore();
+    const { handleSecureAction } = useRequireAuth();
+
+    useEffect(() => {
+        fetchNavGroups();
+    }, [fetchNavGroups]);
     const totalItems = useCartStore((state) => state.totalItems);
     const queryParams = new URLSearchParams(location.search);
     const isAuctionsActive = location.pathname === '/products' && queryParams.get('filter') === 'auctions';
@@ -43,7 +50,7 @@ export default function Header() {
                     <div className="flex items-center gap-5">
                         <Link to="#" className="hover:underline">Ship to</Link>
                         <Link to="/seller" className="hover:underline">Sell</Link>
-                        <Link to="#" className="hover:underline flex items-center gap-1">Watchlist <ChevronDown size={12} /></Link>
+                        <button onClick={() => handleSecureAction(() => navigate('/watchlist'))} className="hover:underline flex items-center gap-1">Watchlist <ChevronDown size={12} /></button>
                         <Link to="/profile" className="hover:underline flex items-center gap-1">My eBay <ChevronDown size={12} /></Link>
                         <button className="hover:bg-gray-100 p-1 rounded-full transition-colors relative">
                             <Bell size={20} strokeWidth={1.5} />
@@ -82,7 +89,17 @@ export default function Header() {
                                 e.preventDefault();
                                 const formData = new FormData(e.currentTarget);
                                 const q = formData.get('q');
-                                if (q) navigate(`/products?q=${encodeURIComponent(q)}`);
+                                const category = formData.get('category');
+                                
+                                const params = new URLSearchParams();
+                                if (q) params.append('q', q);
+                                if (category) params.append('categorySlugs', category);
+                                
+                                if (q || category) {
+                                    navigate(`/products?${params.toString()}`);
+                                } else {
+                                    navigate('/products');
+                                }
                             }}
                         >
                             <div className="flex-grow flex items-center border-[1.5px] border-black h-11 px-4 gap-3 bg-white rounded-full">
@@ -119,22 +136,44 @@ export default function Header() {
 
             {/* Bottom Bar (Categories) */}
             {!isProductDetails && (
-                <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-3 flex items-center justify-center gap-6 text-[13px] text-[#333] overflow-x-auto hide-scrollbar border-t border-gray-100">
-                    <Link to="#" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Saved</Link>
+                <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-3 flex items-center justify-center gap-6 text-[13px] text-[#333] border-t border-gray-100 flex-wrap">
+                    <button onClick={() => handleSecureAction(() => navigate('/saved'))} className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Saved</button>
                     <Link
                         to="/products?filter=auctions"
                         className={`hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1 ${isAuctionsActive ? 'font-bold text-secondary' : ''}`}
                     >
                         Auctions
                     </Link>
-                    <Link to="/products?category=electronics" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Electronics</Link>
-                    <Link to="/products?category=motors" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Motors</Link>
-                    <Link to="/products?category=fashion" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Fashion</Link>
-                    <Link to="/products?category=collectibles" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Collectibles and Art</Link>
-                    <Link to="/products?category=sports" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Sports</Link>
-                    <Link to="/products?category=health" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Health & Beauty</Link>
-                    <Link to="/products?category=industrial" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Industrial equipment</Link>
-                    <Link to="/products?category=home" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Home & Garden</Link>
+                    {navGroups && navGroups.map(group => (
+                        <div key={group.slug} className="relative group">
+                            <Link 
+                                to={`/products?categorySlugs=${group.slug}`} 
+                                className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1 block whitespace-nowrap"
+                            >
+                                {group.name}
+                            </Link>
+                            {/* Dropdown */}
+                            {group.categories && group.categories.length > 0 && (
+                                <div className="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+                                    <div className="bg-white border text-black border-gray-200 shadow-lg rounded-md p-4 min-w-[300px] columns-2 gap-4">
+                                        {group.categories.map(cat => (
+                                            <div key={cat.slug} className="break-inside-avoid mb-3">
+                                                <Link to={`/products?categorySlugs=${cat.slug}`} className="font-bold hover:underline block text-[#333] mb-1">
+                                                    {cat.name}
+                                                </Link>
+                                                {/* sub-categories if any */}
+                                                {cat.subCategories && cat.subCategories.length > 0 && cat.subCategories.map(sub => (
+                                                    <Link key={sub.slug} to={`/products?categorySlugs=${sub.slug}`} className="block text-[#707070] text-[12px] hover:underline mb-1">
+                                                        {sub.name}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                     <Link to="/products?filter=deals" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Deals</Link>
                     <Link to="/seller" className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Sell</Link>
                 </div>

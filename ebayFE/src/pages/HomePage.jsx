@@ -22,8 +22,7 @@ export default function HomePage() {
     return (
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-6">
             <HeroBanner />
-            <TrendingCategories title="The future in your hands" data={categories.slice(0, 7)} />
-            {/* <FeaturedCategories categories={categories} /> */}
+            <FeaturedCategories categories={categories.slice(0, 7)} />
             <GuaranteeBanner />
             <MotorsPromoBanner />
             <TodaysDeals />
