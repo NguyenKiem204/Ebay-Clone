@@ -1248,6 +1248,60 @@ namespace ebay.Migrations
                     b.ToTable("products", (string)null);
                 });
 
+            modelBuilder.Entity("ebay.Models.ProductViewHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CookieId")
+                        .HasMaxLength(36)
+                        .HasColumnType("character varying(36)")
+                        .HasColumnName("cookie_id");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("ViewedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("viewed_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id")
+                        .HasName("product_view_history_pkey");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex(new[] { "CookieId", "ViewedAt" }, "idx_pvh_cookie");
+
+                    b.HasIndex(new[] { "ExpiresAt" }, "idx_pvh_expires");
+
+                    b.HasIndex(new[] { "UserId", "ViewedAt" }, "idx_pvh_user");
+
+                    b.HasIndex(new[] { "CookieId", "ProductId" }, "uq_guest_product")
+                        .IsUnique()
+                        .HasFilter("cookie_id IS NOT NULL");
+
+                    b.HasIndex(new[] { "UserId", "ProductId" }, "uq_user_product")
+                        .IsUnique()
+                        .HasFilter("user_id IS NOT NULL");
+
+                    b.ToTable("product_view_history", (string)null);
+                });
+
             modelBuilder.Entity("ebay.Models.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -1933,6 +1987,42 @@ namespace ebay.Migrations
                     b.ToView("vw_product_listing", (string)null);
                 });
 
+            modelBuilder.Entity("ebay.Models.WatchlistItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("watchlist_pkey");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex(new[] { "UserId" }, "idx_watchlist_user");
+
+                    b.HasIndex(new[] { "UserId", "ProductId" }, "watchlist_user_id_product_id_key")
+                        .IsUnique();
+
+                    b.ToTable("watchlist", (string)null);
+                });
+
             modelBuilder.Entity("ebay.Models.Wishlist", b =>
                 {
                     b.Property<int>("Id")
@@ -2310,6 +2400,26 @@ namespace ebay.Migrations
                     b.Navigation("Store");
                 });
 
+            modelBuilder.Entity("ebay.Models.ProductViewHistory", b =>
+                {
+                    b.HasOne("ebay.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("pvh_product_id_fkey");
+
+                    b.HasOne("ebay.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("pvh_user_id_fkey");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ebay.Models.RefreshToken", b =>
                 {
                     b.HasOne("ebay.Models.User", "User")
@@ -2406,6 +2516,27 @@ namespace ebay.Migrations
                         .HasConstraintName("stores_seller_id_fkey");
 
                     b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("ebay.Models.WatchlistItem", b =>
+                {
+                    b.HasOne("ebay.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("watchlist_product_id_fkey");
+
+                    b.HasOne("ebay.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("watchlist_user_id_fkey");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ebay.Models.Wishlist", b =>

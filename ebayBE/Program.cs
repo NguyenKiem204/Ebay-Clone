@@ -19,6 +19,9 @@ DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Explicitly re-add env vars so DotNetEnv values (set before builder creation) are picked up
+builder.Configuration.AddEnvironmentVariables();
+
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<ExternalAuthSettings>(
@@ -49,7 +52,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IBidService, BidService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddHttpClient<IPaypalService, PaypalService>();
+builder.Services.AddHostedService<ebay.Services.Implementations.HistoryCleanupService>();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
@@ -150,4 +155,25 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles(); // Cho phép truy cập ảnh từ thư mục wwwroot
 app.MapControllers();
+// Apply migrations automatically on startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<EbayDbContext>();
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            context.Database.Migrate();
+            Console.WriteLine("✅ Database updated with new migrations.");
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
+
 app.Run();
+

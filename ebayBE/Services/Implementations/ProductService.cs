@@ -194,6 +194,9 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Bids)
                 .Include(p => p.Coupons)
                 .Include(p => p.OrderItems)
+                .Include(p => p.Wishlists)
+                .Include(p => p.WatchlistItems)
+                .Include(p => p.CartItems)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -216,6 +219,9 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Bids)
                 .Include(p => p.Coupons)
                 .Include(p => p.OrderItems)
+                .Include(p => p.Wishlists)
+                .Include(p => p.WatchlistItems)
+                .Include(p => p.CartItems)
                 .FirstOrDefaultAsync(p => p.Slug == slug);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -255,90 +261,141 @@ namespace ebay.Services.Implementations
         }
 
         public async Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10)
-        {
-            var product = await _context.Products.FindAsync(productId);
-            if (product == null) return new List<ProductResponseDto>();
+{
+    var product = await _context.Products.FindAsync(productId);
+    if (product == null) return new List<ProductResponseDto>();
 
-            var related = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.Seller)
-                .Include(p => p.Reviews)
-                .Include(p => p.Bids)
-                .Include(p => p.Coupons)
-                .Include(p => p.OrderItems)
-                .Where(p => p.Id != productId && p.IsActive == true && p.Status == "active" && p.CategoryId == product.CategoryId)
-                .OrderByDescending(p => p.CreatedAt)
-                .Take(count)
-                .Select(p => MapToDto(p))
-                .ToListAsync();
+    var related = await _context.Products
+        .Include(p => p.Category)
+        .Include(p => p.Seller)
+        .Include(p => p.Reviews)
+        .Include(p => p.Bids)
+        .Include(p => p.Coupons)
+        .Include(p => p.OrderItems)
+        .Where(p => p.Id != productId && p.IsActive == true && p.Status == "active" && p.CategoryId == product.CategoryId)
+        .OrderByDescending(p => p.CreatedAt)
+        .Take(count)
+        .Select(p => MapToDto(p))
+        .ToListAsync();
 
-            return related;
-        }
+    return related;
+}
+public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productId, List<int> excludeIds, int limit = 6)
+{
+    var product = await _context.Products.FindAsync(productId);
+    if (product == null) return new List<ProductResponseDto>();
+
+    var minPrice = product.Price * 0.5m;
+    var maxPrice = product.Price * 1.5m;
+
+    var recs = await _context.Products
+        .Include(p => p.Category)
+        .Include(p => p.Seller)
+        .Include(p => p.Reviews)
+        .Include(p => p.Bids)
+        .Include(p => p.OrderItems)
+        .Where(p =>
+            !excludeIds.Contains(p.Id)
+            && p.IsActive == true
+            && p.Status == "active"
+            && p.CategoryId == product.CategoryId
+            && p.Price >= minPrice
+            && p.Price <= maxPrice)
+        .OrderByDescending(p => p.ViewCount)
+        .Take(limit)
+        .Select(p => MapToDto(p))
+        .ToListAsync();
+
+    // fallback nếu chưa đủ
+    if (recs.Count < limit)
+    {
+        var ids = recs.Select(r => r.Id).Concat(excludeIds).ToList();
+
+        var extra = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Seller)
+            .Include(p => p.Reviews)
+            .Include(p => p.Bids)
+            .Include(p => p.OrderItems)
+            .Where(p =>
+                !ids.Contains(p.Id)
+                && p.IsActive == true
+                && p.Status == "active"
+                && p.Price >= minPrice
+                && p.Price <= maxPrice)
+            .OrderByDescending(p => p.ViewCount)
+            .Take(limit - recs.Count)
+            .Select(p => MapToDto(p))
+            .ToListAsync();
+
+        recs.AddRange(extra);
+    }
+
+    return recs;
+}
 
         public async Task<List<CategoryResponseDto>> GetCategoriesAsync()
-        {
-            var allCategories = await _context.Categories
-                .Where(c => c.IsActive == true)
-                .OrderBy(c => c.DisplayOrder)
-                .ToListAsync();
+{
+    var allCategories = await _context.Categories
+        .Where(c => c.IsActive == true)
+        .OrderBy(c => c.DisplayOrder)
+        .ToListAsync();
 
-            // Build hierarchy
-            var rootCategories = allCategories
-                .Where(c => c.ParentId == null)
-                .Select(c => MapCategoryToDto(c, allCategories))
-                .ToList();
+    var rootCategories = allCategories
+        .Where(c => c.ParentId == null)
+        .Select(c => MapCategoryToDto(c, allCategories))
+        .ToList();
 
-            return rootCategories;
-        }
+    return rootCategories;
+}
 
         // ========== SELLER PRODUCT MANAGEMENT ==========
 
         public async Task<PagedResponseDto<ProductResponseDto>> GetSellerProductsAsync(int sellerId, SellerProductSearchRequest request)
+{
+    var query = _context.Products
+        .Include(p => p.Category)
+        .Include(p => p.Seller)
+        .Include(p => p.Reviews)
+        .Include(p => p.Bids)
+        .Where(p => p.SellerId == sellerId)
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(request.Status))
+    {
+        var status = request.Status.ToLower();
+        query = status switch
         {
-            var query = _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.Seller)
-                .Include(p => p.Reviews)
-                .Include(p => p.Bids)
-                .Where(p => p.SellerId == sellerId)
-                .AsQueryable();
+            "active" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) > 0 && (p.IsActive ?? true)),
+            "draft" => query.Where(p => p.Status == "draft"),
+            "out_of_stock" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) == 0),
+            "ended" => query.Where(p => p.Status == "ended"),
+            _ => query
+        };
+    }
 
-            // Filter by status
-            if (!string.IsNullOrWhiteSpace(request.Status))
-            {
-                var status = request.Status.ToLower();
-                query = status switch
-                {
-                    "active" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) > 0 && (p.IsActive ?? true)),
-                    "draft" => query.Where(p => p.Status == "draft"),
-                    "out_of_stock" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) == 0),
-                    "ended" => query.Where(p => p.Status == "ended"),
-                    _ => query
-                };
-            }
+    if (!string.IsNullOrWhiteSpace(request.Keyword))
+    {
+        var kw = request.Keyword.ToLower();
+        query = query.Where(p => p.Title.ToLower().Contains(kw));
+    }
 
-            // Search by keyword
-            if (!string.IsNullOrWhiteSpace(request.Keyword))
-            {
-                var kw = request.Keyword.ToLower();
-                query = query.Where(p => p.Title.ToLower().Contains(kw));
-            }
+    var totalItems = await query.CountAsync();
 
-            var totalItems = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((request.Page - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync();
+    var items = await query
+        .OrderByDescending(p => p.CreatedAt)
+        .Skip((request.Page - 1) * request.PageSize)
+        .Take(request.PageSize)
+        .ToListAsync();
 
-            return new PagedResponseDto<ProductResponseDto>
-            {
-                Items = items.Select(p => MapToDto(p)).ToList(),
-                TotalItems = totalItems,
-                Page = request.Page,
-                PageSize = request.PageSize
-            };
-        }
+    return new PagedResponseDto<ProductResponseDto>
+    {
+        Items = items.Select(p => MapToDto(p)).ToList(),
+        TotalItems = totalItems,
+        Page = request.Page,
+        PageSize = request.PageSize
+    };
+}
 
         public async Task<ProductResponseDto> CreateProductAsync(int sellerId, CreateProductRequest request)
         {
@@ -667,36 +724,39 @@ namespace ebay.Services.Implementations
                 .ToList()
         };
 
-        public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
-        {
-            Id = p.Id,
-            Title = p.Title,
-            Slug = p.Slug,
-            Description = p.Description,
-            Price = p.Price,
-            DiscountPrice = p.OriginalPrice,
-            OriginalPrice = p.OriginalPrice,
-            Thumbnail = p.Images != null && p.Images.Count > 0 ? p.Images[0] : null,
-            Images = p.Images,
-            Condition = p.Condition ?? "New",
-            Brand = p.Brand,
-            Status = p.Status ?? "active",
-            IsActive = p.IsActive ?? true,
-            Stock = p.Stock ?? 0,
-            ShippingFee = p.ShippingFee ?? 0,
-            ViewCount = p.ViewCount ?? 0,
-            CategoryId = p.CategoryId ?? 0,
-            CategoryName = p.Category?.Name ?? "General",
-            SellerId = p.SellerId,
-            SellerName = p.Seller?.Username ?? "Unknown",
-            IsAuction = p.IsAuction ?? false,
-            AuctionEndTime = p.AuctionEndTime,
-            CurrentBid = p.Bids != null && p.Bids.Any() ? p.Bids.Max(b => b.Amount) : p.StartingBid,
-            BidCount = p.Bids?.Count ?? 0,
-            SoldCount = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
-            CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
-            Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,
-            ReviewCount = p.Reviews?.Count ?? 0
-        };
+        
+public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
+{
+    Id = p.Id,
+    Title = p.Title,
+    Slug = p.Slug,
+    Description = p.Description,
+    Price = p.Price,
+    DiscountPrice = p.OriginalPrice,
+    OriginalPrice = p.OriginalPrice,
+    Thumbnail = p.Images != null && p.Images.Count > 0 ? p.Images[0] : null,
+    Images = p.Images,
+    Condition = p.Condition ?? "New",
+    Brand = p.Brand,
+    Status = p.Status ?? "active",
+    IsActive = p.IsActive ?? true,
+    Stock = p.Stock ?? 0,
+    ShippingFee = p.ShippingFee ?? 0,
+    ViewCount = p.ViewCount ?? 0,
+    CategoryId = p.CategoryId ?? 0,
+    CategoryName = p.Category?.Name ?? "General",
+    SellerId = p.SellerId,
+    SellerName = p.Seller?.Username ?? "Unknown",
+    IsAuction = p.IsAuction ?? false,
+    AuctionEndTime = p.AuctionEndTime,
+    CurrentBid = p.Bids != null && p.Bids.Any() ? p.Bids.Max(b => b.Amount) : p.StartingBid,
+    BidCount = p.Bids?.Count ?? 0,
+    SoldCount = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
+    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+    Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,
+    ReviewCount = p.Reviews?.Count ?? 0,
+    SavedCount = (p.Wishlists?.Count ?? 0) + (p.WatchlistItems?.Count ?? 0),
+    InCartCount = p.CartItems?.Count ?? 0
+};
     }
 }

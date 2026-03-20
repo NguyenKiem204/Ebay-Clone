@@ -69,6 +69,10 @@ public partial class EbayDbContext : DbContext
 
     public virtual DbSet<Wishlist> Wishlists { get; set; }
 
+    public virtual DbSet<WatchlistItem> WatchlistItems { get; set; }
+
+    public virtual DbSet<ProductViewHistory> ProductViewHistories { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder){}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -1329,6 +1333,73 @@ public partial class EbayDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Wishlists)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("wishlists_user_id_fkey");
+        });
+
+        modelBuilder.Entity<WatchlistItem>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("watchlist_pkey");
+
+            entity.ToTable("watchlist");
+
+            entity.HasIndex(e => e.UserId, "idx_watchlist_user");
+
+            entity.HasIndex(e => new { e.UserId, e.ProductId }, "watchlist_user_id_product_id_key").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.WatchlistItems)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("watchlist_product_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("watchlist_user_id_fkey");
+        });
+
+        modelBuilder.Entity<ProductViewHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("product_view_history_pkey");
+
+            entity.ToTable("product_view_history");
+
+            entity.HasIndex(e => new { e.UserId,   e.ViewedAt }, "idx_pvh_user");
+            entity.HasIndex(e => new { e.CookieId, e.ViewedAt }, "idx_pvh_cookie");
+            entity.HasIndex(e => e.ExpiresAt, "idx_pvh_expires");
+
+            // Unique: one row per (user, product) and one row per (cookie, product)
+            entity.HasIndex(e => new { e.UserId,   e.ProductId }, "uq_user_product").IsUnique()
+                  .HasFilter("user_id IS NOT NULL");
+            entity.HasIndex(e => new { e.CookieId, e.ProductId }, "uq_guest_product").IsUnique()
+                  .HasFilter("cookie_id IS NOT NULL");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.CookieId).HasMaxLength(36).HasColumnName("cookie_id");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.ViewedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("viewed_at");
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("expires_at");
+
+            entity.HasOne(d => d.Product).WithMany()
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("pvh_product_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false)
+                .HasConstraintName("pvh_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

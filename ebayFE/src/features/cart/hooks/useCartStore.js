@@ -7,6 +7,7 @@ const useCartStore = create(
             items: [],
             totalItems: 0,
             subtotal: 0,
+            cartOwner: 'guest',
 
             addItem: (product, quantity = 1) => {
                 const items = get().items;
@@ -51,12 +52,13 @@ const useCartStore = create(
             },
 
             clearCart: () => {
-                set({ items: [], totalItems: 0, subtotal: 0 });
+                set({ items: [], totalItems: 0, subtotal: 0, cartOwner: 'guest' });
             },
 
-            setCart: (items) => {
+            setCart: (items, owner = 'user') => {
                 set({
                     items,
+                    cartOwner: owner,
                     totalItems: items.reduce((acc, item) => acc + item.quantity, 0),
                     subtotal: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
                 });

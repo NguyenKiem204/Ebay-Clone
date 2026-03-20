@@ -1,6 +1,21 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../lib/axios';
 
 export default function ProductBreadcrumbs({ product, images }) {
+    const [sellerProfile, setSellerProfile] = useState(null);
+
+    useEffect(() => {
+        if (product?.sellerId) {
+            api.get(`/api/Seller/${product.sellerId}`)
+                .then(res => setSellerProfile(res.data.data))
+                .catch(() => {});
+        }
+    }, [product?.sellerId]);
+
+    const sellerName = sellerProfile?.username || product?.sellerName || 'jane_shop';
+    const positivePercent = sellerProfile ? `${sellerProfile.positivePercent}% positive` : '100% positive';
+
     return (
         <>
             {/* Top Navigation Row (Find similar items) */}
@@ -8,8 +23,8 @@ export default function ProductBreadcrumbs({ product, images }) {
                 <div className="flex items-center gap-2">
                     <span className="text-gray-500 text-[12px]">Find similar items from</span>
                     <div className="flex items-center gap-1">
-                        <span className="font-bold text-gray-900 underline hover:no-underline cursor-pointer">{product.sellerName || 'jane_shop'}</span>
-                        <span className="text-gray-500 font-normal">(100% positive)</span>
+                        <span className="font-bold text-gray-900 underline hover:no-underline cursor-pointer">{sellerName}</span>
+                        <span className="text-gray-500 font-normal">({positivePercent})</span>
                     </div>
                     <div className="flex gap-1 ml-4 items-center">
                         {[1, 2, 3, 4].map(i => (

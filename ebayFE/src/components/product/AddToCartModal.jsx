@@ -1,9 +1,20 @@
 import { X, Check, ChevronRight, Info, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
+import useProductStore from '../../store/useProductStore';
+import useWatchlistStore from '../../features/watchlist/useWatchlistStore';
+import useAuthStore from '../../store/useAuthStore';
+import useCartStore from '../../features/cart/hooks/useCartStore';
 
 export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
     const navigate = useNavigate();
+    const relatedProducts = useProductStore(state => state.relatedProducts);
+    const watchIds = useWatchlistStore(s => s.watchIds);
+    const toggleWatch = useWatchlistStore(s => s.toggleWatch);
+    const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+    
+    const cartItems = useCartStore(state => state.items);
+    const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     if (!isOpen) return null;
 
@@ -15,33 +26,25 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
 
     const handleCheckout = () => {
         onClose();
-        navigate('/checkout');
+        if (!isAuthenticated) {
+            navigate('/login?redirect=/checkout');
+        } else {
+            navigate('/checkout');
+        }
     };
 
-    // Mock related items for the modal (updated to match screenshot)
-    const modalRelatedItems = [
-        {
-            id: 'rel-1',
-            title: 'apple iphone 15 pro max 256gb unlocked used',
-            price: 170391000,
-            condition: 'Pre-owned',
-            image: 'https://i.ebayimg.com/thumbs/images/g/mQ8AAeSwOvlpYd7j/s-l225.jpg' // Using reasonable placeholders
-        },
-        {
-            id: 'rel-2',
-            title: 'Google Pixel 9 Pro Fold Case Clear with Stand Slim Phone...',
-            price: 1048036,
-            condition: 'New',
-            image: 'https://i.ebayimg.com/thumbs/images/g/ougAAeSw1-hn7LkT/s-l225.jpg'
-        },
-        {
-            id: 'rel-3',
-            title: 'iphone 13 pro max unlocked 256gb used',
-            price: 24903300,
-            condition: 'Pre-owned',
-            image: 'https://i.ebayimg.com/thumbs/images/g/8NQAAeSwQxlpQWAa/s-l225.jpg'
+    const handleToggleWatch = (e, productId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isAuthenticated) {
+            navigate(`/login?redirect=/products/${product.id}`);
+            return;
         }
-    ];
+        toggleWatch(productId);
+    };
+
+    // Retrieve up to 3 real related items from the store
+    const displayItems = relatedProducts && relatedProducts.length > 0 ? relatedProducts.slice(0, 3) : [];
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -74,8 +77,8 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded mb-1 border border-blue-100">
-                                    IN 4288 CARTS
+                                <div className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded mb-1 border border-blue-100 uppercase">
+                                    IN {product.inCartCount || 0} CARTS
                                 </div>
                                 <h3 className="text-[14px] text-gray-900 leading-tight line-clamp-2 hover:underline cursor-pointer">
                                     {product.title}
@@ -106,7 +109,7 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
                                 variant="outline"
                                 className="w-full border-[#3665f3] text-[#3665f3] hover:bg-blue-50 h-11 rounded-full font-bold text-[15px]"
                             >
-                                Checkout {quantity} item{quantity > 1 ? 's' : ''}
+                                Checkout {totalCartItems} item{totalCartItems !== 1 ? 's' : ''}
                             </Button>
                         </div>
                     </div>
@@ -118,34 +121,34 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
                                 <h3 className="text-[18px] font-bold text-gray-900 leading-tight">Explore related items</h3>
                                 <span className="text-[12px] text-gray-500">Sponsored</span>
                             </div>
-                            <Link to="#" className="text-[14px] text-gray-900 underline font-medium">See all</Link>
+                            <Link to={`/products/related/${product?.id}`} className="text-[14px] text-gray-900 underline font-medium" onClick={onClose}>See all</Link>
                         </div>
 
                         <div className="grid grid-cols-3 gap-3">
-                            {modalRelatedItems.map((item) => (
+                            {displayItems.map((item) => (
                                 <Link
                                     key={item.id}
-                                    to={`/products/${item.id}`}
+                                    to={`/products/${item.slug || item.id}`}
                                     className="flex flex-col group"
                                     onClick={onClose}
                                 >
                                     <div className="relative aspect-square bg-white border border-gray-200 rounded-lg overflow-hidden p-2 group-hover:shadow-sm transition-shadow">
                                         <img
-                                            src={item.image}
+                                            src={item.thumbnail}
                                             alt={item.title}
                                             className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                                         />
-                                        <button className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center border border-gray-100 hover:bg-white transition-colors">
-                                            <Heart size={18} className="text-gray-900" />
+                                        <button className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center border border-gray-100 hover:bg-white transition-colors" onClick={(e) => handleToggleWatch(e, item.id)}>
+                                            <Heart size={18} className={watchIds.has(item.id) ? 'fill-[#e53238] text-[#e53238]' : 'text-gray-900'} />
                                         </button>
                                     </div>
                                     <div className="mt-3 flex flex-col min-w-0">
                                         <h4 className="text-[13px] text-gray-900 leading-[1.3] line-clamp-3 group-hover:underline font-normal h-[51px]">
                                             {item.title}
                                         </h4>
-                                        <p className="text-[13px] text-gray-500 mt-1">{item.condition}</p>
+                                        <p className="text-[13px] text-gray-500 mt-1">{item.condition || 'Pre-owned'}</p>
                                         <p className="text-[16px] font-bold text-gray-900 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                                            {item.price.toLocaleString('vi-VN')}
+                                            {(item.price * 26231).toLocaleString('vi-VN')}
                                         </p>
                                         <span className="text-[11px] font-bold text-gray-900">VND</span>
                                     </div>

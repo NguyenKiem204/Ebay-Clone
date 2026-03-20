@@ -6,11 +6,11 @@ export const useRequireAuth = () => {
     const location = useLocation();
     const { isAuthenticated } = useAuthStore();
 
-    const handleSecureAction = (callback) => {
+    const handleSecureAction = (callback, customRedirect) => {
         if (isAuthenticated) {
             callback();
         } else {
-            const redirectStr = encodeURIComponent(location.pathname + location.search);
+            const redirectStr = encodeURIComponent(customRedirect || (location.pathname + location.search));
             if (sessionStorage.getItem("verified") === "true") {
                 navigate(`/login?redirect=${redirectStr}`);
             } else {

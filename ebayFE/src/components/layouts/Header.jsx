@@ -19,7 +19,7 @@ export default function Header() {
 
     useEffect(() => {
         fetchNavGroups();
-    }, []);
+    }, [fetchNavGroups]);
 
     const queryParams = new URLSearchParams(location.search);
     const isAuctionsActive =
@@ -30,16 +30,13 @@ export default function Header() {
 
     return (
         <header className="bg-white">
-
             {/* TOP BAR */}
             <div className="border-b border-gray-100">
-                <div className="max-w-[1280px] mx-auto px-4 py-2 flex justify-between text-[12px]">
+                <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-2 flex justify-between items-center text-[12px] text-[#333]">
 
                     {/* LEFT */}
-                    <div className="flex gap-4 items-center">
-
-                        {/* USER */}
-                        <div className="relative">
+                    <div className="flex items-center gap-4">
+                        <div className="relative flex items-center gap-1">
                             {isAuthenticated ? (
                                 <>
                                     <button
@@ -47,53 +44,88 @@ export default function Header() {
                                         className="flex items-center gap-1 hover:underline"
                                     >
                                         Hi <strong>{user?.firstName || user?.username}</strong>
-                                        <ChevronDown size={12} />
+                                        <ChevronDown size={12} className={`transition ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
                                     {isUserMenuOpen && (
-                                        <div className="absolute top-full mt-2 w-56 bg-white shadow-lg border rounded z-50">
-                                            <div className="p-3 border-b">
-                                                <p className="font-bold">
-                                                    {user?.firstName} {user?.lastName}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {user?.email}
-                                                </p>
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-40"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                            />
+                                            <div className="absolute top-full left-0 mt-2 w-56 bg-white border rounded-lg shadow-xl z-50">
+                                                <div className="p-3 border-b">
+                                                    <p className="font-bold">
+                                                        {user?.firstName} {user?.lastName}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {user?.email}
+                                                    </p>
+                                                </div>
+
+                                                <Link
+                                                    to="/profile"
+                                                    onClick={() => setIsUserMenuOpen(false)}
+                                                    className="block px-4 py-2 hover:bg-gray-50"
+                                                >
+                                                    Profile
+                                                </Link>
+
+                                                <button
+                                                    onClick={() => {
+                                                        logout();
+                                                        setIsUserMenuOpen(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-2 text-red-500 hover:bg-red-50"
+                                                >
+                                                    Logout
+                                                </button>
                                             </div>
-
-                                            <Link to="/profile" className="block px-4 py-2 hover:bg-gray-50">
-                                                Profile
-                                            </Link>
-
-                                            <button
-                                                onClick={logout}
-                                                className="block w-full text-left px-4 py-2 text-red-500 hover:bg-red-50"
-                                            >
-                                                Logout
-                                            </button>
-                                        </div>
+                                        </>
                                     )}
                                 </>
                             ) : (
                                 <>
-                                    Hi! <Link to="/login">Sign in</Link>
+                                    Hi!{' '}
+                                    <Link to="/login" className="text-blue-600 hover:underline">
+                                        Sign in
+                                    </Link>
                                 </>
                             )}
                         </div>
 
-                        <Link to="#">Deals</Link>
+                        <Link to="#" className="hover:underline">Deals</Link>
+                        <Link to="#" className="hover:underline">Brand Outlet</Link>
+                        <Link to="#" className="hover:underline">Gift Cards</Link>
+                        <Link to="#" className="hover:underline">Help & Contact</Link>
                     </div>
 
                     {/* RIGHT */}
-                    <div className="flex gap-4 items-center">
-                        <button onClick={() => handleSecureAction(() => navigate('/watchlist'))}>
-                            Watchlist
+                    <div className="flex items-center gap-5">
+                        <Link to="#" className="hover:underline">Ship to</Link>
+                        <Link to="/seller" className="hover:underline">Sell</Link>
+
+                        <button
+                            onClick={() =>
+                                handleSecureAction(() => navigate('/watchlist'), '/watchlist')
+                            }
+                            className="hover:underline flex items-center gap-1"
+                        >
+                            Watchlist <ChevronDown size={12} />
                         </button>
 
-                        <Link to="/cart" className="relative">
-                            <ShoppingCart size={20} />
+                        <Link to="/profile" className="hover:underline flex items-center gap-1">
+                            My eBay <ChevronDown size={12} />
+                        </Link>
+
+                        <button className="hover:bg-gray-100 p-1 rounded-full">
+                            <Bell size={20} />
+                        </button>
+
+                        <Link to="/cart" className="relative hover:bg-gray-100 p-1 rounded-full">
+                            <ShoppingCart size={22} />
                             {totalItems > 0 && (
-                                <span className="absolute -top-1 -right-1 text-xs bg-red-500 text-white rounded-full px-1">
+                                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                                     {totalItems}
                                 </span>
                             )}
@@ -103,8 +135,9 @@ export default function Header() {
             </div>
 
             {/* SEARCH */}
-            <div className="p-4 border-b">
+            <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-3 border-b border-gray-200">
                 <form
+                    className="flex items-center gap-2"
                     onSubmit={(e) => {
                         e.preventDefault();
                         const formData = new FormData(e.currentTarget);
@@ -117,30 +150,46 @@ export default function Header() {
 
                         navigate(`/products?${params.toString()}`);
                     }}
-                    className="flex gap-2"
                 >
-                    <input name="q" placeholder="Search..." className="border px-3 py-2 flex-grow" />
+                    <input
+                        type="text"
+                        name="q"
+                        placeholder="Search for anything"
+                        className="flex-grow border px-4 py-2 rounded-full"
+                    />
 
-                    <select name="category">
-                        <option value="">All</option>
+                    <select name="category" className="border px-2 py-2 rounded">
+                        <option value="">All Categories</option>
                         {categories.map(c => (
                             <option key={c.id} value={c.slug}>{c.name}</option>
                         ))}
                     </select>
 
-                    <button className="bg-blue-500 text-white px-4">Search</button>
+                    <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold">
+                        Search
+                    </button>
                 </form>
             </div>
 
             {/* CATEGORY NAV */}
             {!isProductDetails && (
-                <div className="flex gap-4 p-3 border-t flex-wrap">
+                <div className="max-w-[1280px] mx-auto px-4 py-3 flex gap-6 flex-wrap border-t">
 
-                    <button onClick={() => handleSecureAction(() => navigate('/saved'))}>
+                    <button
+                        onClick={() =>
+                            handleSecureAction(() => navigate('/saved'), '/saved')
+                        }
+                        className="hover:text-blue-600"
+                    >
                         Saved
                     </button>
 
-                    <Link to="/products?filter=auctions">Auctions</Link>
+                    <Link
+                        to="/products?filter=auctions"
+                        className={isAuctionsActive ? 'font-bold text-blue-600' : ''}
+                    >
+                        Auctions
+                    </Link>
 
                     {navGroups?.map(group => (
                         <div key={group.slug} className="relative group">
@@ -148,18 +197,35 @@ export default function Header() {
                                 {group.name}
                             </Link>
 
-                            {group.categories && (
-                                <div className="absolute hidden group-hover:block bg-white shadow p-3">
+                            {group.categories?.length > 0 && (
+                                <div className="absolute hidden group-hover:block bg-white border shadow-lg p-4 z-50 min-w-[300px]">
                                     {group.categories.map(cat => (
-                                        <Link key={cat.slug} to={`/products?categorySlugs=${cat.slug}`}>
-                                            {cat.name}
-                                        </Link>
+                                        <div key={cat.slug}>
+                                            <Link
+                                                to={`/products?categorySlugs=${cat.slug}`}
+                                                className="font-bold block"
+                                            >
+                                                {cat.name}
+                                            </Link>
+
+                                            {cat.subCategories?.map(sub => (
+                                                <Link
+                                                    key={sub.slug}
+                                                    to={`/products?categorySlugs=${sub.slug}`}
+                                                    className="block text-sm text-gray-500"
+                                                >
+                                                    {sub.name}
+                                                </Link>
+                                            ))}
+                                        </div>
                                     ))}
                                 </div>
                             )}
                         </div>
                     ))}
 
+                    <Link to="/products?filter=deals">Deals</Link>
+                    <Link to="/seller">Sell</Link>
                 </div>
             )}
         </header>

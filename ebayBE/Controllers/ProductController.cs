@@ -36,7 +36,6 @@ namespace ebay.Controllers
             return Ok(new ApiResponse<PagedResponseDto<ProductResponseDto>>(data));
         }
 
-
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ApiResponse<ProductResponseDto>>> GetById(int id)
         {
@@ -55,6 +54,24 @@ namespace ebay.Controllers
         public async Task<ActionResult<ApiResponse<List<ProductResponseDto>>>> GetRelated(int id, [FromQuery] int count = 10)
         {
             var data = await _productService.GetRelatedProductsAsync(id, count);
+            return Ok(new ApiResponse<List<ProductResponseDto>>(data));
+        }
+
+        // 🔥 NEW (incoming)
+        [HttpGet("{id:int}/recommendations")]
+        public async Task<ActionResult<ApiResponse<List<ProductResponseDto>>>> GetRecommendations(
+            int id,
+            [FromQuery] string? excludeIds = null,
+            [FromQuery] int limit = 6)
+        {
+            var exclude = excludeIds?.Split(',')
+                .Select(s => int.TryParse(s.Trim(), out var v) ? v : 0)
+                .Where(v => v > 0)
+                .ToList() ?? new List<int>();
+
+            exclude.Add(id);
+
+            var data = await _productService.GetRecommendationsAsync(id, exclude, limit);
             return Ok(new ApiResponse<List<ProductResponseDto>>(data));
         }
 

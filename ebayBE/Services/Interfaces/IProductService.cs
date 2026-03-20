@@ -20,6 +20,7 @@ namespace ebay.Services.Interfaces
         Task<bool> DeleteProductAsync(int sellerId, int productId);
         Task<bool> BulkDeleteProductsAsync(int sellerId, List<int> productIds);
         Task<bool> BulkUpdateStatusAsync(int sellerId, List<int> productIds, string status);
+        Task<List<ProductResponseDto>> GetRecommendationsAsync(int productId, List<int> excludeIds, int limit = 6);
     }
 
     public class PagedResponseDto<T>
