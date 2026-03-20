@@ -215,11 +215,20 @@ CREATE TABLE coupons (
     category_id INT REFERENCES categories(id) ON DELETE SET NULL,
     product_id INT REFERENCES products(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+    max_usage_per_user INTEGER DEFAULT 1,
+    coupon_type VARCHAR(20) DEFAULT 'discount',
+    store_id INTEGER,
     CONSTRAINT chk_discount_type CHECK (discount_type IN ('percentage', 'fixed')),
-    CONSTRAINT chk_applicable CHECK (applicable_to IN ('all', 'category', 'product'))
+    CONSTRAINT chk_applicable CHECK (applicable_to IN ('all', 'category', 'product')),
+    CONSTRAINT unique_coupon_code UNIQUE (code),
+    CONSTRAINT coupons_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
+CREATE TABLE coupon_products (
+    coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    PRIMARY KEY (coupon_id, product_id)
+);
 CREATE INDEX idx_coupons_code ON coupons(code);
 
 -- Orders Table
