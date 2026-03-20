@@ -292,6 +292,15 @@ namespace ebay.Controllers
         }
 
 
+        [HttpPost("upgrade-seller")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<object>>> UpgradeSeller()
+        {
+            var userId = GetCurrentUserId();
+            await _authService.UpgradeToSellerAsync(userId);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Nâng cấp lên tài khoản người bán thành công. Bây giờ bạn có thể tạo cửa hàng!"));
+        }
+
         [HttpGet("health")]
         public IActionResult Health()
         {

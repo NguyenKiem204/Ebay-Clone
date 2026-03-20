@@ -33,3 +33,4 @@ const Checkbox = forwardRef(({ label, className, ...props }, ref) => {
 Checkbox.displayName = 'Checkbox';
 
 export { Checkbox };
+export default Checkbox;

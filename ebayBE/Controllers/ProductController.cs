@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using ebay.DTOs.Requests;
 using ebay.DTOs.Responses;
 using ebay.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ebay.Controllers
@@ -15,6 +17,10 @@ namespace ebay.Controllers
         {
             _productService = productService;
         }
+
+        private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        // ========== PUBLIC ENDPOINTS ==========
 
         [HttpGet("landing")]
         public async Task<ActionResult<ApiResponse<LandingPageResponseDto>>> GetLandingPage()
@@ -50,11 +56,77 @@ namespace ebay.Controllers
             var data = await _productService.GetProductBySlugAsync(slug);
             return Ok(new ApiResponse<ProductResponseDto>(data));
         }
+
         [HttpGet("{id:int}/related")]
         public async Task<ActionResult<ApiResponse<List<ProductResponseDto>>>> GetRelated(int id, [FromQuery] int count = 10)
         {
             var data = await _productService.GetRelatedProductsAsync(id, count);
             return Ok(new ApiResponse<List<ProductResponseDto>>(data));
+        }
+
+        // ========== SELLER ENDPOINTS ==========
+
+        [HttpGet("seller/me")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<PagedResponseDto<ProductResponseDto>>>> GetSellerProducts([FromQuery] SellerProductSearchRequest request)
+        {
+            var data = await _productService.GetSellerProductsAsync(GetUserId(), request);
+            return Ok(ApiResponse<PagedResponseDto<ProductResponseDto>>.SuccessResponse(data));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<ProductResponseDto>>> CreateProduct([FromForm] CreateProductRequest request)
+        {
+            var data = await _productService.CreateProductAsync(GetUserId(), request);
+            return Ok(ApiResponse<ProductResponseDto>.SuccessResponse(data, "Đăng bán sản phẩm thành công"));
+        }
+
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<ProductResponseDto>>> UpdateProduct(int id, [FromForm] UpdateProductRequest request)
+        {
+            var data = await _productService.UpdateProductAsync(GetUserId(), id, request);
+            return Ok(ApiResponse<ProductResponseDto>.SuccessResponse(data, "Cập nhật sản phẩm thành công"));
+        }
+
+        [HttpPatch("{id:int}/toggle-visibility")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<ProductResponseDto>>> ToggleVisibility(int id)
+        {
+            var data = await _productService.ToggleProductVisibilityAsync(GetUserId(), id);
+            var message = data.IsActive ? "Sản phẩm đã được hiển thị" : "Sản phẩm đã được ẩn";
+            return Ok(ApiResponse<ProductResponseDto>.SuccessResponse(data, message));
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteProduct(int id)
+        {
+            var result = await _productService.DeleteProductAsync(GetUserId(), id);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, "Xoá sản phẩm thành công"));
+        }
+
+        [HttpPost("bulk-delete")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<bool>>> BulkDelete([FromBody] List<int> ids)
+        {
+            var result = await _productService.BulkDeleteProductsAsync(GetUserId(), ids);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, $"Đã xoá {ids.Count} sản phẩm"));
+        }
+
+        [HttpPatch("bulk-status")]
+        [Authorize(Roles = "seller,admin")]
+        public async Task<ActionResult<ApiResponse<bool>>> BulkUpdateStatus([FromBody] BulkStatusRequest request)
+        {
+            var result = await _productService.BulkUpdateStatusAsync(GetUserId(), request.Ids, request.Status);
+            return Ok(ApiResponse<bool>.SuccessResponse(result, $"Đã cập nhật trạng thái {request.Ids.Count} sản phẩm"));
+        }
+
+        public class BulkStatusRequest
+        {
+            public List<int> Ids { get; set; } = null!;
+            public string Status { get; set; } = null!;
         }
     }
 }

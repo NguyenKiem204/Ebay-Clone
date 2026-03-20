@@ -1,113 +1,243 @@
-export default function SellerMarketingPage() {
+import { useState } from 'react';
+import CouponDashboard from '../../features/seller/components/CouponDashboard';
+import CouponList from '../../features/seller/components/CouponList';
+import CreateCouponForm from '../../features/seller/components/CreateCouponForm';
+import { Tag, TrendingUp, Share2, HelpCircle, ChevronRight, Plus, X, CheckCircle2, Store } from 'lucide-react';
+import useAuthStore from '../../store/useAuthStore';
+import { useNavigate } from 'react-router-dom';
+
+// ── Upgrade modal shown to buyers ────────────────────────────────────────────
+function SellerUpgradeModal({ onClose }) {
+    const navigate = useNavigate();
+
+    const features = [
+        'Target buyers with emails and coupons',
+        'Access more volume pricing options',
+        'Run sale events to help boost sales',
+        'Get sourcing insights and list more items for free',
+    ];
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 max-w-[1200px] mx-auto">
-            {/* Sidebar Controls */}
-            <div className="md:col-span-3 space-y-8">
-                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="font-bold text-gray-900 mb-6 text-lg">Promotions</h3>
-                    <div className="space-y-4">
-                        <button className="text-sm font-bold text-gray-900 block border-l-4 border-secondary -ml-6 pl-5 py-1">Create a promotion</button>
-                        <button className="text-sm text-gray-500 hover:text-secondary hover:underline block transition-colors">Promotions manager</button>
-                        <button className="text-sm text-gray-500 hover:text-secondary hover:underline block transition-colors">Promoted listings</button>
-                        <button className="text-sm text-gray-500 hover:text-secondary hover:underline block transition-colors">Social share</button>
-                    </div>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={onClose}
+            />
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="font-bold text-[13px] text-gray-900 mb-6 uppercase tracking-wider uppercase">Active Promotions (3)</h3>
-                    <div className="space-y-6">
-                        <div>
-                            <p className="text-sm font-bold text-secondary">SAVE20JULY</p>
-                            <p className="text-[11px] text-gray-400">Ends in 5 days</p>
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-secondary">SUMMER-VIBES</p>
-                            <p className="text-[11px] text-gray-400">Ends in 12 days</p>
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-secondary">BOGO-ACCESSORIES</p>
-                            <p className="text-[11px] text-gray-400">No end date</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Modal */}
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                {/* Close button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors z-10"
+                >
+                    <X size={18} />
+                </button>
 
-            {/* Main Content: Create Coupon */}
-            <div className="md:col-span-9 bg-white p-10 rounded-lg border border-gray-200 shadow-sm space-y-12">
-                <div className="pb-8 border-b border-gray-100">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Create a coupon</h2>
-                    <p className="text-sm text-gray-500">Drive more sales by offering discounts with a custom coupon code.</p>
-                </div>
-
-                {/* Step 1 */}
-                <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-gray-900">1. Set your coupon details</h3>
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-800 uppercase tracking-wider">Coupon code name <span className="text-red-500">*</span></label>
-                        <input type="text" placeholder="e.g. SAVE10" className="w-full md:w-2/3 border border-gray-300 rounded-md px-4 py-3 outline-none focus:border-secondary transition-all" />
-                        <p className="text-[11px] text-gray-400">This is the code your buyers will enter at checkout.</p>
-                    </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-gray-900">2. Discount type</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <label className="border-2 border-secondary rounded-lg p-5 flex items-center gap-4 cursor-pointer bg-blue-50/10">
-                            <input type="radio" checked className="w-5 h-5 text-secondary focus:ring-secondary/20 transition-all cursor-pointer" />
-                            <div>
-                                <p className="text-sm font-bold text-gray-900">Percentage off</p>
-                                <p className="text-xs text-gray-500">e.g. 20% off</p>
+                {/* Illustration area */}
+                <div className="bg-gradient-to-br from-violet-50 to-blue-50 px-8 pt-10 pb-6 flex items-center justify-center">
+                    <div className="relative">
+                        {/* Two person illustration (CSS art) */}
+                        <div className="flex items-end gap-4">
+                            {/* Person 1 */}
+                            <div className="flex flex-col items-center gap-1">
+                                <div className="w-10 h-10 rounded-full bg-rose-300 border-4 border-white shadow-md" />
+                                <div className="w-8 h-16 bg-emerald-400 rounded-t-full" />
+                                <div className="flex gap-1">
+                                    <div className="w-3 h-8 bg-emerald-600 rounded-b-md" />
+                                    <div className="w-3 h-8 bg-emerald-600 rounded-b-md" />
+                                </div>
                             </div>
-                        </label>
-                        <label className="border border-gray-200 rounded-lg p-5 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                            <input type="radio" className="w-5 h-5 text-secondary focus:ring-secondary/20 transition-all cursor-pointer" />
-                            <div>
-                                <p className="text-sm font-bold text-gray-900">Fixed amount off</p>
-                                <p className="text-xs text-gray-500">e.g. $10 off</p>
+
+                            {/* Floating tag icon between them */}
+                            <div className="mb-12">
+                                <div className="bg-white rounded-xl shadow-lg p-3 border border-gray-100">
+                                    <div className="flex items-center gap-2">
+                                        <Tag size={18} className="text-[#3665f3]" />
+                                        <span className="text-xs font-bold text-gray-700">Promo</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 mt-1">
+                                        <div className="flex">
+                                            {[...Array(4)].map((_, i) => (
+                                                <span key={i} className="text-yellow-400 text-xs">★</span>
+                                            ))}
+                                        </div>
+                                        <span className="text-[10px] font-bold text-green-600">+14%</span>
+                                    </div>
+                                </div>
                             </div>
-                        </label>
-                    </div>
-                    <div className="relative md:w-1/3">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-800">%</span>
-                        <input type="text" defaultValue="0" className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md outline-none focus:border-secondary font-bold text-lg" />
+
+                            {/* Person 2 */}
+                            <div className="flex flex-col items-center gap-1">
+                                <div className="w-10 h-10 rounded-full bg-amber-300 border-4 border-white shadow-md" />
+                                <div className="w-8 h-16 bg-green-500 rounded-t-full" />
+                                <div className="flex gap-1">
+                                    <div className="w-3 h-8 bg-green-700 rounded-b-md" />
+                                    <div className="w-3 h-8 bg-green-700 rounded-b-md" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Step 3 */}
-                <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-gray-900">3. Minimum purchase</h3>
-                    <div className="flex flex-wrap gap-8">
-                        {['No minimum', 'Min. quantity', 'Min. amount spend'].map((option, i) => (
-                            <label key={option} className="flex items-center gap-3 cursor-pointer group">
-                                <input type="radio" name="min-p" checked={i === 0} className="w-5 h-5 text-secondary border-gray-300 cursor-pointer" />
-                                <span className={`text-sm transition-colors ${i === 0 ? 'text-gray-900 font-bold' : 'text-gray-500 font-medium group-hover:text-gray-700'}`}>{option}</span>
-                            </label>
+                {/* Content */}
+                <div className="px-8 py-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">
+                        Become a Seller to access marketing tools and much more
+                    </h2>
+
+                    <p className="text-sm font-semibold text-gray-700 mb-4 mt-3">
+                        With a seller account you can:
+                    </p>
+
+                    <ul className="space-y-2.5 mb-7">
+                        {features.map((f, i) => (
+                            <li key={i} className="flex items-start gap-2.5">
+                                <CheckCircle2 size={16} className="text-[#3665f3] shrink-0 mt-0.5" />
+                                <span className="text-sm text-gray-600">{f}</span>
+                            </li>
                         ))}
-                    </div>
-                </div>
+                    </ul>
 
-                {/* Step 4 */}
-                <div className="space-y-6">
-                    <h3 className="text-lg font-bold text-gray-900">4. Product selection criteria</h3>
-                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-10 flex flex-col items-center justify-center gap-4 bg-gray-50/30">
-                        <div className="text-center">
-                            <p className="text-sm font-bold text-gray-800">Select inventory</p>
-                            <p className="text-xs text-gray-400">Choose which items this coupon applies to.</p>
-                        </div>
-                        <button className="px-8 py-2 border-2 border-secondary text-secondary font-bold rounded-full hover:bg-blue-50 transition-colors">Add Items</button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => {
+                                onClose();
+                                navigate('/seller/store');
+                            }}
+                            className="flex-1 flex items-center justify-center gap-2 bg-[#3665f3] text-white font-bold py-2.5 px-5 rounded-full hover:bg-blue-700 transition-colors shadow-sm"
+                        >
+                            <Store size={16} />
+                            Open your Store
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="px-5 py-2.5 rounded-full border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                            Maybe later
+                        </button>
                     </div>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-secondary" />
-                        <span className="text-xs font-bold text-gray-700">Apply to all eligible listings</span>
-                    </label>
-                </div>
-
-                <div className="pt-12 border-t border-gray-100 flex justify-end gap-6 items-center">
-                    <button className="text-secondary font-bold hover:underline text-[15px]">Save as draft</button>
-                    <button className="bg-primary text-white font-bold py-3 px-12 rounded-full hover:opacity-90 shadow-lg shadow-red-200 transition-all">Launch Coupon</button>
                 </div>
             </div>
         </div>
+    );
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
+export default function SellerMarketingPage() {
+    const [view, setView] = useState('dashboard'); // 'dashboard' | 'create' | 'edit'
+    const [editingCoupon, setEditingCoupon] = useState(null);
+    const [coupons, setCoupons] = useState([]);
+    const [showUpgrade, setShowUpgrade] = useState(false);
+
+    const { user } = useAuthStore();
+    const isBuyer = user?.role?.toLowerCase() === 'buyer';
+
+    const handleCreateClick = () => {
+        if (isBuyer) {
+            setShowUpgrade(true);
+        } else {
+            setView('create');
+        }
+    };
+
+    const handleEdit = (coupon) => {
+        setEditingCoupon(coupon);
+        setView('edit');
+    };
+
+    const handleCancel = () => {
+        setEditingCoupon(null);
+        setView('dashboard');
+    };
+
+    return (
+        <>
+            {showUpgrade && <SellerUpgradeModal onClose={() => setShowUpgrade(false)} />}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1400px] mx-auto pb-20">
+                {/* Sidebar Controls */}
+                <div className="lg:col-span-3 space-y-6">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-gray-50 flex justify-between items-center">
+                            <h3 className="font-bold text-gray-900 text-lg">Marketing Hub</h3>
+                            <HelpCircle size={18} className="text-gray-400" />
+                        </div>
+                        <div className="p-4 space-y-1">
+                            {[
+                                { id: 'promotions', label: 'Promotions', icon: Tag, active: true },
+                                { id: 'advertising', label: 'Advertising', icon: TrendingUp },
+                                { id: 'social', label: 'Social Share', icon: Share2 },
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    className={`w-full text-left px-4 py-3 rounded-lg flex items-center justify-between group transition-all ${item.active ? 'bg-blue-50 text-secondary' : 'text-gray-500 hover:bg-gray-50'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <item.icon size={18} className={item.active ? 'text-secondary' : 'text-gray-400 group-hover:text-gray-600'} />
+                                        <span className="text-sm font-bold">{item.label}</span>
+                                    </div>
+                                    <ChevronRight size={14} className={item.active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'} />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-secondary to-blue-700 p-6 rounded-xl shadow-lg shadow-blue-100 text-white relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <h4 className="font-bold text-lg leading-tight mb-2">Grow your sales with promotions</h4>
+                            <p className="text-blue-100 text-xs mb-6 leading-relaxed">
+                                Boost visibility and attract buyers with custom discount codes and sales events.
+                            </p>
+                            <button
+                                onClick={handleCreateClick}
+                                className="bg-white text-secondary font-bold text-sm px-6 py-2.5 rounded-full hover:bg-blue-50 transition-colors"
+                            >
+                                Get Started
+                            </button>
+                        </div>
+                        <Tag className="absolute -bottom-8 -right-8 w-32 h-32 text-white/10 -rotate-12 group-hover:scale-110 transition-transform" />
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="lg:col-span-9 space-y-8">
+                    {view === 'dashboard' ? (
+                        <>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Manage your discounts</h1>
+                                    <p className="text-sm text-gray-500 mt-1">Review and manage your active promotions in one place.</p>
+                                </div>
+                                <button
+                                    onClick={handleCreateClick}
+                                    className="bg-primary text-white font-bold py-3 px-8 rounded-full hover:opacity-90 shadow-lg shadow-red-200 transition-all flex items-center gap-2"
+                                >
+                                    <Plus size={20} />
+                                    Create promotion
+                                </button>
+                            </div>
+
+                            <CouponDashboard coupons={coupons} />
+
+                            <div className="pt-8 border-t border-gray-100">
+                                <div className="mb-6">
+                                    <h2 className="text-xl font-bold text-gray-900">Your discounts</h2>
+                                    <p className="text-sm text-gray-500 mt-0.5">Manage existing coupons and monitor their status.</p>
+                                </div>
+                                <CouponList onEdit={handleEdit} onCreateClick={handleCreateClick} onCouponsLoaded={setCoupons} />
+                            </div>
+                        </>
+                    ) : (
+                        <CreateCouponForm
+                            editCoupon={editingCoupon}
+                            onCancel={handleCancel}
+                            onSuccess={handleCancel}
+                        />
+                    )}
+                </div>
+            </div>
+        </>
     );
 }

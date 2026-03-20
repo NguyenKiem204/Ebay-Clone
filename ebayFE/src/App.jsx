@@ -24,9 +24,11 @@ const SellerOverviewPage = lazy(() => import('./pages/seller/SellerOverviewPage'
 const SellerOrdersPage = lazy(() => import('./pages/seller/SellerOrdersPage'));
 const SellerListingsPage = lazy(() => import('./pages/seller/SellerListingsPage'));
 const SellerCreateListingPage = lazy(() => import('./pages/seller/SellerCreateListingPage'));
+const SellerEditListingPage = lazy(() => import('./pages/seller/SellerEditListingPage'));
 const SellerInventoryPage = lazy(() => import('./pages/seller/SellerInventoryPage'));
 const SellerMarketingPage = lazy(() => import('./pages/seller/SellerMarketingPage'));
 const SellerStorePage = lazy(() => import('./pages/seller/SellerStorePage'));
+const CouponProductsPage = lazy(() => import('./pages/CouponProductsPage'));
 
 // Auth Pages (Lazy Loaded)
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -58,6 +60,10 @@ const router = createBrowserRouter([
       {
         path: 'products/:id',
         element: <Suspense fallback={<PageLoader />}><ProductDetailsPage /></Suspense>,
+      },
+      {
+        path: 'coupons/:id',
+        element: <Suspense fallback={<PageLoader />}><CouponProductsPage /></Suspense>,
       },
       {
         path: 'cart',
@@ -150,6 +156,10 @@ const router = createBrowserRouter([
       {
         path: 'listings/create',
         element: <Suspense fallback={<PageLoader />}><SellerCreateListingPage /></Suspense>
+      },
+      {
+        path: 'listings/:id/edit',
+        element: <Suspense fallback={<PageLoader />}><SellerEditListingPage /></Suspense>
       },
       {
         path: 'inventory',

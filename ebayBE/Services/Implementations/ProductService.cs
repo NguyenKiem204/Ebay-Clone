@@ -10,10 +10,14 @@ namespace ebay.Services.Implementations
     public class ProductService : IProductService
     {
         private readonly EbayDbContext _context;
+        private readonly IFileService _fileService;
+        private readonly ILogger<ProductService> _logger;
 
-        public ProductService(EbayDbContext context)
+        public ProductService(EbayDbContext context, IFileService fileService, ILogger<ProductService> logger)
         {
             _context = context;
+            _fileService = fileService;
+            _logger = logger;
         }
 
         public async Task<LandingPageResponseDto> GetLandingPageProductsAsync()
@@ -76,7 +80,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
-                .Where(p => p.IsActive == true && p.Status == "active")
+                .Where(p => (p.IsActive ?? true) && p.Status == "active" && (p.Stock ?? 0) > 0)
                 .AsQueryable();
 
             // Filters
@@ -143,6 +147,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.Coupons)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -151,7 +156,9 @@ namespace ebay.Services.Implementations
             product.ViewCount = (product.ViewCount ?? 0) + 1;
             await _context.SaveChangesAsync();
 
-            return MapToDto(product);
+            var dto = MapToDto(product);
+            dto.ActiveCoupons = await GetActiveCouponsForProductAsync(product);
+            return dto;
         }
 
         public async Task<ProductResponseDto> GetProductBySlugAsync(string slug)
@@ -161,6 +168,7 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Seller)
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
+                .Include(p => p.Coupons)
                 .FirstOrDefaultAsync(p => p.Slug == slug);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -168,7 +176,35 @@ namespace ebay.Services.Implementations
             product.ViewCount = (product.ViewCount ?? 0) + 1;
             await _context.SaveChangesAsync();
 
-            return MapToDto(product);
+            var dto = MapToDto(product);
+            dto.ActiveCoupons = await GetActiveCouponsForProductAsync(product);
+            return dto;
+        }
+
+        private async Task<List<CouponResponseDto>> GetActiveCouponsForProductAsync(Product product)
+        {
+            var now = DateTime.UtcNow;
+            var coupons = await _context.Coupons
+                .Where(c => c.IsActive == true && 
+                           c.StartDate <= now && 
+                           c.EndDate >= now &&
+                           c.StoreId == product.StoreId)
+                .Where(c => c.ApplicableTo == "all" || 
+                           (c.ApplicableTo == "category" && c.CategoryId == product.CategoryId) ||
+                           (c.ApplicableTo == "product" && c.Products.Any(p => p.Id == product.Id)))
+                .ToListAsync();
+
+            return coupons.Select(c => new CouponResponseDto
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Description = c.Description,
+                DiscountType = c.DiscountType,
+                DiscountValue = c.DiscountValue,
+                MinOrderAmount = c.MinOrderAmount,
+                EndDate = c.EndDate,
+                ApplicableTo = c.ApplicableTo
+            }).ToList();
         }
 
         public async Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10)
@@ -206,7 +242,368 @@ namespace ebay.Services.Implementations
             return rootCategories;
         }
 
-        private static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
+        // ========== SELLER PRODUCT MANAGEMENT ==========
+
+        public async Task<PagedResponseDto<ProductResponseDto>> GetSellerProductsAsync(int sellerId, SellerProductSearchRequest request)
+        {
+            var query = _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .Where(p => p.SellerId == sellerId)
+                .AsQueryable();
+
+            // Filter by status
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                var status = request.Status.ToLower();
+                query = status switch
+                {
+                    "active" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) > 0 && (p.IsActive ?? true)),
+                    "draft" => query.Where(p => p.Status == "draft"),
+                    "out_of_stock" => query.Where(p => p.Status == "active" && (p.Stock ?? 0) == 0),
+                    "ended" => query.Where(p => p.Status == "ended"),
+                    _ => query
+                };
+            }
+
+            // Search by keyword
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var kw = request.Keyword.ToLower();
+                query = query.Where(p => p.Title.ToLower().Contains(kw));
+            }
+
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            return new PagedResponseDto<ProductResponseDto>
+            {
+                Items = items.Select(p => MapToDto(p)).ToList(),
+                TotalItems = totalItems,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }
+
+        public async Task<ProductResponseDto> CreateProductAsync(int sellerId, CreateProductRequest request)
+        {
+            _logger.LogInformation("Creating product for seller {SellerId}: {Title}", sellerId, request.Title);
+            
+            // Check listing limits
+            var user = await _context.Users.FindAsync(sellerId);
+            if (user != null && user.Role.ToLower() == "buyer")
+            {
+                var currentCount = await _context.Products.CountAsync(p => p.SellerId == sellerId);
+                if (currentCount >= 10)
+                {
+                    _logger.LogWarning("Buyer {SellerId} reached listing limit (10)", sellerId);
+                    throw new BadRequestException("Tài khoản Buyer chỉ được đăng tối đa 10 sản phẩm. Vui lòng nâng cấp lên Seller để đăng không giới hạn.");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Title))
+                throw new BadRequestException("Tiêu đề sản phẩm không được để trống");
+
+            if (request.Price <= 0 && !(request.IsAuction))
+                throw new BadRequestException("Giá sản phẩm phải lớn hơn 0");
+
+            // Get seller's store
+            var store = await _context.Stores.FirstOrDefaultAsync(s => s.SellerId == sellerId);
+
+            // Map condition to allowed DB values: 'new','used','refurbished','open box','pre-owned'
+            string normalizedCondition = (request.Condition ?? "new").ToLower();
+            if (normalizedCondition.Contains("new")) normalizedCondition = "new";
+            else if (normalizedCondition.Contains("used")) normalizedCondition = "used";
+            else if (normalizedCondition.Contains("refurbished")) normalizedCondition = "refurbished";
+            else if (normalizedCondition.Contains("open")) normalizedCondition = "open box";
+            else if (normalizedCondition.Contains("pre")) normalizedCondition = "pre-owned";
+            else normalizedCondition = "new"; // Fallback
+
+            // Upload images
+            var imageUrls = new List<string>();
+            if (request.Images != null && request.Images.Count > 0)
+            {
+                _logger.LogInformation("Uploading {Count} images for new product", request.Images.Count);
+                foreach (var image in request.Images.Take(24)) // Max 24 images
+                {
+                    var url = await _fileService.SaveFileAsync(image, "products");
+                    imageUrls.Add(url);
+                }
+            }
+
+            var product = new Product
+            {
+                Title = request.Title,
+                Slug = GenerateSlug(request.Title),
+                Description = request.Description,
+                Price = request.Price,
+                OriginalPrice = request.OriginalPrice,
+                CategoryId = request.CategoryId,
+                SellerId = sellerId,
+                StoreId = store?.Id,
+                Condition = normalizedCondition,
+                Brand = request.Brand,
+                Stock = request.Stock,
+                ShippingFee = request.ShippingFee,
+                Weight = request.Weight,
+                Dimensions = request.Dimensions,
+                IsAuction = request.IsAuction,
+                StartingBid = request.IsAuction ? request.StartingBid : null,
+                AuctionStartTime = request.IsAuction ? DateTime.UtcNow : null,
+                AuctionEndTime = request.IsAuction && request.AuctionDurationDays.HasValue
+                    ? DateTime.UtcNow.AddDays(request.AuctionDurationDays.Value)
+                    : null,
+                Images = imageUrls,
+                IsActive = request.Status?.ToLower() == "draft" ? false : true,
+                Status = string.IsNullOrEmpty(request.Status) ? "active" : request.Status.ToLower(),
+                ViewCount = 0,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully created product {ProductId} with slug {Slug}", product.Id, product.Slug);
+
+            // Reload with includes
+            var created = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .FirstAsync(p => p.Id == product.Id);
+
+            return MapToDto(created);
+        }
+
+        public async Task<ProductResponseDto> UpdateProductAsync(int sellerId, int productId, UpdateProductRequest request)
+        {
+            _logger.LogInformation("Updating product {ProductId} for seller {SellerId}", productId, sellerId);
+            
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .FirstOrDefaultAsync(p => p.Id == productId);
+
+            if (product == null)
+            {
+                _logger.LogWarning("Product {ProductId} not found for update", productId);
+                throw new NotFoundException("Sản phẩm không tồn tại");
+            }
+
+            if (product.SellerId != sellerId)
+            {
+                _logger.LogError("Seller {SellerId} attempted to update product {ProductId} owned by {OwnerId}", sellerId, productId, product.SellerId);
+                throw new ForbiddenException("Bạn không có quyền chỉnh sửa sản phẩm này");
+            }
+
+            // Update fields if provided
+            if (!string.IsNullOrWhiteSpace(request.Title) && request.Title != product.Title)
+            {
+                _logger.LogInformation("Updating product title from '{OldTitle}' to '{NewTitle}'", product.Title, request.Title);
+                product.Title = request.Title;
+                product.Slug = GenerateSlug(request.Title);
+            }
+            if (request.Description != null) product.Description = request.Description;
+            if (request.Price.HasValue) product.Price = request.Price.Value;
+            if (request.OriginalPrice.HasValue) product.OriginalPrice = request.OriginalPrice.Value;
+            if (request.CategoryId.HasValue) product.CategoryId = request.CategoryId.Value;
+            if (request.Condition != null) product.Condition = request.Condition;
+            if (request.Brand != null) product.Brand = request.Brand;
+            if (request.Stock.HasValue) product.Stock = request.Stock.Value;
+            if (request.ShippingFee.HasValue) product.ShippingFee = request.ShippingFee.Value;
+            if (request.Weight.HasValue) product.Weight = request.Weight.Value;
+            if (request.Dimensions != null) product.Dimensions = request.Dimensions;
+            if (request.IsAuction.HasValue)
+            {
+                product.IsAuction = request.IsAuction.Value;
+                if (request.IsAuction.Value)
+                {
+                    if (request.StartingBid.HasValue) product.StartingBid = request.StartingBid.Value;
+                    if (request.AuctionDurationDays.HasValue)
+                    {
+                        product.AuctionStartTime = DateTime.UtcNow;
+                        product.AuctionEndTime = DateTime.UtcNow.AddDays(request.AuctionDurationDays.Value);
+                    }
+                }
+            }
+
+            // Handle images: keep existing ones specified, delete the rest, add new ones
+            var updatedImages = new List<string>();
+
+            if (request.ExistingImages != null)
+            {
+                // Delete images that are not in the ExistingImages list
+                if (product.Images != null)
+                {
+                    foreach (var oldImage in product.Images)
+                    {
+                        if (!request.ExistingImages.Contains(oldImage))
+                        {
+                            _logger.LogInformation("Deleting removed image: {Url}", oldImage);
+                            _fileService.DeleteFile(oldImage);
+                        }
+                    }
+                }
+                updatedImages.AddRange(request.ExistingImages);
+            }
+            else if (product.Images != null)
+            {
+                // If ExistingImages is not provided, keep all current images
+                updatedImages.AddRange(product.Images);
+            }
+
+            // Upload new images
+            if (request.NewImages != null && request.NewImages.Count > 0)
+            {
+                _logger.LogInformation("Uploading {Count} new images for product {ProductId}", request.NewImages.Count, productId);
+                var remainingSlots = 24 - updatedImages.Count;
+                foreach (var newImage in request.NewImages.Take(remainingSlots))
+                {
+                    var url = await _fileService.SaveFileAsync(newImage, "products");
+                    updatedImages.Add(url);
+                }
+            }
+
+            product.Images = updatedImages;
+            product.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Successfully updated product {ProductId}", productId);
+
+            return MapToDto(product);
+        }
+
+        public async Task<ProductResponseDto> ToggleProductVisibilityAsync(int sellerId, int productId)
+        {
+            _logger.LogInformation("Toggling visibility for product {ProductId} by seller {SellerId}", productId, sellerId);
+            
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .FirstOrDefaultAsync(p => p.Id == productId);
+
+            if (product == null)
+                throw new NotFoundException("Sản phẩm không tồn tại");
+
+            if (product.SellerId != sellerId)
+                throw new ForbiddenException("Bạn không có quyền thay đổi trạng thái sản phẩm này");
+
+            product.IsActive = !(product.IsActive ?? true);
+            product.Status = (product.IsActive ?? true) ? "active" : "ended";
+            product.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Product {ProductId} visibility set to {IsActive}, Status to {Status}", productId, product.IsActive, product.Status);
+
+            return MapToDto(product);
+        }
+
+        public async Task<bool> DeleteProductAsync(int sellerId, int productId)
+        {
+            _logger.LogInformation("Deleting product {ProductId} by seller {SellerId}", productId, sellerId);
+            
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.Id == productId);
+
+            if (product == null)
+                throw new NotFoundException("Sản phẩm không tồn tại");
+
+            if (product.SellerId != sellerId)
+                throw new ForbiddenException("Bạn không có quyền xoá sản phẩm này");
+
+            // Delete product images from filesystem
+            if (product.Images != null)
+            {
+                _logger.LogInformation("Deleting {Count} images for product {ProductId}", product.Images.Count, productId);
+                foreach (var imageUrl in product.Images)
+                {
+                    _fileService.DeleteFile(imageUrl);
+                }
+            }
+
+            _context.Products.Remove(product);
+            var result = await _context.SaveChangesAsync() > 0;
+            
+            if (result)
+                _logger.LogInformation("Successfully deleted product {ProductId}", productId);
+            else
+                _logger.LogWarning("Failed to delete product {ProductId} from database", productId);
+            
+            return result;
+        }
+
+        public async Task<bool> BulkDeleteProductsAsync(int sellerId, List<int> productIds)
+        {
+            _logger.LogInformation("Bulk deleting {Count} products by seller {SellerId}", productIds.Count, sellerId);
+            
+            var products = await _context.Products
+                .Where(p => productIds.Contains(p.Id) && p.SellerId == sellerId)
+                .ToListAsync();
+
+            if (!products.Any()) return false;
+
+            foreach (var product in products)
+            {
+                if (product.Images != null)
+                {
+                    foreach (var imageUrl in product.Images)
+                    {
+                        _fileService.DeleteFile(imageUrl);
+                    }
+                }
+            }
+
+            _context.Products.RemoveRange(products);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> BulkUpdateStatusAsync(int sellerId, List<int> productIds, string status)
+        {
+            _logger.LogInformation("Bulk updating status to {Status} for {Count} products by seller {SellerId}", status, productIds.Count, sellerId);
+            
+            var products = await _context.Products
+                .Where(p => productIds.Contains(p.Id) && p.SellerId == sellerId)
+                .ToListAsync();
+
+            if (!products.Any()) return false;
+
+            foreach (var product in products)
+            {
+                product.Status = status.ToLower();
+                product.UpdatedAt = DateTime.UtcNow;
+                
+                if (product.Status == "active") product.IsActive = true;
+                else if (product.Status == "draft" || product.Status == "ended") product.IsActive = false;
+            }
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        // ========== HELPER METHODS ==========
+
+        private string GenerateSlug(string title)
+        {
+            var str = title.ToLower();
+            str = System.Text.RegularExpressions.Regex.Replace(str, @"[^a-z0-9\s-]", "");
+            str = System.Text.RegularExpressions.Regex.Replace(str, @"\s+", " ").Trim();
+            str = str.Replace(" ", "-");
+            // Add timestamp suffix for uniqueness
+            str = $"{str}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+            return str;
+        }
+
+        public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
         {
             Id = p.Id,
             Title = p.Title,
@@ -214,14 +611,19 @@ namespace ebay.Services.Implementations
             Description = p.Description,
             Price = p.Price,
             DiscountPrice = p.OriginalPrice,
+            OriginalPrice = p.OriginalPrice,
             Thumbnail = p.Images != null && p.Images.Count > 0 ? p.Images[0] : null,
-            Condition = p.Condition ?? "new",
+            Images = p.Images,
+            Condition = p.Condition ?? "New",
+            Brand = p.Brand,
             Status = p.Status ?? "active",
+            IsActive = p.IsActive ?? true,
             Stock = p.Stock ?? 0,
             ShippingFee = p.ShippingFee ?? 0,
             ViewCount = p.ViewCount ?? 0,
             CategoryId = p.CategoryId ?? 0,
             CategoryName = p.Category?.Name ?? "General",
+            SellerId = p.SellerId,
             SellerName = p.Seller?.Username ?? "Unknown",
             IsAuction = p.IsAuction ?? false,
             AuctionEndTime = p.AuctionEndTime,

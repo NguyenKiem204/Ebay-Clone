@@ -347,11 +347,6 @@ public partial class EbayDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent)
-                .HasForeignKey(d => d.ParentId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("categories_parent_id_fkey");
         });
 
         modelBuilder.Entity<Coupon>(entity =>
@@ -362,14 +357,7 @@ public partial class EbayDbContext : DbContext
 
             entity.HasIndex(e => e.Code, "coupons_code_key").IsUnique();
 
-            entity.HasIndex(e => e.Code, "idx_coupons_code");
-
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.ApplicableTo)
-                .HasMaxLength(20)
-                .HasDefaultValueSql("'all'::character varying")
-                .HasColumnName("applicable_to");
-            entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.Code)
                 .HasMaxLength(50)
                 .HasColumnName("code");
@@ -394,27 +382,49 @@ public partial class EbayDbContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("max_discount");
             entity.Property(e => e.MaxUsage).HasColumnName("max_usage");
+            entity.Property(e => e.MaxUsagePerUser)
+                .HasDefaultValue(1)
+                .HasColumnName("max_usage_per_user");
             entity.Property(e => e.MinOrderAmount)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0")
                 .HasColumnName("min_order_amount");
-            entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.StartDate)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("start_date");
             entity.Property(e => e.UsedCount)
                 .HasDefaultValue(0)
                 .HasColumnName("used_count");
+            entity.Property(e => e.CouponType)
+                .HasMaxLength(20)
+                .HasColumnName("coupon_type");
+            entity.Property(e => e.CategoryId).HasColumnName("category_id");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.StoreId).HasColumnName("store_id");
+            entity.Property(e => e.ApplicableTo)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'all'::character varying")
+                .HasColumnName("applicable_to");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Coupons)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("coupons_category_id_fkey");
+                
+            entity.HasOne(d => d.Store).WithMany(p => p.Coupons)
+                .HasForeignKey(d => d.StoreId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("coupons_store_id_fkey");
 
-            entity.HasOne(d => d.Product).WithMany(p => p.Coupons)
-                .HasForeignKey(d => d.ProductId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("coupons_product_id_fkey");
+            entity.HasMany(d => d.Products).WithMany(p => p.Coupons)
+                .UsingEntity<Dictionary<string, object>>(
+                    "coupon_products",
+                    r => r.HasOne<Product>().WithMany().HasForeignKey("product_id").HasConstraintName("coupon_products_product_id_fkey"),
+                    l => l.HasOne<Coupon>().WithMany().HasForeignKey("coupon_id").HasConstraintName("coupon_products_coupon_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("coupon_id", "product_id").HasName("coupon_products_pkey");
+                        j.ToTable("coupon_products");
+                    });
         });
 
         modelBuilder.Entity<CouponUsage>(entity =>
@@ -422,10 +432,6 @@ public partial class EbayDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("coupon_usage_pkey");
 
             entity.ToTable("coupon_usage");
-
-            entity.HasIndex(e => new { e.CouponId, e.OrderId }, "coupon_usage_coupon_id_order_id_key").IsUnique();
-
-            entity.HasIndex(e => e.UserId, "idx_coupon_usage_user");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CouponId).HasColumnName("coupon_id");

@@ -665,5 +665,17 @@ namespace ebay.Services.Implementations
                 .Replace('/', '_')
                 .TrimEnd('=');
         }
+        public async Task UpgradeToSellerAsync(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) throw new NotFoundException("Người dùng không tồn tại");
+
+            if (user.Role == "seller" || user.Role == "admin")
+                return; // Đã là seller hoặc admin rồi
+
+            user.Role = "seller";
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 }
