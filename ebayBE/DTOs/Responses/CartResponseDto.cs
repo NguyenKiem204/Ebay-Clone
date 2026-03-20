@@ -12,6 +12,8 @@ namespace ebay.DTOs.Responses
         public int Stock { get; set; }
         public decimal TotalPrice => UnitPrice * Quantity;
         public decimal ShippingFee { get; set; }
+        public int SellerId { get; set; }
+        public string SellerName { get; set; } = null!;
     }
 
     public class CartResponseDto

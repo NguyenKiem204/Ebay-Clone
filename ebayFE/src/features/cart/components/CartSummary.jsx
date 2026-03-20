@@ -1,10 +1,29 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Info, ShieldCheck } from 'lucide-react';
+import useAuthStore from '../../../store/useAuthStore';
+import { useDebounceButton } from '../../../hooks/useDebounceButton';
 
 export default function CartSummary({ subtotal, totalItems }) {
-    // Mock shipping to match screenshot complexity
-    const shipping = 7760848;
-    const total = subtotal + shipping;
+    const { isAuthenticated } = useAuthStore();
+    const navigate = useNavigate();
+
+    // Anti-spam: block rapid repeated clicks on checkout
+    const { trigger: handleCheckout, isBlocked } = useDebounceButton(
+        () => {
+            if (!isAuthenticated) {
+                // Guest: check if hCaptcha has already been verified in this session
+                const isVerified = sessionStorage.getItem('verified') === 'true';
+                if (isVerified) {
+                    navigate('/login?redirect=/cart');
+                } else {
+                    navigate('/verify?redirect=/cart');
+                }
+            } else {
+                navigate('/checkout');
+            }
+        },
+        { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Vui lòng không nhấn quá nhanh!' }
+    );
 
     return (
         <div className="bg-[#f2f2f2]/40 border border-gray-200 p-8 rounded-[16px] shadow-sm">
@@ -31,17 +50,18 @@ export default function CartSummary({ subtotal, totalItems }) {
                 </span>
             </div>
 
-            <Link
-                to="/checkout"
-                className="block w-full text-center py-3.5 bg-[#3665f3] text-white font-bold rounded-full hover:bg-blue-700 transition text-[16px] shadow-md shadow-blue-500/10 mb-8"
+            <button
+                onClick={handleCheckout}
+                disabled={isBlocked}
+                className="block w-full text-center py-3.5 bg-[#3665f3] text-white font-bold rounded-full hover:bg-blue-700 transition text-[16px] shadow-md shadow-blue-500/10 mb-8 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-                Go to checkout
-            </Link>
+                {!isAuthenticated ? 'Sign in to checkout' : 'Go to checkout'}
+            </button>
 
             <div className="flex items-start gap-2 pt-2 border-t border-gray-100 mt-4">
                 <ShieldCheck size={20} className="text-[#3665f3] flex-shrink-0 mt-0.5" />
                 <p className="text-[12px] text-gray-600 leading-relaxed">
-                    Purchase protected by <Link to="#" className="text-[#3665f3] underline">eBay Money Back Guarantee</Link>
+                    Purchase protected by <a href="#" className="text-[#3665f3] underline">eBay Money Back Guarantee</a>
                 </p>
             </div>
         </div>

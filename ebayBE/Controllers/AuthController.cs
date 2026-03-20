@@ -289,7 +289,7 @@ namespace ebay.Controllers
         [RateLimit("VerifyCaptcha", 10, 1, RateLimitPeriod.Minute)]
         public async Task<ActionResult<ApiResponse<object>>> VerifyCaptcha([FromBody] CaptchaRequestDto request)
         {
-            string secret = _configuration["HCaptchaSecret"];
+            string secret = _configuration["HCaptchaSecret:Secret"];
             if (string.IsNullOrEmpty(secret))
             {
                 _logger.LogError("HCaptchaSecret missing in appsettings.json.");

@@ -1,11 +1,30 @@
-import { Link } from 'react-router-dom';
-import { Button } from './Button';
-import { useRequireAuth } from '../../hooks/useRequireAuth';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Heart } from 'lucide-react';
+import useAuthStore from '../../store/useAuthStore';
+import useSavedStore from '../../features/saved/useSavedStore';
 
 export function ProductCard({ product }) {
-    const { handleSecureAction } = useRequireAuth();
+    const { isAuthenticated } = useAuthStore();
+    const isSaved = useSavedStore(s => s.isSaved(product?.id));
+    const toggleSaved = useSavedStore(s => s.toggleSaved);
+    const navigate = useNavigate();
 
     if (!product) return null;
+
+    const handleSaveToggle = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isAuthenticated) {
+            const isVerified = sessionStorage.getItem('verified') === 'true';
+            if (isVerified) {
+                navigate(`/login?redirect=/products/${product.id}`);
+            } else {
+                navigate(`/verify?redirect=/products/${product.id}`);
+            }
+            return;
+        }
+        toggleSaved(product.id);
+    };
 
     return (
         <div className="group relative bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-shadow h-full">
@@ -14,17 +33,16 @@ export function ProductCard({ product }) {
                     {product.discount}% OFF
                 </div>
             )}
-            <button 
-                onClick={(e) => {
-                    e.preventDefault();
-                    handleSecureAction(() => {});
-                }}
-                className="absolute top-2 right-2 z-10 p-2 text-gray-400 hover:text-red-500 transition-colors"
-                title="Add to watchlist"
+            <button
+                onClick={handleSaveToggle}
+                className="absolute top-2 right-2 z-10 p-2 transition-colors"
+                title={isSaved ? 'Remove from saved' : 'Save'}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </svg>
+                <Heart
+                    size={22}
+                    strokeWidth={1.5}
+                    className={isSaved ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}
+                />
             </button>
 
             <Link to={`/products/${product.id}`} className="block relative pt-[100%] overflow-hidden bg-white px-2">
@@ -78,9 +96,13 @@ export function ProductCard({ product }) {
                 </div>
 
                 <div className="mt-2 overflow-hidden h-0 group-hover:h-8 transition-all opacity-0 group-hover:opacity-100">
-                    <Button className="w-full text-[12px] h-8 bg-secondary hover:bg-blue-700 text-white rounded-full font-bold" variant="secondary">
-                        {product.isAuction ? 'Bid now' : 'Add to cart'}
-                    </Button>
+                    <Link
+                        to={`/products/${product.id}`}
+                        className="flex w-full items-center justify-center text-[12px] h-8 bg-secondary hover:bg-blue-700 text-white rounded-full font-bold"
+                    >
+                        <ShoppingCart size={14} className="mr-1.5" />
+                        {product.isAuction ? 'Bid now' : 'View item'}
+                    </Link>
                 </div>
             </div>
         </div>

@@ -3,80 +3,100 @@ import useCartStore from './useCartStore';
 import useAuthStore from '../../../store/useAuthStore';
 import { cartService } from '../services/cartService';
 
+// Module-level flag: shared across all hook instances.
+// Prevents CartPage remount from re-triggering merge/fetch and doubling quantities.
+let hasSynced = false;
+
 export const useCart = () => {
-    const { items, addItem, removeItem, updateQuantity, clearCart, setCart } = useCartStore();
+    const { items, addItem, removeItem, updateQuantity, clearCart, setCart, cartOwner } = useCartStore();
     const { isAuthenticated, loading: authLoading } = useAuthStore();
 
     const fetchCart = useCallback(async () => {
-        if (isAuthenticated) {
-            try {
-                const response = await cartService.getCart();
-                if (response.success) {
-                    // Map backend CartItemResponseDto to frontend item structure
-                    const mappedItems = response.data.items.map(item => ({
-                        id: item.productId,
-                        title: item.productName,
-                        price: item.price,
-                        quantity: item.quantity,
-                        image: item.productThumbnail,
-                        seller: item.sellerName,
-                        condition: 'New', // Default or map if available
-                        shippingPrice: 0 // Default or map if available
-                    }));
-                    setCart(mappedItems);
-                }
-            } catch (error) {
-                console.error('Failed to fetch cart:', error);
+        try {
+            const response = await cartService.getCart();
+            if (response.success) {
+                // Map backend CartItemResponseDto → frontend item shape
+                const mappedItems = response.data.items.map(item => ({
+                    id: item.productId,
+                    title: item.productName,
+                    price: item.unitPrice,           // fix: was item.price
+                    image: item.productImage,        // fix: was item.productThumbnail
+                    sellerId: item.sellerId,
+                    sellerName: item.sellerName,
+                    seller: item.sellerName || 'seller',
+                    condition: 'New',
+                    shippingPrice: item.shippingFee ?? 0,
+                    quantity: item.quantity,
+                    stock: item.stock
+                }));
+                setCart(mappedItems);
             }
+        } catch (error) {
+            console.error('Failed to fetch cart:', error);
         }
-    }, [isAuthenticated, setCart]);
+    }, [setCart]);
 
-    // Sync guest cart with server on login
+    // Sync on login: merge local cart → server, then fetch fresh server cart
     useEffect(() => {
+        // Only run after auth is resolved and when authenticated
+        if (authLoading || !isAuthenticated) {
+            hasSynced = false; // reset when logged out so next login syncs again
+            return;
+        }
+
+        // Guard: only sync once per login session (module-level flag, not per-component)
+        if (hasSynced) return;
+        hasSynced = true;
+
         const syncOnLogin = async () => {
-            if (!authLoading && isAuthenticated && items.length > 0) {
+            if (items.length > 0 && cartOwner === 'guest') {
+                // There are local (guest) items — merge them first
                 try {
-                    // Send minimal data for merging: List<AddToCartRequestDto>
                     const guestItems = items.map(item => ({
                         productId: item.id,
                         quantity: item.quantity
                     }));
-                    const response = await cartService.mergeCart(guestItems);
-                    if (response.success) {
-                        fetchCart(); // Fetch fresh cart from server after merge
-                    }
+                    await cartService.mergeCart(guestItems);
                 } catch (error) {
                     console.error('Failed to merge cart:', error);
+                } finally {
+                    // Always clear local cart after attempting merge to prevent
+                    // cross-user contamination
+                    clearCart();
                 }
-            } else if (!authLoading && isAuthenticated) {
-                fetchCart();
             }
+            // Fetch the authoritative server cart (merged or existing)
+            await fetchCart();
         };
 
         syncOnLogin();
-    }, [isAuthenticated, authLoading]);
+    }, [isAuthenticated, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleAddItem = async (product, quantity = 1) => {
-        // Essential fields for cart display
         const cartItem = {
             id: product.id,
             title: product.title || product.name,
             price: product.price || 0,
-            image: product.thumbnail || product.imageUrl || product.image,
-            seller: product.sellerName || 'ebay_seller',
+            image: product.thumbnail || product.imageUrl || (product.images && product.images[0]) || product.image,
+            sellerId: product.sellerId,
+            sellerName: product.sellerName,
+            seller: product.sellerName || 'seller',
             condition: product.condition || 'New',
-            shippingPrice: product.shippingFee || 0,
+            shippingPrice: product.shippingFee ?? 0,
             quantity
         };
 
-        addItem(cartItem, quantity);
-
         if (isAuthenticated) {
+            // Authenticated: call API first, then fetch fresh cart
             try {
                 await cartService.addToCart(product.id, quantity);
+                await fetchCart();
             } catch (error) {
-                console.error('Failed to add item to API cart:', error);
+                console.error('Failed to add item to cart:', error);
             }
+        } else {
+            // Guest: only update localStorage
+            addItem(cartItem, quantity);
         }
     };
 
@@ -86,18 +106,22 @@ export const useCart = () => {
             try {
                 await cartService.removeFromCart(productId);
             } catch (error) {
-                console.error('Failed to remove item from API cart:', error);
+                console.error('Failed to remove item from cart:', error);
             }
         }
     };
 
     const handleUpdateQuantity = async (productId, quantity) => {
+        if (quantity <= 0) {
+            await handleRemoveItem(productId);
+            return;
+        }
         updateQuantity(productId, quantity);
         if (isAuthenticated) {
             try {
                 await cartService.updateCartItem(productId, quantity);
             } catch (error) {
-                console.error('Failed to update quantity in API cart:', error);
+                console.error('Failed to update cart quantity:', error);
             }
         }
     };

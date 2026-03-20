@@ -1,8 +1,20 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, Info } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
+import api from '../../../lib/axios';
 
 export default function CartItem({ item, onRemove, onUpdateQuantity }) {
+    const [sellerProfile, setSellerProfile] = useState(null);
+
+    useEffect(() => {
+        if (item.sellerId) {
+            api.get(`/api/Seller/${item.sellerId}`)
+                .then(res => setSellerProfile(res.data.data))
+                .catch(() => {});
+        }
+    }, [item.sellerId]);
+
     // Mocked badges for visual similarity to screenshot
     const badges = {
         1: { text: "IN 1 OTHER CART", variant: "primary" },
@@ -10,23 +22,27 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }) {
     };
     const activeBadge = badges[item.id];
 
+    const sellerName = sellerProfile?.username || item.sellerName || item.seller || 'Unknown';
+    const positivePercent = sellerProfile ? `${sellerProfile.positivePercent}%` : (item.feedback || '...');
+    const avatarUrl = sellerProfile?.avatarUrl || item.sellerAvatar;
+
     return (
         <div className="bg-white rounded-[16px] border border-gray-200 shadow-sm mb-4 overflow-hidden">
             {/* Seller Header */}
             <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
-                        {item.sellerAvatar ? (
-                            <img src={item.sellerAvatar} alt={item.seller} className="w-full h-full object-cover" />
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt={sellerName} className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-gray-400 text-xs font-bold">{item.seller?.charAt(0).toUpperCase() || 'S'}</span>
+                            <span className="text-gray-400 text-xs font-bold">{sellerName.charAt(0).toUpperCase()}</span>
                         )}
                     </div>
                     <div>
                         <div className="flex items-center gap-1">
-                            <span className="font-bold text-[15px] text-gray-900 leading-tight border-b border-black">{item.seller || 'lite_corp'}</span>
+                            <span className="font-bold text-[15px] text-gray-900 leading-tight border-b border-black">{sellerName}</span>
                         </div>
-                        <p className="text-[13px] text-gray-500">{item.feedback || '99.6%'} positive feedback</p>
+                        <p className="text-[13px] text-gray-500">{positivePercent} positive feedback</p>
                     </div>
                 </div>
                 <button className="text-[#3665f3] hover:underline text-[14px] font-medium border-b border-blue-600">Pay only this seller</button>
@@ -40,7 +56,7 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }) {
                         <img
                             src={item.thumbnail || item.imageUrl || (item.images && item.images[0]?.imageUrl) || item.image || 'https://via.placeholder.com/150'}
                             alt={item.title}
-                            className={`w-full h-full object-contain ${!item.thumbnail && !item.imageUrl && !(item.images?.[0]?.imageUrl) ? 'opacity-20' : 'mix-blend-multiply'}`}
+                            className={`w-full h-full object-contain ${!item.thumbnail && !item.imageUrl && !(item.images?.[0]?.imageUrl) && !item.image ? 'opacity-20' : ''}`}
                         />
                     </div>
                 </div>

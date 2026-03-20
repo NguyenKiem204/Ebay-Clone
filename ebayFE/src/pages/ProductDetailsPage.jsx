@@ -8,10 +8,17 @@ import SimilarItemsList from '../components/product/SimilarItemsList';
 import RelatedItems from '../components/product/RelatedItems';
 import AboutThisItem from '../components/product/AboutThisItem';
 import SellerSection from '../components/product/SellerSection/SellerSection';
+import { RecommendedItems } from '../components/product/RecommendedItems';
+import useHistoryStore from '../features/history/useHistoryStore';
+import { useRecommendations } from '../features/history/useRecommendations';
 
 export default function ProductDetailsPage() {
     const { id } = useParams();
     const { currentProduct: product, relatedProducts, loading, error, fetchProductById, fetchRelatedProducts } = useProductStore();
+    const trackView  = useHistoryStore(s => s.trackView);
+    const historyItems = useHistoryStore(s => s.historyItems);
+    const excludeIds = historyItems.map(i => i.productId);
+    const { recommendations } = useRecommendations(product?.id, excludeIds);
 
     useEffect(() => {
         if (id) {
@@ -19,6 +26,13 @@ export default function ProductDetailsPage() {
             fetchRelatedProducts(id);
         }
     }, [id, fetchProductById, fetchRelatedProducts]);
+
+    // Track view when product data is loaded
+    useEffect(() => {
+        if (product) {
+            trackView(product);
+        }
+    }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (loading && !product) {
         return (
@@ -51,7 +65,7 @@ export default function ProductDetailsPage() {
                 {/* Left Column: Image Gallery (Span 7) */}
                 <div className="md:col-span-7">
                     <div className="sticky top-24">
-                        <ImageGallery images={images} title={product.title} />
+                        <ImageGallery images={images} title={product.title} savedCount={product.savedCount} inCartCount={product.inCartCount} />
                         <SimilarItemsList images={images} />
                     </div>
                 </div>
@@ -63,7 +77,10 @@ export default function ProductDetailsPage() {
             </div>
 
             {/* Explore related items */}
-            <RelatedItems relatedProducts={relatedProducts} />
+            <RelatedItems relatedProducts={relatedProducts} productId={product.id} />
+
+            {/* Because you viewed this... */}
+            <RecommendedItems recommendations={recommendations} />
 
             {/* Bottom Tabs (About this item) */}
             <AboutThisItem product={product} />

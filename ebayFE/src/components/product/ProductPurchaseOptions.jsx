@@ -1,39 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Heart, Info } from 'lucide-react';
+import { useCart } from '../../features/cart/hooks/useCart';
 import useCartStore from '../../features/cart/hooks/useCartStore';
 import toast from 'react-hot-toast';
 import AddToCartModal from './AddToCartModal';
 import useAuthStore from '../../store/useAuthStore';
 import GuestCheckoutModal from './GuestCheckoutModal';
+import { useDebounceButton } from '../../hooks/useDebounceButton';
+import useWatchlistStore from '../../features/watchlist/useWatchlistStore';
+import SellerFeedbackModal from './SellerSection/SellerFeedbackModal';
+import api from '../../lib/axios';
 
 export default function ProductPurchaseOptions({ product }) {
     const [quantity, setQuantity] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
-    const addItem = useCartStore((state) => state.addItem);
+    const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
+    const [sellerProfile, setSellerProfile] = useState(null);
+    const { addItem } = useCart();
+    const cartItems = useCartStore(s => s.items);
+    const isInCart = cartItems.some(item => item.id === product.id);
     const { isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
+    const isWatched = useWatchlistStore(s => s.isWatched(product?.id));
+    const toggleWatch = useWatchlistStore(s => s.toggleWatch);
 
-    const handleAddToCart = () => {
-        addItem(product, quantity);
+    // Fetch seller profile for review count & positive %
+    useEffect(() => {
+        if (product?.sellerId) {
+            api.get(`/api/Seller/${product.sellerId}`)
+                .then(res => setSellerProfile(res.data.data))
+                .catch(() => {});
+        }
+    }, [product?.sellerId]);
+
+    const spamOpts = { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Vui lòng không nhấn quá nhanh!' };
+
+    const { trigger: handleAddToCart, isBlocked: addBlocked } = useDebounceButton(async () => {
+        await addItem(product, quantity);
         setIsModalOpen(true);
-    };
+    }, spamOpts);
 
-    const handleBuyItNow = () => {
-        // Do not add to cart! Bypass directly to checkout
+    const { trigger: handleBuyItNow, isBlocked: buyBlocked } = useDebounceButton(() => {
         if (isAuthenticated) {
             navigate(`/checkout?buyItNow=1&productId=${product.id}&quantity=${quantity}`);
         } else {
             setIsGuestModalOpen(true);
         }
+    }, spamOpts);
+
+    const formatCount = (n) => {
+        if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+        if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+        return n?.toLocaleString() || '0';
     };
 
     return (
         <div className="w-full">
-            {/* Modal */}
-            <GuestCheckoutModal 
+            {/* Modals */}
+            <GuestCheckoutModal
                 isOpen={isGuestModalOpen}
                 onClose={() => setIsGuestModalOpen(false)}
                 product={product}
@@ -45,6 +72,12 @@ export default function ProductPurchaseOptions({ product }) {
                 product={product}
                 quantity={quantity}
             />
+            <SellerFeedbackModal
+                isOpen={isSellerModalOpen}
+                onClose={() => setIsSellerModalOpen(false)}
+                sellerId={product?.sellerId}
+                productId={product?.id}
+            />
 
             <div className="mb-6">
                 <h1 className="text-[22px] font-bold text-gray-900 leading-[1.2] mb-4">
@@ -52,19 +85,19 @@ export default function ProductPurchaseOptions({ product }) {
                 </h1>
 
                 {/* Seller Card Refined */}
-                <div className="flex items-center gap-3 group cursor-pointer border-t border-gray-100 pt-4">
+                <div className="flex items-center gap-3 group cursor-pointer border-t border-gray-100 pt-4" onClick={() => setIsSellerModalOpen(true)}>
                     <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
-                        <img src="https://i.ebayimg.com/images/g/2i4AAOSwAWZngDgE/s-l64.jpg" alt="seller" className="w-full h-full object-cover" />
+                        <img src={sellerProfile?.avatarUrl || "https://i.ebayimg.com/images/g/2i4AAOSwAWZngDgE/s-l64.jpg"} alt="seller" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900 hover:underline">{product.sellerName || 'Prime Renewed Laptops'}</span>
-                            <span className="text-gray-500 text-[13px]">(6982)</span>
+                            <span className="font-bold text-gray-900 hover:underline">{sellerProfile?.username || product.sellerName || 'Unknown'}</span>
+                            <span className="text-gray-500 text-[13px]">({sellerProfile ? formatCount(sellerProfile.totalReviews) : '...'})</span>
                         </div>
                         <div className="text-[13px] flex items-center gap-3">
-                            <span className="text-gray-900 underline underline-offset-2">99.9% positive</span>
-                            <Link to="#" className="text-gray-900 underline underline-offset-2">Seller's other items</Link>
-                            <Link to="#" className="text-gray-900 underline underline-offset-2">Contact seller</Link>
+                            <span className="text-gray-900 underline underline-offset-2">{sellerProfile ? `${sellerProfile.positivePercent}% positive` : '...'}</span>
+                            <Link to="#" className="text-gray-900 underline underline-offset-2" onClick={e => e.stopPropagation()}>Seller's other items</Link>
+                            <Link to="#" className="text-gray-900 underline underline-offset-2" onClick={e => e.stopPropagation()}>Contact seller</Link>
                         </div>
                     </div>
                     <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-400"><path fill="none" stroke="currentColor" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
@@ -100,11 +133,20 @@ export default function ProductPurchaseOptions({ product }) {
                             <input
                                 type="number"
                                 min="1"
+                                max={product.stock > 0 ? product.stock : 1}
                                 value={quantity}
-                                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                onChange={(e) => setQuantity(Math.min(product.stock > 0 ? product.stock : 1, Math.max(1, parseInt(e.target.value) || 1)))}
                                 className="w-[60px] h-10 border border-gray-300 rounded px-3 text-center"
                             />
-                            <span className="text-[14px] text-gray-500">3 available · 5 sold</span>
+                            <span className="text-[14px] text-gray-500">
+                                {product.stock > 0 ? (
+                                    <>
+                                        {product.stock} available {product.soldCount > 0 && <span>&middot; {product.soldCount} sold</span>}
+                                    </>
+                                ) : (
+                                    <span className="text-[#dd1e31] font-bold">Out of stock</span>
+                                )}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -113,31 +155,63 @@ export default function ProductPurchaseOptions({ product }) {
                 <div className="space-y-3">
                     <Button
                         onClick={handleBuyItNow}
-                        className="w-full bg-[#3665f3] hover:bg-blue-700 h-[50px] rounded-full font-bold text-[16px]"
+                        disabled={buyBlocked}
+                        className="w-full bg-[#3665f3] hover:bg-blue-700 h-[50px] rounded-full font-bold text-[16px] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         Buy It Now
                     </Button>
                     <Button
-                        onClick={handleAddToCart}
-                        className="w-full bg-white border border-[#3665f3] text-[#3665f3] hover:bg-blue-50 h-[50px] rounded-full font-bold text-[16px]"
+                        onClick={isInCart ? () => navigate('/cart') : handleAddToCart}
+                        disabled={!isInCart && addBlocked}
+                        className="w-full bg-white border border-[#3665f3] text-[#3665f3] hover:bg-blue-50 h-[50px] rounded-full font-bold text-[16px] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Add to cart
+                        {isInCart ? 'See in cart' : 'Add to cart'}
                     </Button>
-                    <Button className="w-full bg-white border border-[#3665f3] text-[#3665f3] hover:bg-blue-50 h-[50px] rounded-full font-bold text-[16px] flex items-center justify-center gap-2">
-                        <Heart size={20} />
-                        <span>Add to Watchlist</span>
+                    <Button
+                        onClick={() => {
+                            if (!isAuthenticated) {
+                                navigate(`/login?redirect=/products/${product.id}`);
+                                return;
+                            }
+                            toggleWatch(product.id);
+                        }}
+                        className={`w-full border h-[50px] rounded-full font-bold text-[16px] flex items-center justify-center gap-2 transition-colors ${
+                            isWatched
+                                ? 'bg-red-50 border-red-400 text-red-500 hover:bg-red-100'
+                                : 'bg-white border-[#3665f3] text-[#3665f3] hover:bg-blue-50'
+                        }`}
+                    >
+                        <Heart size={20} className={isWatched ? 'fill-red-500 text-red-500' : ''} />
+                        <span>{isWatched ? 'Watching' : 'Add to Watchlist'}</span>
                     </Button>
                 </div>
 
+
                 {/* Trust Signals */}
-                <div className="mt-6 bg-[#f7f7f7] rounded-lg p-4 flex items-start gap-3">
-                    <div className="w-6 h-6 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-current stroke-2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                {(product.soldCount > 0 || product.savedCount > 0) && (
+                    <div className="mt-6 bg-[#f7f7f7] rounded-lg p-4 flex flex-col gap-3">
+                        {product.soldCount > 0 && (
+                            <div className="flex items-start gap-3">
+                                <div className="w-5 h-5 flex items-center justify-center mt-0.5 shrink-0">
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-current stroke-2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                                </div>
+                                <p className="text-[14px] text-gray-900 leading-tight pt-0.5">
+                                    <span className="font-bold">{product.soldCount > 5 ? "This one's trending." : "Good choice."}</span> {product.soldCount} have already sold.
+                                </p>
+                            </div>
+                        )}
+                        {product.savedCount > 0 && (
+                            <div className="flex items-start gap-3">
+                                <div className="w-5 h-5 flex items-center justify-center mt-0.5 shrink-0">
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-current stroke-2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                                </div>
+                                <p className="text-[14px] text-gray-900 leading-tight pt-0.5">
+                                    <span className="font-bold">People want this.</span> {product.savedCount} people are watching this.
+                                </p>
+                            </div>
+                        )}
                     </div>
-                    <p className="text-[14px] text-gray-900">
-                        <span className="font-bold">Popular item.</span> 5 have already sold.
-                    </p>
-                </div>
+                )}
 
                 {/* Summary Details */}
                 <div className="mt-8 space-y-4 text-[13px] border-t border-gray-100 pt-6">

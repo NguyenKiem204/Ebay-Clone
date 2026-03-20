@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { checkoutService } from '../services/checkoutService';
 import { useCart } from '../../cart/hooks/useCart';
 import api from '../../../lib/axios';
+import useAuthStore from '../../../store/useAuthStore';
 
 export const useCheckout = () => {
     const navigate = useNavigate();
@@ -22,6 +23,11 @@ export const useCheckout = () => {
     const [selectedAddressId, setSelectedAddressId] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const [note, setNote] = useState('');
+    const [guestShipping, setGuestShipping] = useState({ country: 'Vietnam' });
+    const [isGuestDone, setIsGuestDone] = useState(false);
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [selectedSavedIdx, setSelectedSavedIdx] = useState(0);
+    const isAuthenticated = useAuthStore(s => s.isAuthenticated);
 
     // Fetch Buy It Now Item
     useEffect(() => {
@@ -36,6 +42,8 @@ export const useCheckout = () => {
                             title: product.name || product.title,
                             price: product.price,
                             image: product.thumbnail || product.imageUrl || (product.images?.[0]?.imageUrl),
+                            sellerId: product.sellerId,
+                            sellerName: product.sellerName,
                             seller: product.sellerName || 'ebay_seller',
                             soldCount: product.soldCount ?? 0,
                             quantity: initialQuantity
@@ -50,6 +58,7 @@ export const useCheckout = () => {
     }, [isBuyItNow, buyItNowProductId, initialQuantity]);
 
     useEffect(() => {
+        if (!isAuthenticated) return; // skip for guests
         const fetchAddresses = async () => {
             try {
                 const response = await checkoutService.getShippingAddresses();
@@ -63,7 +72,7 @@ export const useCheckout = () => {
             }
         };
         fetchAddresses();
-    }, []);
+    }, [isAuthenticated]);
 
     const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
@@ -154,6 +163,15 @@ export const useCheckout = () => {
         note,
         setNote,
         updateQuantity,
-        handlePlaceOrder
+        handlePlaceOrder,
+        guestShipping,
+        setGuestShipping,
+        isGuestDone,
+        setIsGuestDone,
+        isAuthenticated,
+        savedAddresses,
+        setSavedAddresses,
+        selectedSavedIdx,
+        setSelectedSavedIdx
     };
 };

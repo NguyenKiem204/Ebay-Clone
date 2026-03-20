@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ebay.Models;
@@ -74,4 +74,6 @@ public partial class Product
     public virtual Store? Store { get; set; }
 
     public virtual ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
+
+    public virtual ICollection<WatchlistItem> WatchlistItems { get; set; } = new List<WatchlistItem>();
 }

@@ -30,7 +30,9 @@ namespace ebay.Services.Implementations
                 UnitPrice = ci.Product.Price,
                 Quantity = ci.Quantity,
                 Stock = ci.Product.Stock ?? 0,
-                ShippingFee = ci.Product.ShippingFee ?? 0
+                ShippingFee = ci.Product.ShippingFee ?? 0,
+                SellerId = ci.Product.SellerId,
+                SellerName = ci.Product.Seller?.Username ?? "Unknown"
             }).ToList();
 
             return new CartResponseDto
@@ -134,6 +136,7 @@ namespace ebay.Services.Implementations
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
                     .ThenInclude(ci => ci.Product)
+                        .ThenInclude(p => p.Seller)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (cart == null)

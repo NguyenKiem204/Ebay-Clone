@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../lib/axios';
+import useCartStore from '../features/cart/hooks/useCartStore';
 
 const useAuthStore = create((set) => ({
     user: null,
@@ -111,6 +112,13 @@ const useAuthStore = create((set) => ({
         try {
             await api.post('/api/Auth/logout');
         } finally {
+            // Clear cart to prevent leaking data to next user on same browser
+            useCartStore.getState().clearCart();
+
+            // Clear history store so next user doesn't see this user's viewed items
+            const { default: useHistoryStore } = await import('../features/history/useHistoryStore');
+            useHistoryStore.getState().clear();
+
             set({
                 user: null,
                 refreshToken: null,
@@ -138,6 +146,8 @@ const useAuthStore = create((set) => ({
                 isAuthenticated: true
             });
         } catch (error) {
+            // Not authenticated — clear any stale cart data
+            useCartStore.getState().clearCart();
             set({ user: null, isAuthenticated: false });
         } finally {
             set({ loading: false });

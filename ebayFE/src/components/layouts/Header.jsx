@@ -50,7 +50,7 @@ export default function Header() {
                     <div className="flex items-center gap-5">
                         <Link to="#" className="hover:underline">Ship to</Link>
                         <Link to="/seller" className="hover:underline">Sell</Link>
-                        <button onClick={() => handleSecureAction(() => navigate('/watchlist'))} className="hover:underline flex items-center gap-1">Watchlist <ChevronDown size={12} /></button>
+                        <button onClick={() => handleSecureAction(() => navigate('/watchlist'), '/watchlist')} className="hover:underline flex items-center gap-1">Watchlist <ChevronDown size={12} /></button>
                         <Link to="/profile" className="hover:underline flex items-center gap-1">My eBay <ChevronDown size={12} /></Link>
                         <button className="hover:bg-gray-100 p-1 rounded-full transition-colors relative">
                             <Bell size={20} strokeWidth={1.5} />
@@ -137,7 +137,7 @@ export default function Header() {
             {/* Bottom Bar (Categories) */}
             {!isProductDetails && (
                 <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-3 flex items-center justify-center gap-6 text-[13px] text-[#333] border-t border-gray-100 flex-wrap">
-                    <button onClick={() => handleSecureAction(() => navigate('/saved'))} className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Saved</button>
+                    <button onClick={() => handleSecureAction(() => navigate('/saved'), '/saved')} className="hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1">Saved</button>
                     <Link
                         to="/products?filter=auctions"
                         className={`hover:text-blue-600 border-b border-transparent hover:border-blue-600 pb-1 ${isAuctionsActive ? 'font-bold text-secondary' : ''}`}

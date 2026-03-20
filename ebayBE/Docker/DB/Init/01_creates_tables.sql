@@ -492,6 +492,34 @@ CREATE TABLE wishlists (
 
 CREATE INDEX idx_wishlists_user ON wishlists(user_id);
 
+CREATE TABLE watchlist (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(user_id, product_id)
+);
+
+CREATE INDEX idx_watchlist_user ON watchlist(user_id);
+
+-- Product View History Table (Recently Viewed)
+CREATE TABLE product_view_history (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,          -- NULL for guests
+    cookie_id VARCHAR(36),                                        -- UUID cookie for guests
+    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+
+    CONSTRAINT uq_user_product  UNIQUE (user_id, product_id),
+    CONSTRAINT uq_guest_product UNIQUE (cookie_id, product_id)
+);
+
+CREATE INDEX idx_pvh_user    ON product_view_history(user_id, viewed_at DESC);
+CREATE INDEX idx_pvh_cookie  ON product_view_history(cookie_id, viewed_at DESC);
+CREATE INDEX idx_pvh_expires ON product_view_history(expires_at);
+
 -- Banners Table
 CREATE TABLE banners (
     id SERIAL PRIMARY KEY,
@@ -607,3 +635,25 @@ FROM orders o
 LEFT JOIN users u ON o.buyer_id = u.id
 LEFT JOIN payments p ON o.id = p.order_id
 LEFT JOIN shipping_info s ON o.id = s.order_id;
+
+-- ============================================
+-- EF CORE MIGRATIONS HISTORY SYNC
+-- ============================================
+-- Since this script generates all tables automatically,
+-- we must tell EF Core that its baseline migrations have already been applied
+-- so it does not crash on startup with 'relation already exists'
+
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+    "MigrationId" character varying(150) NOT NULL,
+    "ProductVersion" character varying(32) NOT NULL,
+    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+);
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
+VALUES ('20260316024845_AddSocialLoginFields', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
+VALUES ('20260320004716_AddWatchlistTable', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
+VALUES ('20260320033846_AddProductViewHistoryTable', '9.0.2') ON CONFLICT DO NOTHING;

@@ -189,6 +189,9 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
                 .Include(p => p.OrderItems)
+                .Include(p => p.Wishlists)
+                .Include(p => p.WatchlistItems)
+                .Include(p => p.CartItems)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -208,6 +211,9 @@ namespace ebay.Services.Implementations
                 .Include(p => p.Reviews)
                 .Include(p => p.Bids)
                 .Include(p => p.OrderItems)
+                .Include(p => p.Wishlists)
+                .Include(p => p.WatchlistItems)
+                .Include(p => p.CartItems)
                 .FirstOrDefaultAsync(p => p.Slug == slug);
 
             if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
@@ -238,6 +244,52 @@ namespace ebay.Services.Implementations
             return related;
         }
 
+        public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productId, List<int> excludeIds, int limit = 6)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return [];
+
+            var minPrice = product.Price * 0.5m;
+            var maxPrice = product.Price * 1.5m;
+
+            var recs = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .Include(p => p.OrderItems)
+                .Where(p =>
+                    !excludeIds.Contains(p.Id)
+                    && p.IsActive == true
+                    && p.Status == "active"
+                    && p.CategoryId == product.CategoryId
+                    && p.Price >= minPrice
+                    && p.Price <= maxPrice)
+                .OrderByDescending(p => p.ViewCount)
+                .Take(limit)
+                .Select(p => MapToDto(p))
+                .ToListAsync();
+
+            // Fallback: if not enough in same category, widen to any category in price range
+            if (recs.Count < limit)
+            {
+                var ids = recs.Select(r => r.Id).Concat(excludeIds).ToList();
+                var extra = await _context.Products
+                    .Include(p => p.Category).Include(p => p.Seller)
+                    .Include(p => p.Reviews).Include(p => p.Bids).Include(p => p.OrderItems)
+                    .Where(p => !ids.Contains(p.Id) && p.IsActive == true && p.Status == "active"
+                                && p.Price >= minPrice && p.Price <= maxPrice)
+                    .OrderByDescending(p => p.ViewCount)
+                    .Take(limit - recs.Count)
+                    .Select(p => MapToDto(p))
+                    .ToListAsync();
+                recs.AddRange(extra);
+            }
+
+            return recs;
+        }
+
+
         private static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
         {
             Id = p.Id,
@@ -254,6 +306,7 @@ namespace ebay.Services.Implementations
             ViewCount = p.ViewCount ?? 0,
             CategoryId = p.CategoryId ?? 0,
             CategoryName = p.Category?.Name ?? "General",
+            SellerId = p.SellerId,
             SellerName = p.Seller?.Username ?? "Unknown",
             IsAuction = p.IsAuction ?? false,
             AuctionEndTime = p.AuctionEndTime,
@@ -262,7 +315,9 @@ namespace ebay.Services.Implementations
             SoldCount = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
             CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
             Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,
-            ReviewCount = p.Reviews?.Count ?? 0
+            ReviewCount = p.Reviews?.Count ?? 0,
+            SavedCount = (p.Wishlists?.Count ?? 0) + (p.WatchlistItems?.Count ?? 0),
+            InCartCount = p.CartItems?.Count ?? 0
         };
     }
 }

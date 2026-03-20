@@ -20,8 +20,11 @@ namespace ebay.DTOs.Responses
         public string CategoryName { get; set; } = null!;
         public int CategoryId { get; set; }
         public string SellerName { get; set; } = null!;
+        public int SellerId { get; set; }
         public decimal? Rating { get; set; } 
         public int ReviewCount { get; set; }
+        public int SavedCount { get; set; }
+        public int InCartCount { get; set; }
         public bool IsAuction { get; set; }
         public DateTime? AuctionEndTime { get; set; }
         public decimal? CurrentBid { get; set; }

@@ -50,5 +50,23 @@ namespace ebay.Controllers
             var data = await _productService.GetRelatedProductsAsync(id, count);
             return Ok(new ApiResponse<List<ProductResponseDto>>(data));
         }
+
+        // GET /api/products/recommendations/{id}?excludeIds=1,2,3&limit=6
+        // "Because you viewed this..." — same category, similar price
+        [HttpGet("{id:int}/recommendations")]
+        public async Task<ActionResult<ApiResponse<List<ProductResponseDto>>>> GetRecommendations(
+            int id,
+            [FromQuery] string? excludeIds = null,
+            [FromQuery] int limit = 6)
+        {
+            var exclude = excludeIds?.Split(',')
+                .Select(s => int.TryParse(s.Trim(), out var v) ? v : 0)
+                .Where(v => v > 0)
+                .ToList() ?? [];
+            exclude.Add(id); // always exclude the viewed product itself
+
+            var data = await _productService.GetRecommendationsAsync(id, exclude, limit);
+            return Ok(new ApiResponse<List<ProductResponseDto>>(data));
+        }
     }
 }

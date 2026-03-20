@@ -4,6 +4,97 @@ import { useCheckout } from '../features/checkout/hooks/useCheckout';
 import ShippingAddress from '../features/checkout/components/ShippingAddress';
 import PaymentMethod from '../features/checkout/components/PaymentMethod';
 
+import { useState, useEffect } from 'react';
+import api from '../lib/axios';
+
+const CheckoutItem = ({ item, updateQuantity }) => {
+    const [sellerProfile, setSellerProfile] = useState(null);
+
+    useEffect(() => {
+        if (item.sellerId) {
+            api.get(`/api/Seller/${item.sellerId}`)
+                .then(res => setSellerProfile(res.data.data))
+                .catch(() => {});
+        }
+    }, [item.sellerId]);
+
+    const sellerName = sellerProfile?.username || item.sellerName || 'Unknown';
+    const positivePercent = sellerProfile ? `${sellerProfile.positivePercent}%` : '...';
+    const avatarUrl = sellerProfile?.avatarUrl;
+
+    return (
+        <div className="mb-8 border-b border-gray-200 pb-8 last:border-b-0 last:pb-0 last:mb-0">
+            <div className="flex items-center gap-3 mb-5 border-b border-gray-100 pb-4">
+                <div className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center font-bold text-gray-700 bg-gray-50 overflow-hidden">
+                    {avatarUrl ? (
+                        <img src={avatarUrl} alt={sellerName} className="w-full h-full object-cover" />
+                    ) : (
+                        sellerName.charAt(0).toUpperCase()
+                    )}
+                </div>
+                <div>
+                    <p className="font-bold text-[14px] text-gray-900">{sellerName}</p>
+                    <p className="text-[12px] text-gray-500">{positivePercent} positive feedback</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-[150px_1fr] gap-6">
+                <div className="relative">
+                    <div className="w-full aspect-square bg-gray-50 border border-gray-100 p-2">
+                        <img src={item.image} alt={item.title} className="w-full h-full object-contain" />
+                    </div>
+                </div>
+                <div className="flex flex-col">
+                    {item.soldCount > 0 && (
+                        <span className="inline-block self-start border border-blue-600 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase hover:bg-blue-50">
+                            {item.soldCount} SOLD
+                        </span>
+                    )}
+                    <h3 className="text-[15px] text-black leading-tight mb-2 hover:underline cursor-pointer">
+                        {item.title}
+                    </h3>
+                    <div className="flex items-baseline gap-2 mb-4">
+                        <span className="font-bold text-[16px] text-gray-900">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                        </span>
+                        {item.originalPrice && (
+                            <span className="text-sm text-gray-400 line-through">
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.originalPrice)}
+                            </span>
+                        )}
+                    </div>
+                    
+                    <div className="mb-6 w-32 relative">
+                        <select 
+                            className="w-full appearance-none bg-white border border-gray-400 hover:border-gray-500 rounded py-2 pl-3 pr-8 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                            value={item.quantity}
+                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                        >
+                            {[...Array(10).keys()].map(n => (
+                                <option key={n + 1} value={n + 1}>Quantity: {n + 1}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="font-bold text-[14px] text-gray-900 mb-1">Delivery</h4>
+                        <p className="text-[14px] text-gray-900">Est. delivery: <strong>May 4 - May 25</strong></p>
+                        <p className="text-[14px] text-gray-900">eBay International Shipping</p>
+                        <p className="text-[14px] text-gray-900">30 days returns accepted <span className="text-gray-400 border border-gray-300 rounded-full inline-flex items-center justify-center w-4 h-4 text-[10px] ml-1 cursor-pointer">i</span></p>
+                        <p className="font-bold text-[14px] text-gray-900 mt-2">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(145530)}
+                        </p>
+                        <p className="text-[13px] text-gray-500 mt-1">Import fees may apply on delivery</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function CheckoutPage() {
     const {
         items,
@@ -17,7 +108,16 @@ export default function CheckoutPage() {
         paymentMethod,
         setPaymentMethod,
         updateQuantity,
-        handlePlaceOrder
+        handlePlaceOrder,
+        guestShipping,
+        setGuestShipping,
+        isGuestDone,
+        setIsGuestDone,
+        isAuthenticated,
+        savedAddresses,
+        setSavedAddresses,
+        selectedSavedIdx,
+        setSelectedSavedIdx
     } = useCheckout();
 
     const shippingCost = items.length > 0 ? 145530 : 0;
@@ -62,81 +162,21 @@ export default function CheckoutPage() {
                             <p className="text-gray-500 h-24 flex items-center justify-center">Your order is empty.</p>
                         ) : (
                             items.map(item => (
-                                <div key={item.id} className="mb-8 border-b border-gray-200 pb-8 last:border-b-0 last:pb-0 last:mb-0">
-                                    <div className="flex items-center gap-3 mb-5 border-b border-gray-100 pb-4">
-                                        <div className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center font-bold text-gray-700 bg-gray-50 overflow-hidden">
-                                            {item.seller ? item.seller[0].toUpperCase() : 'S'}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-[14px] text-gray-900">{item.seller || 'ebay_seller'}</p>
-                                            <p className="text-[12px] text-gray-500">99.9% positive feedback</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-[150px_1fr] gap-6">
-                                        <div className="relative">
-                                            <div className="w-full aspect-square bg-gray-50 border border-gray-100 p-2">
-                                                <img src={item.image} alt={item.title} className="w-full h-full object-contain" />
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            {item.soldCount > 0 && (
-                                                <span className="inline-block self-start border border-blue-600 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase hover:bg-blue-50">
-                                                    {item.soldCount} SOLD
-                                                </span>
-                                            )}
-                                            <h3 className="text-[15px] text-black leading-tight mb-2 hover:underline cursor-pointer">
-                                                {item.title}
-                                            </h3>
-                                            <div className="flex items-baseline gap-2 mb-4">
-                                                <span className="font-bold text-[16px] text-gray-900">
-                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
-                                                </span>
-                                                <span className="text-sm text-gray-400 line-through">
-                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * 1.5)}
-                                                </span>
-                                            </div>
-                                            
-                                            <div className="mb-6 w-32 relative">
-                                                <select 
-                                                    className="w-full appearance-none bg-white border border-gray-400 hover:border-gray-500 rounded py-2 pl-3 pr-8 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-                                                    value={item.quantity}
-                                                    onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
-                                                >
-                                                    {[...Array(10).keys()].map(n => (
-                                                        <option key={n + 1} value={n + 1}>Quantity: {n + 1}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <h4 className="font-bold text-[14px] text-gray-900 mb-1">Delivery</h4>
-                                                <p className="text-[14px] text-gray-900">Est. delivery: <strong>May 4 - May 25</strong></p>
-                                                <p className="text-[14px] text-gray-900">eBay International Shipping</p>
-                                                <p className="text-[14px] text-gray-900">30 days returns accepted <span className="text-gray-400 border border-gray-300 rounded-full inline-flex items-center justify-center w-4 h-4 text-[10px] ml-1 cursor-pointer">i</span></p>
-                                                <p className="font-bold text-[14px] text-gray-900 mt-2">
-                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(145530)}
-                                                </p>
-                                                <p className="text-[13px] text-gray-500 mt-1">Import fees may apply on delivery</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <CheckoutItem key={item.id} item={item} updateQuantity={updateQuantity} />
                             ))
                         )}
                     </div>
 
                     <ShippingAddress
-                        address={selectedAddress}
-                        addresses={addresses}
-                        selectedAddressId={selectedAddressId}
-                        setSelectedAddressId={setSelectedAddressId}
-                        isEditing={true} 
-                        onEdit={() => {}}
-                        onContinue={() => {}}
+                        guestShipping={guestShipping}
+                        setGuestShipping={setGuestShipping}
+                        onGuestDone={() => setIsGuestDone(true)}
+                        savedAddresses={savedAddresses}
+                        setSavedAddresses={setSavedAddresses}
+                        selectedSavedIdx={selectedSavedIdx}
+                        setSelectedSavedIdx={setSelectedSavedIdx}
+                        isEditing={!isGuestDone}
+                        onEdit={() => setIsGuestDone(false)}
                     />
 
                     <PaymentMethod
@@ -175,15 +215,20 @@ export default function CheckoutPage() {
 
                         <Button
                             onClick={handlePlaceOrder}
-                            disabled={isLoading || !selectedAddressId || items.length === 0}
-                            className={`w-full font-bold text-[16px] py-3.5 mb-4 rounded-full ${isLoading || !selectedAddressId || items.length === 0 ? 'bg-gray-300 text-gray-500 pointer-events-none' : 'bg-[#e53238] hover:bg-[#c92025] text-white shadow-md'}`}
+                            disabled={isLoading || (!isAuthenticated && !isGuestDone) || (isAuthenticated && !selectedAddressId) || items.length === 0}
+                            className={`w-full font-bold text-[16px] py-3.5 mb-4 rounded-full ${isLoading || (!isAuthenticated && !isGuestDone) || (isAuthenticated && !selectedAddressId) || items.length === 0 ? 'bg-gray-300 text-gray-500 pointer-events-none' : 'bg-[#e53238] hover:bg-[#c92025] text-white shadow-md'}`}
                         >
                             {isLoading ? 'Processing...' : 'Confirm and pay'}
                         </Button>
                         
-                        {!selectedAddressId && (
+                        {!isAuthenticated && !isGuestDone && (
                             <p className="text-center text-gray-900 font-bold text-[14px]">
                                 Enter shipping address
+                            </p>
+                        )}
+                        {isAuthenticated && !selectedAddressId && (
+                            <p className="text-center text-gray-900 font-bold text-[14px]">
+                                Select a shipping address
                             </p>
                         )}
 
