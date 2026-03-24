@@ -5,7 +5,7 @@ import useSavedStore from '../../features/saved/useSavedStore';
 
 export function ProductCard({ product }) {
     const { isAuthenticated } = useAuthStore();
-    const isSaved = useSavedStore(s => s.isSaved(product?.id));
+    const isSaved = useSavedStore(s => s.savedIds.has(product?.id));
     const toggleSaved = useSavedStore(s => s.toggleSaved);
     const navigate = useNavigate();
 

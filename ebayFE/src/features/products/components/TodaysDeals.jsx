@@ -7,9 +7,11 @@ import useSavedStore from '../../saved/useSavedStore';
 export function TodaysDeals() {
     const { bestDeals, loading } = useProductStore();
     const { isAuthenticated } = useAuthStore();
+    const savedIds = useSavedStore(s => s.savedIds);
     const toggleSaved = useSavedStore(s => s.toggleSaved);
-    const isSavedFn = useSavedStore(s => s.isSaved);
     const navigate = useNavigate();
+
+    const isSavedFn = (id) => savedIds.has(id);
 
     if (loading && bestDeals.length === 0) {
         return <div className="animate-pulse h-64 bg-gray-100 rounded-2xl mb-16"></div>;

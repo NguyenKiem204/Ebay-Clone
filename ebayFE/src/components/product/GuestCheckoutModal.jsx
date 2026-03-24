@@ -32,7 +32,7 @@ export default function GuestCheckoutModal({ isOpen, onClose, product, quantity 
                     <div className="flex gap-4 mb-6">
                         <div className="w-[120px] h-[120px] bg-white flex-shrink-0 flex items-center justify-center border border-gray-100 p-2">
                             <img 
-                                src={product.thumbnail || product.imageUrl || product.images?.[0]?.imageUrl} 
+                                src={product.thumbnail || product.imageUrl || product.images?.[0]} 
                                 alt={product.title}
                                 className="w-full h-full object-contain"
                             />

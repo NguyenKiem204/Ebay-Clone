@@ -8,7 +8,6 @@ import SimilarItemsList from '../components/product/SimilarItemsList';
 import RelatedItems from '../components/product/RelatedItems';
 import AboutThisItem from '../components/product/AboutThisItem';
 import SellerSection from '../components/product/SellerSection/SellerSection';
-import ProductCouponSection from '../components/product/ProductCouponSection';
 import { RecommendedItems } from '../components/product/RecommendedItems';
 import useHistoryStore from '../features/history/useHistoryStore';
 import { useRecommendations } from '../features/history/useRecommendations';
@@ -53,8 +52,8 @@ export default function ProductDetailsPage() {
     }
 
     const images = product.images && product.images.length > 0
-        ? product.images.map(img => img.imageUrl)
-        : [product.thumbnail || product.imageUrl];
+        ? product.images
+        : (product.thumbnail ? [product.thumbnail] : []);
 
     return (
         <div className="container mx-auto px-4 pt-1 pb-8 max-w-[1280px]">
@@ -74,9 +73,6 @@ export default function ProductDetailsPage() {
                 {/* Right Column: Buy Box & Summary (Span 5) */}
                 <div className="md:col-span-5">
                     <ProductPurchaseOptions product={product} />
-
-                    {/* Coupon Section */}
-                    <ProductCouponSection coupons={product.activeCoupons} />
                 </div>
             </div>
 

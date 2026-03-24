@@ -53,6 +53,7 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IBidService, BidService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISellerService, SellerService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddHttpClient<IPaypalService, PaypalService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.HistoryCleanupService>();
 

@@ -24,7 +24,7 @@ export default function ProductPurchaseOptions({ product }) {
     const isInCart = cartItems.some(item => item.id === product.id);
     const { isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
-    const isWatched = useWatchlistStore(s => s.isWatched(product?.id));
+    const isWatched = useWatchlistStore(s => s.watchIds.has(product?.id));
     const toggleWatch = useWatchlistStore(s => s.toggleWatch);
 
     // Fetch seller profile for review count & positive %

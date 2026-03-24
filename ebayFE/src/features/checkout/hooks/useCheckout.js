@@ -41,7 +41,7 @@ export const useCheckout = () => {
                             id: product.id,
                             title: product.name || product.title,
                             price: product.price,
-                            image: product.thumbnail || product.imageUrl || (product.images?.[0]?.imageUrl),
+                            image: product.thumbnail || product.imageUrl || (product.images?.[0]),
                             sellerId: product.sellerId,
                             sellerName: product.sellerName,
                             seller: product.sellerName || 'ebay_seller',
