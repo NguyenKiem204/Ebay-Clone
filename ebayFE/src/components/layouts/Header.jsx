@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ShoppingCart, ChevronDown } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
@@ -13,6 +14,7 @@ export default function Header() {
     const queryParams = new URLSearchParams(location.search);
     const isAuctionsActive = location.pathname === '/products' && queryParams.get('filter') === 'auctions';
     const isProductDetails = /^\/products\/[^/]+$/.test(location.pathname);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
     return (
         <header className="bg-white">
@@ -21,11 +23,56 @@ export default function Header() {
                 <div className="max-w-[1280px] mx-auto px-4 md:px-8 xl:px-4 py-2 flex justify-between items-center text-[12px] text-[#333]">
                     {/* Left Side */}
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
+                        <div className="relative flex items-center gap-1 group">
                             {isAuthenticated ? (
                                 <>
-                                    Hi <strong>{user?.username}</strong>!
-                                    <button onClick={logout} className="ml-2 text-secondary hover:underline text-blue-600">Logout</button>
+                                    <button 
+                                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                        className="flex items-center gap-1 hover:underline focus:outline-none"
+                                    >
+                                        Hi <strong>{user?.firstName || user?.username}</strong>!
+                                        <ChevronDown size={12} className={`transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {/* User Dropdown Menu */}
+                                    {isUserMenuOpen && (
+                                        <>
+                                            <div 
+                                                className="fixed inset-0 z-40" 
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                            />
+                                            <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                                        {(user?.firstName?.[0] || user?.username?.[0] || 'U').toUpperCase()}
+                                                    </div>
+                                                    <div className="overflow-hidden">
+                                                        <p className="font-bold text-gray-900 truncate">{user?.firstName} {user?.lastName}</p>
+                                                        <p className="text-[11px] text-gray-500 truncate">{user?.email}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="py-2">
+                                                    <Link 
+                                                        to="/profile" 
+                                                        onClick={() => setIsUserMenuOpen(false)}
+                                                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        Edit profile info
+                                                    </Link>
+                                                    <button 
+                                                        onClick={() => {
+                                                            logout();
+                                                            setIsUserMenuOpen(false);
+                                                        }}
+                                                        className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                                    >
+                                                        Sign out
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </>
                             ) : (
                                 <>
