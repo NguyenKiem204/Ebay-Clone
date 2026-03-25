@@ -14,7 +14,7 @@ services:
       - ./Docker/DB/Init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
 
   api:
     build:
@@ -49,7 +49,7 @@ services:
       - db
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
 
   web:
     build:
@@ -68,7 +68,7 @@ services:
       retries: 3
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
 
   nginx-lb:
     image: nginx:alpine
@@ -81,9 +81,10 @@ services:
       - web
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
 
 networks:
-  ebay-network:
+  ebay-swarm-network:
+    driver: overlay
 
 # End of file
