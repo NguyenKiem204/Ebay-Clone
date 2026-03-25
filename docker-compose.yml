@@ -54,5 +54,4 @@ networks:
   ebay-network:
     driver: bridge
 
-volumes:
-# No named volumes needed for bind mounts
+# End of file
