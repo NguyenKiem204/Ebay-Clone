@@ -41,6 +41,19 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy config files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "docker-compose.yml,nginx.conf"
+          target: "/ebay-project"
+
       - name: SSH into VPS and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
