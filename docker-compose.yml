@@ -45,7 +45,7 @@ services:
     image: nguyenkiem/ebay-web:latest
     container_name: ebay-web
     ports:
-      - "3000:80"
+      - "80:80"
     restart: unless-stopped
     networks:
       - ebay-network
