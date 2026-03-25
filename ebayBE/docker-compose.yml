@@ -9,8 +9,8 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./Docker/DB/Init:/docker-entrypoint-initdb.d:ro
+      - ./db-data:/var/lib/postgresql/data
+      - ../Docker/DB/Init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
   api:
@@ -33,4 +33,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  db-data:
+# No named volumes needed for bind mounts

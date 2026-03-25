@@ -9,8 +9,8 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./ebayBE/Docker/DB/Init:/docker-entrypoint-initdb.d:ro
+      - ./db_data:/var/lib/postgresql/data
+      - ./Docker/DB/Init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
       - ebay-network
@@ -55,4 +55,4 @@ networks:
     driver: bridge
 
 volumes:
-  db_data:
+# No named volumes needed for bind mounts
