@@ -70,7 +70,9 @@ jobs:
             docker compose pull
             # Shut down the old docker-compose containers (One-time transition required to free up ports)
             docker compose down || true
-            # Deploy stack using Swarm for Zero Downtime (using compose config to resolve .env variables)
-            docker compose --env-file .env config | docker stack deploy -c - ebay-cluster
+            # Export environment variables for Swarm
+            export $(grep -v '^#' .env | xargs)
+            # Deploy stack using Swarm for Zero Downtime
+            docker stack deploy -c docker-compose.yml ebay-cluster
             # Optional: Clean up old images to save space
             docker image prune -f
