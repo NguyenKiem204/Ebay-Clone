@@ -64,9 +64,11 @@ jobs:
           script: |
             # Use absolute path
             cd /ebay-project
+            # Ensure swarm is initialized (fails silently if already huge)
+            docker swarm init || true
             # Pull the latest images
             docker compose pull
-            # Start/Restart the containers
-            docker compose up -d
+            # Deploy stack using Swarm for Zero Downtime
+            docker stack deploy -c docker-compose.yml ebay-cluster
             # Optional: Clean up old images to save space
             docker image prune -f

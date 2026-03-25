@@ -92,6 +92,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -156,6 +157,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles(); // Cho phép truy cập ảnh từ thư mục wwwroot
 app.MapControllers();
+app.MapHealthChecks("/health");
 // Apply migrations automatically on startup
 using (var scope = app.Services.CreateScope())
 {
