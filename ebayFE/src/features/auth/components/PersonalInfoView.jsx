@@ -3,7 +3,7 @@ import { CheckCircle, Edit2 } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 import { toast } from 'react-hot-toast';
 
-export default function PersonalInfoView() {
+export default function PersonalInfoView({ setActiveTab }) {
     const { user, updateProfile } = useAuthStore();
     const [editingSection, setEditingSection] = useState(null); // 'username' | 'contact' | 'personal'
     const [formData, setFormData] = useState({
@@ -140,10 +140,10 @@ export default function PersonalInfoView() {
                 </div>
             </div>
 
-            {/* Personal info Details */}
+            {/* Name Section */}
             <div className="py-6 border-b border-gray-100 flex gap-24">
                 <div className="w-32 flex-shrink-0">
-                    <span className="text-[14px] font-bold text-[#333]">Personal info</span>
+                    <span className="text-[14px] font-bold text-[#333]">Name</span>
                 </div>
                 <div className="flex-grow">
                     {editingSection === 'personal' ? (
@@ -183,23 +183,41 @@ export default function PersonalInfoView() {
                         </div>
                     ) : (
                         <div className="flex justify-between items-start">
-                            <div>
-                                <p className="text-[12px] text-gray-500 mb-1">Owner name, address</p>
-                                <p className="text-[14px] text-[#333] font-medium leading-relaxed uppercase">
-                                    {user?.firstName} {user?.lastName}<br />
-                                    {user?.addresses?.[0] ? (
-                                        <>
-                                            {user.addresses[0].street}<br />
-                                            {user.addresses[0].city}, {user.addresses[0].country}
-                                        </>
-                                    ) : (
-                                        <span className="text-gray-400 normal-case italic">Chưa cập nhật địa chỉ mặc định</span>
-                                    )}
-                                </p>
-                            </div>
+                            <span className="text-[14px] text-[#333]">{user?.firstName} {user?.lastName}</span>
                             <button onClick={() => setEditingSection('personal')} className="text-blue-600 hover:underline text-sm">Edit</button>
                         </div>
                     )}
+                </div>
+            </div>
+            
+            {/* Default Address Section */}
+            <div className="py-6 border-b border-gray-100 flex gap-24">
+                <div className="w-32 flex-shrink-0">
+                    <span className="text-[14px] font-bold text-[#333]">Personal info</span>
+                </div>
+                <div className="flex-grow">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-[12px] text-gray-500 mb-1">Owner name, address</p>
+                            <p className="text-[14px] text-[#333] font-medium leading-relaxed uppercase">
+                                {user?.firstName} {user?.lastName}<br />
+                                {user?.addresses?.[0] ? (
+                                    <>
+                                        {user.addresses[0].street}<br />
+                                        {user.addresses[0].city}, {user.addresses[0].country}
+                                    </>
+                                ) : (
+                                    <span className="text-gray-400 normal-case italic">Chưa cập nhật địa chỉ mặc định</span>
+                                )}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={() => setActiveTab('addresses')}
+                            className="text-blue-600 hover:underline text-sm"
+                        >
+                            Edit
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
