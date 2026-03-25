@@ -49,9 +49,8 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            # Create app directory if not exists
-            mkdir -p ~/app
-            cd ~/app
+            # Use absolute path
+            cd /ebay-project
             # Pull the latest images
             docker compose pull
             # Start/Restart the containers
