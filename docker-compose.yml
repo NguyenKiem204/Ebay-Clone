@@ -85,6 +85,5 @@ services:
 
 networks:
   ebay-network:
-    driver: bridge
 
 # End of file
