@@ -591,6 +591,17 @@ namespace ebay.Services.Implementations
             var user = await _context.Users.FindAsync(userId);
             if (user == null) throw new NotFoundException("User không tồn tại");
 
+            // Handle Username change
+            if (!string.IsNullOrEmpty(request.Username) && request.Username != user.Username)
+            {
+                var normalizedUsername = request.Username.Trim().ToLower();
+                if (await _context.Users.AnyAsync(u => u.Id != userId && u.Username.ToLower() == normalizedUsername))
+                {
+                    throw new BadRequestException("Username đã được sử dụng");
+                }
+                user.Username = request.Username.Trim();
+            }
+
             user.FirstName = request.FirstName;
             user.LastName = request.LastName;
             user.Phone = request.Phone;

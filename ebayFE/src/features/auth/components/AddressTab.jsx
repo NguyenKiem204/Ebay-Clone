@@ -89,171 +89,150 @@ export default function AddressTab() {
     }
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="px-8 py-5 border-b border-gray-200 flex justify-between items-center">
+        <div className="max-w-[800px]">
+            <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900">Shipping Addresses</h2>
-                    <p className="text-sm text-gray-500 mt-1">Where should we deliver your orders?</p>
+                    <h1 className="text-[28px] font-medium text-[#333]">Addresses</h1>
+                    <p className="text-[14px] text-gray-500 mt-1">Manage your delivery locations</p>
                 </div>
-                <button
-                    onClick={() => {
-                        setEditingAddress(null);
-                        setFormData({ fullName: '', phone: '', street: '', city: '', country: '', isDefault: false });
-                        setIsAdding(true);
-                    }}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-[#3665F3] text-white text-sm font-bold rounded-full hover:bg-[#382aef] transition-all shadow-sm"
-                >
-                    <Plus size={18} />
-                    Add Address
-                </button>
+                {!isAdding && !editingAddress && (
+                    <button
+                        onClick={() => {
+                            setEditingAddress(null);
+                            setFormData({ fullName: '', phone: '', street: '', city: '', country: '', isDefault: false });
+                            setIsAdding(true);
+                        }}
+                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-full hover:bg-blue-700 transition-all"
+                    >
+                        <Plus size={18} />
+                        Add Address
+                    </button>
+                )}
             </div>
 
-            <div className="p-8">
+            <div className="space-y-6">
                 {isAdding || editingAddress ? (
-                    <form onSubmit={handleSubmit} className="max-w-2xl space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-bold text-gray-900">{editingAddress ? 'Edit Address' : 'New Address'}</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-gray-700">Full Name</label>
+                    <form onSubmit={handleSubmit} className="p-6 border border-gray-200 rounded-xl bg-gray-50/50">
+                        <h3 className="text-[16px] font-bold text-[#333] mb-6">{editingAddress ? 'Edit address' : 'Add a new address'}</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white">
+                                <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium">Full name</label>
                                 <input
                                     type="text"
                                     name="fullName"
                                     value={formData.fullName}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
+                                    className="w-full outline-none text-[15px] text-[#333]"
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-gray-700">Phone Number</label>
+                            <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white">
+                                <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium">Phone number</label>
                                 <input
                                     type="tel"
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
+                                    className="w-full outline-none text-[15px] text-[#333]"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-gray-700">Street Address</label>
+                        <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white mb-4">
+                            <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium">Street address</label>
                             <input
                                 type="text"
                                 name="street"
                                 value={formData.street}
                                 onChange={handleInputChange}
                                 required
-                                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
+                                className="w-full outline-none text-[15px] text-[#333]"
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-gray-700">City</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white">
+                                <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium">City</label>
                                 <input
                                     type="text"
                                     name="city"
                                     value={formData.city}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
+                                    className="w-full outline-none text-[15px] text-[#333]"
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-gray-700">Country</label>
+                            <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white">
+                                <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium">Country</label>
                                 <input
                                     type="text"
                                     name="country"
                                     value={formData.country}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
+                                    className="w-full outline-none text-[15px] text-[#333]"
                                 />
                             </div>
                         </div>
 
-                        <label className="flex items-center gap-3 cursor-pointer group py-1">
+                        <label className="flex items-center gap-3 cursor-pointer mb-8">
                             <input
                                 type="checkbox"
                                 name="isDefault"
                                 checked={formData.isDefault}
                                 onChange={handleInputChange}
-                                className="w-5 h-5 rounded border-gray-300 text-[#3665F3] focus:ring-[#3665F3]/20 transition-all cursor-pointer"
+                                className="w-5 h-5 rounded border-gray-300 text-blue-600"
                             />
-                            <span className="text-sm text-gray-700 font-medium group-hover:text-gray-900 transition-colors">Set as default shipping address</span>
+                            <span className="text-[14px] text-[#333]">Set as default shipping address</span>
                         </label>
 
-                        <div className="flex gap-3 pt-4 border-t border-gray-200">
-                            <button
-                                type="submit"
-                                className="px-8 py-2.5 bg-[#3665F3] text-white font-bold rounded-full hover:bg-[#382aef] transition-all text-sm"
-                            >
-                                {editingAddress ? 'Update Address' : 'Save Address'}
-                            </button>
+                        <div className="flex gap-4">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setIsAdding(false);
                                     setEditingAddress(null);
                                 }}
-                                className="px-8 py-2.5 bg-white text-gray-700 font-bold rounded-full border border-gray-300 hover:bg-gray-100 transition-all text-sm"
+                                className="flex-1 py-2 border border-blue-600 text-blue-600 rounded-full font-bold text-sm hover:bg-blue-50"
                             >
                                 Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="flex-1 py-2 bg-blue-600 text-white rounded-full font-bold text-sm hover:bg-blue-700"
+                            >
+                                {editingAddress ? 'Update' : 'Save'}
                             </button>
                         </div>
                     </form>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-4">
                         {addresses.length === 0 ? (
-                            <div className="col-span-full py-16 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                                <MapPin size={48} className="mx-auto text-gray-300 mb-4" />
-                                <h3 className="text-gray-900 font-bold text-lg">No addresses yet</h3>
-                                <p className="text-gray-500 max-w-xs mx-auto mt-1">Add your first shipping address to start shopping.</p>
-                                <button
-                                    onClick={() => setIsAdding(true)}
-                                    className="mt-6 text-[#3665F3] font-bold hover:underline"
-                                >
-                                    + Add your first address
-                                </button>
+                            <div className="py-16 text-center border-2 border-dashed border-gray-200 rounded-xl">
+                                <MapPin size={40} className="mx-auto text-gray-300 mb-2" />
+                                <p className="text-gray-500">No addresses saved yet.</p>
                             </div>
                         ) : (
                             addresses.map((addr) => (
                                 <div
                                     key={addr.id}
-                                    className={`relative p-6 rounded-xl border-2 transition-all ${
-                                        addr.isDefault
-                                            ? 'border-[#3665F3] bg-[#3665F3]/[0.02]'
-                                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    className={`p-6 border rounded-xl transition-all ${
+                                        addr.isDefault ? 'border-blue-600 bg-blue-50/10' : 'border-gray-200 hover:border-gray-300'
                                     }`}
                                 >
-                                    {addr.isDefault && (
-                                        <div className="absolute top-4 right-4 bg-[#3665F3] text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1">
-                                            <Check size={10} strokeWidth={4} />
-                                            Default
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-start gap-3 mb-4">
-                                        <div className={`p-2 rounded-lg ${addr.isDefault ? 'bg-[#3665F3]/10 text-[#3665F3]' : 'bg-gray-100 text-gray-500'}`}>
-                                            <Home size={20} />
-                                        </div>
+                                    <div className="flex justify-between items-start mb-4">
                                         <div>
-                                            <h4 className="font-bold text-gray-900">{addr.fullName}</h4>
-                                            <p className="text-sm text-gray-500 mt-0.5">{addr.phone}</p>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="font-bold text-[#333]">{addr.fullName}</h4>
+                                                {addr.isDefault && (
+                                                    <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase">Default</span>
+                                                )}
+                                            </div>
+                                            <p className="text-[14px] text-gray-600">{addr.phone}</p>
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-1 text-sm text-gray-600 mb-6 min-h-[4rem]">
-                                        <p className="line-clamp-1">{addr.street}</p>
-                                        <p>{addr.city}, {addr.country}</p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                        <div className="flex gap-4">
+                                        <div className="flex gap-3">
                                             <button
                                                 onClick={() => {
                                                     setEditingAddress(addr);
@@ -266,29 +245,29 @@ export default function AddressTab() {
                                                         isDefault: addr.isDefault
                                                     });
                                                 }}
-                                                className="text-gray-600 hover:text-[#3665F3] transition-colors flex items-center gap-1.5 text-xs font-bold"
+                                                className="text-gray-400 hover:text-blue-600"
                                             >
-                                                <Edit2 size={14} />
-                                                Edit
+                                                <Edit2 size={16} />
                                             </button>
-                                            <button
-                                                onClick={() => handleDelete(addr.id)}
-                                                className="text-gray-600 hover:text-red-600 transition-colors flex items-center gap-1.5 text-xs font-bold"
-                                            >
-                                                <Trash2 size={14} />
-                                                Delete
-                                            </button>
+                                            {!addr.isDefault && (
+                                                <button onClick={() => handleDelete(addr.id)} className="text-gray-400 hover:text-red-600">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
-
-                                        {!addr.isDefault && (
-                                            <button
-                                                onClick={() => handleSetDefault(addr.id)}
-                                                className="text-[#3665F3] hover:underline text-xs font-bold"
-                                            >
-                                                Set as Default
-                                            </button>
-                                        )}
                                     </div>
+                                    <div className="text-[14px] text-gray-700 leading-relaxed mb-4 uppercase">
+                                        {addr.street}<br />
+                                        {addr.city}, {addr.country}
+                                    </div>
+                                    {!addr.isDefault && (
+                                        <button
+                                            onClick={() => handleSetDefault(addr.id)}
+                                            className="text-blue-600 hover:underline text-[13px] font-bold"
+                                        >
+                                            Set as Default
+                                        </button>
+                                    )}
                                 </div>
                             ))
                         )}
