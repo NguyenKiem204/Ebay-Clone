@@ -1,7 +1,7 @@
 import axios from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -24,7 +24,7 @@ api.interceptors.response.use(
             if (refreshToken) {
                 try {
                     const response = await axios.post(
-                        `${BASE_URL}/Auth/refresh-token`,
+                        `${BASE_URL}/api/Auth/refresh-token`,
                         { refreshToken },
                         { withCredentials: true }
                     );

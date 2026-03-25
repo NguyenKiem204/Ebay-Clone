@@ -33,7 +33,7 @@ jobs:
           push: true
           tags: nguyenkiem/ebay-web:latest
           build-args: |
-            VITE_API_URL=/api
+            VITE_API_URL=
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
   # Automatic deploy to VPS
