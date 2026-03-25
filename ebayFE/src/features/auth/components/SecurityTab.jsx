@@ -54,126 +54,108 @@ export default function SecurityTab() {
     };
 
     const PasswordReq = ({ met, text }) => (
-        <div className={`flex items-center gap-2 text-xs transition-colors ${met ? 'text-green-600' : 'text-gray-400'}`}>
-            {met ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+        <div className={`flex items-center gap-2 text-[12px] transition-colors ${met ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+            {met ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
             {text}
         </div>
     );
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="px-8 py-5 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900">Account Security</h2>
-                <p className="text-sm text-gray-500 mt-1">Keep your account safe by updating your password regularly.</p>
-            </div>
+        <div className="max-w-[800px]">
+            <h1 className="text-[28px] font-medium text-[#333] mb-2">Sign in and security</h1>
+            <p className="text-[14px] text-gray-500 mb-8 border-b border-gray-100 pb-6">Update your password to keep your account secure.</p>
 
-            <div className="p-8">
-                <div className="max-w-md">
-                    <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100 mb-8">
-                        <div className="p-2 bg-white rounded-lg shadow-sm text-[#3665F3]">
-                            <Shield size={20} />
-                        </div>
-                        <p className="text-sm text-blue-800 font-medium">Use a strong password that you don't use elsewhere.</p>
+            <div className="max-w-md">
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                        <AlertCircle size={18} className="text-red-600 mt-0.5" />
+                        <p className="text-sm text-red-800 font-medium">{error}</p>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Current Password */}
+                    <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white transition-colors">
+                        <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Current Password</label>
+                        <input
+                            type={showPw.current ? 'text' : 'password'}
+                            name="currentPassword"
+                            value={formData.currentPassword}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full outline-none text-[16px] text-[#333]"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPw({ ...showPw, current: !showPw.current })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            {showPw.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                     </div>
 
-                    {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                            <AlertCircle size={18} className="text-red-600 mt-0.5" />
-                            <p className="text-sm text-red-800 font-medium">{error}</p>
-                        </div>
-                    )}
+                    {/* New Password */}
+                    <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white transition-colors">
+                        <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium uppercase tracking-wider">New Password</label>
+                        <input
+                            type={showPw.new ? 'text' : 'password'}
+                            name="newPassword"
+                            value={formData.newPassword}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full outline-none text-[16px] text-[#333]"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPw({ ...showPw, new: !showPw.new })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            {showPw.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-gray-700">Current Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showPw.current ? 'text' : 'password'}
-                                    name="currentPassword"
-                                    value={formData.currentPassword}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full pl-4 pr-12 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw({ ...showPw, current: !showPw.current })}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                                >
-                                    {showPw.current ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                        </div>
+                    {/* Confirm Password */}
+                    <div className="relative border border-gray-400 p-2 pt-5 rounded-md focus-within:border-blue-600 bg-white transition-colors">
+                        <label className="absolute top-1 left-2 text-[11px] text-gray-500 font-medium uppercase tracking-wider">Confirm Password</label>
+                        <input
+                            type={showPw.confirm ? 'text' : 'password'}
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full outline-none text-[16px] text-[#333]"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPw({ ...showPw, confirm: !showPw.confirm })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            {showPw.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
 
-                        <div className="space-y-1.5 pt-2">
-                            <label className="text-sm font-medium text-gray-700">New Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showPw.new ? 'text' : 'password'}
-                                    name="newPassword"
-                                    value={formData.newPassword}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full pl-4 pr-12 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw({ ...showPw, new: !showPw.new })}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                                >
-                                    {showPw.new ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                        </div>
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                        <PasswordReq met={formData.newPassword.length >= 8} text="At least 8 characters long" />
+                        <PasswordReq met={formData.newPassword !== '' && formData.newPassword === formData.confirmPassword} text="Passwords match" />
+                    </div>
 
-                        <div className="space-y-1.5 pt-2">
-                            <label className="text-sm font-medium text-gray-700">Confirm New Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showPw.confirm ? 'text' : 'password'}
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full pl-4 pr-12 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3665F3]/20 focus:border-[#3665F3] outline-none transition-all"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw({ ...showPw, confirm: !showPw.confirm })}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                                >
-                                    {showPw.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-xl space-y-2 mt-6">
-                            <PasswordReq met={formData.newPassword.length >= 8} text="At least 8 characters long" />
-                            <PasswordReq met={formData.newPassword !== '' && formData.newPassword === formData.confirmPassword} text="Passwords match" />
-                        </div>
-
-                        <div className="pt-6">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className={`w-full py-3.5 px-6 rounded-full font-bold text-white transition-all shadow-md ${
-                                    loading
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-[#3665F3] hover:bg-[#382aef] active:scale-[0.98]'
-                                }`}
-                            >
-                                {loading ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Updating...
-                                    </div>
-                                ) : (
-                                    'Update Password'
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div className="flex gap-4 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' })}
+                            className="flex-1 py-2 border border-blue-600 text-blue-600 rounded-full font-bold text-sm hover:bg-blue-50 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={`flex-1 py-2 bg-blue-600 text-white rounded-full font-bold text-sm hover:bg-blue-700 transition-colors shadow-sm ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {loading ? 'Saving...' : 'Update Password'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
