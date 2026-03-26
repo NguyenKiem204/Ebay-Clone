@@ -107,7 +107,7 @@ export default function ProfilePage() {
                 {/* Main Content Area */}
                 <main className="flex-grow min-w-0">
                     <div className="bg-white rounded-lg p-2">
-                        {activeTab === 'personal' && <PersonalInfoView />}
+                        {activeTab === 'personal' && <PersonalInfoView setActiveTab={setActiveTab} />}
                         {activeTab === 'addresses' && <AddressTab />}
                         {activeTab === 'security' && <SecurityTab />}
                         {activeTab === 'feedback' && (
