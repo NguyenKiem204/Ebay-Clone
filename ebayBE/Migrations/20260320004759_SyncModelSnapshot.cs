@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,15 +10,27 @@ namespace ebay.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "ExternalProviderId",
-                table: "users",
-                newName: "external_provider_id");
+            // migrationBuilder.RenameColumn(
+            //     name: "ExternalProviderId",
+            //     table: "users",
+            //     newName: "external_provider_id");
 
-            migrationBuilder.RenameColumn(
-                name: "ExternalProvider",
-                table: "users",
-                newName: "external_provider");
+            // migrationBuilder.RenameColumn(
+            //     name: "ExternalProvider",
+            //     table: "users",
+            //     newName: "external_provider");
+            
+            // Use raw SQL for conditional rename
+            migrationBuilder.Sql(@"
+                DO $$ 
+                BEGIN 
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ExternalProviderId') THEN
+                        ALTER TABLE users RENAME COLUMN ""ExternalProviderId"" TO external_provider_id;
+                    END IF;
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ExternalProvider') THEN
+                        ALTER TABLE users RENAME COLUMN ""ExternalProvider"" TO external_provider;
+                    END IF;
+                END $$;");
 
             migrationBuilder.AlterColumn<string>(
                 name: "external_provider_id",

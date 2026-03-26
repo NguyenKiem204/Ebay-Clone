@@ -23,6 +23,12 @@ namespace ebay.Middlewares
         {
             var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             
+            if (ipAddress == "127.0.0.1" || ipAddress == "::ffff:127.0.0.1" || ipAddress == "::1")
+            {
+                await _next(context);
+                return;
+            }
+
             var cacheKey = $"GlobalSpam_{ipAddress}";
 
             var requestCount = _cache.GetOrCreate(cacheKey, entry =>
