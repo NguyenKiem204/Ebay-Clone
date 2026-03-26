@@ -24,6 +24,11 @@ namespace ebay.Validators.Product
             RuleFor(x => x.Stock)
                 .GreaterThanOrEqualTo(0).WithMessage("Số lượng kho không được âm");
 
+            RuleFor(x => x.Stock)
+                .Equal(1)
+                .When(x => x.IsAuction)
+                .WithMessage("Listing đấu giá chỉ hỗ trợ số lượng kho bằng 1");
+
             RuleFor(x => x.Condition)
                 .NotEmpty().WithMessage("Trạng thái sản phẩm (Condition) không được để trống");
 
@@ -36,6 +41,23 @@ namespace ebay.Validators.Product
             
             RuleFor(x => x.StartingBid)
                 .GreaterThan(0).When(x => x.IsAuction).WithMessage("Giá khởi điểm đấu giá phải lớn hơn 0");
+
+            RuleFor(x => x.ReservePrice)
+                .GreaterThan(0).When(x => x.IsAuction && x.ReservePrice.HasValue)
+                .WithMessage("Reserve price phải lớn hơn 0");
+
+            RuleFor(x => x)
+                .Must(x => !x.IsAuction || !x.ReservePrice.HasValue || !x.StartingBid.HasValue || x.ReservePrice.Value >= x.StartingBid.Value)
+                .WithMessage("Reserve price phải lớn hơn hoặc bằng starting bid");
+
+            RuleFor(x => x)
+                .Must(x => !x.IsAuction || !x.BuyItNowPrice.HasValue || !x.StartingBid.HasValue || x.BuyItNowPrice.Value >= x.StartingBid.Value * 1.3m)
+                .WithMessage("Buy It Now phải >= 130% starting bid theo rule auction + BIN");
+
+            RuleFor(x => x.AuctionDurationDays)
+                .Must(d => !d.HasValue || new[] { 1, 3, 5, 7, 10 }.Contains(d.Value))
+                .When(x => x.IsAuction)
+                .WithMessage("Thời lượng đấu giá chỉ hỗ trợ: 1, 3, 5, 7 hoặc 10 ngày");
         }
     }
 
@@ -57,6 +79,34 @@ namespace ebay.Validators.Product
 
             RuleFor(x => x.Stock)
                 .GreaterThanOrEqualTo(0).When(x => x.Stock.HasValue).WithMessage("Số lượng kho không được âm");
+
+            RuleFor(x => x.Stock)
+                .Equal(1)
+                .When(x => x.IsAuction == true && x.Stock.HasValue)
+                .WithMessage("Listing đấu giá chỉ hỗ trợ số lượng kho bằng 1");
+
+            RuleFor(x => x.StartingBid)
+                .GreaterThan(0)
+                .When(x => x.IsAuction == true && x.StartingBid.HasValue)
+                .WithMessage("Giá khởi điểm đấu giá phải lớn hơn 0");
+
+            RuleFor(x => x.ReservePrice)
+                .GreaterThan(0)
+                .When(x => x.IsAuction == true && x.ReservePrice.HasValue)
+                .WithMessage("Reserve price phải lớn hơn 0");
+
+            RuleFor(x => x)
+                .Must(x => x.IsAuction != true || !x.ReservePrice.HasValue || !x.StartingBid.HasValue || x.ReservePrice.Value >= x.StartingBid.Value)
+                .WithMessage("Reserve price phải lớn hơn hoặc bằng starting bid");
+
+            RuleFor(x => x)
+                .Must(x => x.IsAuction != true || !x.BuyItNowPrice.HasValue || !x.StartingBid.HasValue || x.BuyItNowPrice.Value >= x.StartingBid.Value * 1.3m)
+                .WithMessage("Buy It Now phải >= 130% starting bid theo rule auction + BIN");
+
+            RuleFor(x => x.AuctionDurationDays)
+                .Must(d => !d.HasValue || new[] { 1, 3, 5, 7, 10 }.Contains(d.Value))
+                .When(x => x.IsAuction == true)
+                .WithMessage("Thời lượng đấu giá chỉ hỗ trợ: 1, 3, 5, 7 hoặc 10 ngày");
         }
     }
 }

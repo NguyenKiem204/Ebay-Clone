@@ -6,8 +6,9 @@ namespace ebay.Services.Interfaces
 {
     public interface IBidService
     {
-        Task<BidResponseDto> PlaceBidAsync(int productId, int bidderId, decimal amount);
+        Task<BidPlacementResponseDto> PlaceBidAsync(int productId, int bidderId, decimal amount);
         Task<List<BidResponseDto>> GetBidsByProductIdAsync(int productId);
         Task<BidResponseDto?> GetWinningBidAsync(int productId);
+        Task<AuctionStateResponseDto> GetAuctionStateAsync(int productId, int? currentUserId = null);
     }
 }

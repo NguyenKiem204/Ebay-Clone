@@ -13,9 +13,15 @@ public partial class Bid
 
     public decimal Amount { get; set; }
 
+    public decimal? MaxAmount { get; set; }
+
     public DateTime? BidTime { get; set; }
 
     public bool? IsWinning { get; set; }
+
+    public bool? IsRetracted { get; set; }
+
+    public DateTime? RetractedAt { get; set; }
 
     public virtual User Bidder { get; set; } = null!;
 

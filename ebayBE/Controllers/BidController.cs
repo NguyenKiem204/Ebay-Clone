@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
+using ebay.Attributes;
 using ebay.DTOs.Requests;
+using ebay.DTOs.Responses;
 using ebay.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,38 +21,46 @@ namespace ebay.Controllers
         }
 
         [Authorize]
+        [RateLimit("PlaceBid", 20, 1, RateLimitPeriod.Minute)]
         [HttpPost("{productId}")]
-        public async Task<IActionResult> PlaceBid(int productId, [FromBody] PlaceBidRequestDto request)
+        public async Task<ActionResult<ApiResponse<BidPlacementResponseDto>>> PlaceBid(int productId, [FromBody] PlaceBidRequestDto request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null) return Unauthorized();
 
             int bidderId = int.Parse(userIdClaim.Value);
-
-            try
-            {
-                var bid = await _bidService.PlaceBidAsync(productId, bidderId, request.Amount);
-                return Ok(bid);
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var result = await _bidService.PlaceBidAsync(productId, bidderId, request.Amount);
+            return Ok(ApiResponse<BidPlacementResponseDto>.SuccessResponse(result, "Đặt bid thành công"));
         }
 
         [HttpGet("{productId}")]
-        public async Task<IActionResult> GetBids(int productId)
+        public async Task<ActionResult<ApiResponse<List<BidResponseDto>>>> GetBids(int productId)
         {
             var bids = await _bidService.GetBidsByProductIdAsync(productId);
-            return Ok(bids);
+            return Ok(ApiResponse<List<BidResponseDto>>.SuccessResponse(bids));
         }
 
         [HttpGet("{productId}/winning")]
-        public async Task<IActionResult> GetWinningBid(int productId)
+        public async Task<ActionResult<ApiResponse<BidResponseDto?>>> GetWinningBid(int productId)
         {
             var bid = await _bidService.GetWinningBidAsync(productId);
-            if (bid == null) return NotFound("No bids yet");
-            return Ok(bid);
+            if (bid == null) return Ok(ApiResponse<BidResponseDto?>.SuccessResponse(null, "Chưa có bid thắng"));
+            return Ok(ApiResponse<BidResponseDto?>.SuccessResponse(bid));
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{productId}/state")]
+        public async Task<ActionResult<ApiResponse<AuctionStateResponseDto>>> GetAuctionState(int productId)
+        {
+            int? currentUserId = null;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
+            {
+                currentUserId = parsedUserId;
+            }
+
+            var data = await _bidService.GetAuctionStateAsync(productId, currentUserId);
+            return Ok(ApiResponse<AuctionStateResponseDto>.SuccessResponse(data));
         }
     }
 }

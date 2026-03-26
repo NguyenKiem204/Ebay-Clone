@@ -3,9 +3,6 @@ using ebay.Exceptions;
 using ebay.Models;
 using ebay.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 
 namespace ebay.Services.Implementations
 {
@@ -13,130 +10,166 @@ namespace ebay.Services.Implementations
     {
         Task<string> CreateOrderAsync(int userId, int orderId);
         Task<bool> CaptureOrderAsync(string paypalOrderId);
+        Task<bool> FailOrderAsync(string paypalOrderId);
     }
 
     public class PaypalService : IPaypalService
     {
         private readonly EbayDbContext _context;
-        private readonly IConfiguration _config;
-        private readonly HttpClient _httpClient;
 
-        public PaypalService(EbayDbContext context, IConfiguration config, HttpClient httpClient)
+        public PaypalService(EbayDbContext context)
         {
             _context = context;
-            _config = config;
-            _httpClient = httpClient;
-        }
-
-        private async Task<string> GetAccessTokenAsync()
-        {
-            var clientId = _config["PayPal:ClientId"];
-            var secret = _config["PayPal:ClientSecret"];
-            var mode = _config["PayPal:Mode"] ?? "sandbox";
-            var url = mode == "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
-
-            var auth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{secret}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", auth);
-
-            var content = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("grant_type", "client_credentials")
-            });
-
-            var response = await _httpClient.PostAsync($"{url}/v1/oauth2/token", content);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("access_token").GetString()!;
         }
 
         public async Task<string> CreateOrderAsync(int userId, int orderId)
         {
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId && o.BuyerId == userId);
+            var order = await _context.Orders
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.Id == orderId && o.BuyerId == userId);
+
             if (order == null) throw new NotFoundException("Đơn hàng không tồn tại");
-
-            var accessToken = await GetAccessTokenAsync();
-            var mode = _config["PayPal:Mode"] ?? "sandbox";
-            var url = mode == "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
-
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var body = new
+            if (!string.Equals(order.CustomerType, "member", StringComparison.OrdinalIgnoreCase))
             {
-                intent = "CAPTURE",
-                purchase_units = new[]
-                {
-                    new
-                    {
-                        reference_id = order.OrderNumber,
-                        amount = new
-                        {
-                            currency_code = "USD", // PayPal standard
-                            value = (order.TotalPrice / 25000).ToString("F2") // Convert to USD roughly
-                        }
-                    }
-                },
-                application_context = new
-                {
-                    return_url = _config["PayPal:ReturnUrl"],
-                    cancel_url = _config["PayPal:CancelUrl"]
-                }
-            };
-
-            var response = await _httpClient.PostAsync($"{url}/v2/checkout/orders", 
-                new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"));
-            
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var paypalOrderId = doc.RootElement.GetProperty("id").GetString()!;
-
-            // Save Paypal Order ID to Payment record
-            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
-            if (payment != null)
-            {
-                payment.TransactionId = paypalOrderId;
-                payment.PaymentGateway = "paypal";
-                await _context.SaveChangesAsync();
+                throw new BadRequestException("Mô phỏng PayPal chỉ áp dụng cho đơn hàng member");
             }
 
-            return paypalOrderId;
+            var payment = order.Payments
+                .OrderByDescending(p => p.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault();
+
+            if (payment == null)
+            {
+                throw new BadRequestException("Đơn hàng chưa có bản ghi thanh toán");
+            }
+
+            await EnsureAuctionPaymentDeadlineNotExceededAsync(order, payment);
+
+            if (!string.Equals(payment.Method, "paypal", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Đơn hàng này không dùng PayPal");
+            }
+
+            if (!string.IsNullOrWhiteSpace(payment.TransactionId))
+            {
+                return payment.TransactionId;
+            }
+
+            var simulatedPaymentRef = $"SIM-PAYPAL-{order.OrderNumber}-{Guid.NewGuid():N}".ToUpperInvariant();
+            payment.TransactionId = simulatedPaymentRef;
+            payment.PaymentGateway = "paypal_simulated";
+            payment.Status = "pending";
+
+            await _context.SaveChangesAsync();
+            return simulatedPaymentRef;
         }
 
         public async Task<bool> CaptureOrderAsync(string paypalOrderId)
         {
-            var accessToken = await GetAccessTokenAsync();
-            var mode = _config["PayPal:Mode"] ?? "sandbox";
-            var url = mode == "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+            var payment = await _context.Payments
+                .Include(p => p.Order)
+                .FirstOrDefaultAsync(p => p.TransactionId == paypalOrderId);
 
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var response = await _httpClient.PostAsync($"{url}/v2/checkout/orders/{paypalOrderId}/capture", 
-                new StringContent("", Encoding.UTF8, "application/json"));
-
-            if (!response.IsSuccessStatusCode) return false;
-
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var status = doc.RootElement.GetProperty("status").GetString();
-
-            if (status == "COMPLETED")
+            if (payment == null)
             {
-                var payment = await _context.Payments.Include(p => p.Order).FirstOrDefaultAsync(p => p.TransactionId == paypalOrderId);
-                if (payment != null)
-                {
-                    payment.Status = "completed";
-                    payment.PaidAt = DateTime.UtcNow;
-                    payment.Order.Status = "confirmed";
-                    payment.Order.UpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                }
+                return false;
+            }
+
+            if (string.Equals(payment.Status, "completed", StringComparison.OrdinalIgnoreCase))
+            {
                 return true;
             }
 
-            return false;
+            if (!string.Equals(payment.Method, "paypal", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Bản ghi thanh toán này không phải PayPal");
+            }
+
+            await EnsureAuctionPaymentDeadlineNotExceededAsync(payment.Order, payment);
+
+            payment.Status = "completed";
+            payment.PaidAt = DateTime.UtcNow;
+            payment.PaymentGateway ??= "paypal_simulated";
+            payment.Order.Status = "confirmed";
+            payment.Order.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> FailOrderAsync(string paypalOrderId)
+        {
+            var payment = await _context.Payments
+                .Include(p => p.Order)
+                    .ThenInclude(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(p => p.TransactionId == paypalOrderId);
+
+            if (payment == null)
+            {
+                return false;
+            }
+
+            if (string.Equals(payment.Status, "failed", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(payment.Status, "completed", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Không thể đánh dấu thất bại cho thanh toán đã hoàn tất");
+            }
+
+            if (!string.Equals(payment.Method, "paypal", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException("Bản ghi thanh toán này không phải PayPal");
+            }
+
+            payment.Status = "failed";
+            payment.PaidAt = null;
+            payment.PaymentGateway ??= "paypal_simulated";
+
+            if (payment.Order.IsAuctionOrder != true)
+            {
+                foreach (var orderItem in payment.Order.OrderItems)
+                {
+                    if (orderItem.Product != null)
+                    {
+                        orderItem.Product.Stock = (orderItem.Product.Stock ?? 0) + orderItem.Quantity;
+                    }
+                }
+            }
+
+            payment.Order.Status = "cancelled";
+            payment.Order.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task EnsureAuctionPaymentDeadlineNotExceededAsync(Order order, Payment payment)
+        {
+            if (order.IsAuctionOrder != true || !order.PaymentDueAt.HasValue)
+            {
+                return;
+            }
+
+            if (string.Equals(payment.Status, "completed", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (order.PaymentDueAt.Value <= DateTime.UtcNow)
+            {
+                payment.Status = "failed";
+                payment.PaidAt = null;
+                payment.PaymentGateway ??= "paypal_simulated";
+                order.Status = "cancelled";
+                order.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                throw new BadRequestException("Đơn thắng đấu giá đã quá hạn thanh toán.");
+            }
         }
     }
 }

@@ -21,6 +21,12 @@ namespace ebay.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
+            if (HttpMethods.IsOptions(context.Request.Method))
+            {
+                await _next(context);
+                return;
+            }
+
             var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             
             var cacheKey = $"GlobalSpam_{ipAddress}";

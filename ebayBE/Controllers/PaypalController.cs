@@ -35,5 +35,14 @@ namespace ebay.Controllers
                 return Ok(ApiResponse<bool>.SuccessResponse(true, "Thanh toán thành công"));
             return BadRequest(ApiResponse<bool>.ErrorResponse("Thanh toán thất bại"));
         }
+
+        [HttpPost("fail-order/{paypalOrderId}")]
+        public async Task<ActionResult<ApiResponse<bool>>> FailOrder(string paypalOrderId)
+        {
+            var success = await _paypalService.FailOrderAsync(paypalOrderId);
+            if (success)
+                return Ok(ApiResponse<bool>.SuccessResponse(true, "Thanh toán mô phỏng đã được đánh dấu thất bại"));
+            return BadRequest(ApiResponse<bool>.ErrorResponse("Không thể đánh dấu thất bại cho thanh toán này"));
+        }
     }
 }

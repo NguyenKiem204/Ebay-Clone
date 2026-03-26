@@ -12,10 +12,15 @@ namespace ebay.Controllers
     public class HistoryController : ControllerBase
     {
         private readonly EbayDbContext _ctx;
+        private readonly ILogger<HistoryController> _logger;
         private const int MaxHistory = 10;
         private const string CookieName = "ebay_guest_id";
 
-        public HistoryController(EbayDbContext ctx) => _ctx = ctx;
+        public HistoryController(EbayDbContext ctx, ILogger<HistoryController> logger)
+        {
+            _ctx = ctx;
+            _logger = logger;
+        }
 
         private int? GetUserId()
         {
@@ -34,7 +39,7 @@ namespace ebay.Controllers
                 HttpOnly = false, // FE needs to read it for sync
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(30),
-                Secure = true,
+                Secure = Request.IsHttps,
                 IsEssential = true,
                 Path = "/"           // ← accessible from ALL routes, not just /api/History
             });
@@ -90,7 +95,28 @@ namespace ebay.Controllers
                 });
             }
 
-            await _ctx.SaveChangesAsync();
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Guard against duplicate inserts when FE triggers rapid duplicate requests
+                // (e.g. React StrictMode effect replay in development).
+                var duplicated = await _ctx.ProductViewHistories
+                    .FirstOrDefaultAsync(h =>
+                        (userId != null && h.UserId == userId && h.ProductId == productId) ||
+                        (userId == null && h.CookieId == cookieId && h.ProductId == productId)
+                    );
+
+                if (duplicated != null)
+                {
+                    duplicated.ViewedAt = now;
+                    duplicated.ExpiresAt = userId.HasValue ? now.AddDays(90) : now.AddDays(30);
+                    await _ctx.SaveChangesAsync();
+                }
+            }
+
             return Ok(ApiResponse<object>.SuccessResponse(null, "Tracked"));
         }
 
@@ -140,49 +166,102 @@ namespace ebay.Controllers
                 return Ok(ApiResponse<object>.SuccessResponse(null, "No guest cookie found"));
             }
 
-            var userId = GetUserId()!.Value;
-            var now    = DateTime.UtcNow;
+            var userId = GetUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Unauthorized"));
+            }
+
+            var now = DateTime.UtcNow;
 
             var guestRows = await _ctx.ProductViewHistories
                 .Where(h => h.CookieId == cookieId)
+                .OrderByDescending(h => h.ViewedAt)
                 .ToListAsync();
 
-            foreach (var guest in guestRows)
+            if (guestRows.Count == 0)
             {
-                var existing = await _ctx.ProductViewHistories
-                    .FirstOrDefaultAsync(h => h.UserId == userId && h.ProductId == guest.ProductId);
-
-                if (existing is null)
-                {
-                    await _ctx.ProductViewHistories.AddAsync(new ProductViewHistory
-                    {
-                        UserId    = userId,
-                        ProductId = guest.ProductId,
-                        ViewedAt  = guest.ViewedAt,
-                        ExpiresAt = now.AddDays(90)
-                    });
-                }
-                else
-                {
-                    // Keep the more recent timestamp
-                    if (guest.ViewedAt > existing.ViewedAt)
-                        existing.ViewedAt = guest.ViewedAt;
-                    existing.ExpiresAt = now.AddDays(90);
-                }
-
-                _ctx.ProductViewHistories.Remove(guest);
+                return Ok(ApiResponse<object>.SuccessResponse(null, "No guest history found"));
             }
 
-            // Enforce limit: keep only latest MaxHistory
+            // Defensive aggregation: keep latest row per product before merging into user history.
+            var mergedGuestRows = guestRows
+                .GroupBy(h => h.ProductId)
+                .Select(g => g.OrderByDescending(x => x.ViewedAt).First())
+                .ToList();
+
+            var guestProductIds = mergedGuestRows.Select(r => r.ProductId).ToList();
+
+            var existingUserRows = await _ctx.ProductViewHistories
+                .Where(h => h.UserId == userId.Value && guestProductIds.Contains(h.ProductId))
+                .ToDictionaryAsync(h => h.ProductId);
+
+            foreach (var guest in mergedGuestRows)
+            {
+                if (existingUserRows.TryGetValue(guest.ProductId, out var existing))
+                {
+                    if (guest.ViewedAt > existing.ViewedAt)
+                    {
+                        existing.ViewedAt = guest.ViewedAt;
+                    }
+
+                    existing.ExpiresAt = now.AddDays(90);
+                    continue;
+                }
+
+                await _ctx.ProductViewHistories.AddAsync(new ProductViewHistory
+                {
+                    UserId = userId.Value,
+                    ProductId = guest.ProductId,
+                    ViewedAt = guest.ViewedAt,
+                    ExpiresAt = now.AddDays(90)
+                });
+            }
+
+            _ctx.ProductViewHistories.RemoveRange(guestRows);
+
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // StrictMode / duplicate mount may call sync concurrently.
+                // If another request already merged, treat this as idempotent and continue.
+                _logger.LogWarning(ex, "History sync conflict for cookie {CookieId} and user {UserId}", cookieId, userId.Value);
+
+                _ctx.ChangeTracker.Clear();
+
+                var remainingGuestRows = await _ctx.ProductViewHistories
+                    .Where(h => h.CookieId == cookieId)
+                    .ToListAsync();
+
+                if (remainingGuestRows.Count > 0)
+                {
+                    _ctx.ProductViewHistories.RemoveRange(remainingGuestRows);
+
+                    try
+                    {
+                        await _ctx.SaveChangesAsync();
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        _logger.LogWarning(cleanupEx, "History sync cleanup failed for cookie {CookieId}", cookieId);
+                    }
+                }
+            }
+
+            // Enforce max history after merge to keep list bounded and deterministic.
             var allUserRows = await _ctx.ProductViewHistories
-                .Where(h => h.UserId == userId)
+                .Where(h => h.UserId == userId.Value)
                 .OrderByDescending(h => h.ViewedAt)
                 .ToListAsync();
 
             if (allUserRows.Count > MaxHistory)
+            {
                 _ctx.ProductViewHistories.RemoveRange(allUserRows.Skip(MaxHistory));
-
-            await _ctx.SaveChangesAsync();
+                await _ctx.SaveChangesAsync();
+            }
 
             // Delete guest cookie so next logout creates a fresh identity
             Response.Cookies.Delete(CookieName, new CookieOptions { Path = "/" });

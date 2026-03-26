@@ -24,6 +24,8 @@ export default function SellerCreateListingPage() {
         shippingFee: 0,
         isAuction: false,
         startingBid: '',
+        reservePrice: '',
+        buyItNowPrice: '',
         auctionDurationDays: 7,
     });
 
@@ -84,6 +86,7 @@ export default function SellerCreateListingPage() {
         }
 
         const data = new FormData();
+        const normalizedStock = formData.isAuction ? 1 : (parseInt(formData.stock) || 1);
         data.append('Title', formData.title);
         data.append('Description', formData.description);
         data.append('Price', parseFloat(formData.price) || 0);
@@ -91,13 +94,15 @@ export default function SellerCreateListingPage() {
         if (formData.categoryId) data.append('CategoryId', parseInt(formData.categoryId));
         data.append('Condition', formData.condition);
         if (formData.brand) data.append('Brand', formData.brand);
-        data.append('Stock', parseInt(formData.stock) || 1);
+        data.append('Stock', normalizedStock);
         data.append('ShippingFee', parseFloat(formData.shippingFee) || 0);
         data.append('IsAuction', formData.isAuction);
         data.append('Status', status);
 
         if (formData.isAuction) {
             data.append('StartingBid', parseFloat(formData.startingBid) || 0);
+            if (formData.reservePrice) data.append('ReservePrice', parseFloat(formData.reservePrice));
+            if (formData.buyItNowPrice) data.append('BuyItNowPrice', parseFloat(formData.buyItNowPrice));
             data.append('AuctionDurationDays', parseInt(formData.auctionDurationDays));
         }
 
@@ -280,8 +285,12 @@ export default function SellerCreateListingPage() {
                             value={formData.stock}
                             onChange={handleInputChange}
                             min={1}
+                            disabled={formData.isAuction}
                             className="w-full border border-gray-300 rounded-md px-4 py-3 outline-none focus:border-secondary"
                         />
+                        {formData.isAuction && (
+                            <p className="text-[11px] text-gray-400">Auction listing supports only quantity = 1.</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -319,7 +328,7 @@ export default function SellerCreateListingPage() {
                             type="radio"
                             name="pricingType"
                             checked={formData.isAuction}
-                            onChange={() => setFormData(prev => ({ ...prev, isAuction: true }))}
+                            onChange={() => setFormData(prev => ({ ...prev, isAuction: true, stock: 1 }))}
                             className="w-5 h-5 text-secondary border-gray-300 focus:ring-secondary/20 cursor-pointer"
                         />
                         <span className={`font-bold transition-colors ${formData.isAuction ? 'text-gray-900' : 'text-gray-500'}`}>Auction</span>
@@ -388,12 +397,44 @@ export default function SellerCreateListingPage() {
                                     onChange={handleInputChange}
                                     className="w-full border border-gray-300 rounded-md px-4 py-3 outline-none focus:border-secondary"
                                 >
+                                    <option value={1}>1 day</option>
                                     <option value={3}>3 days</option>
                                     <option value={5}>5 days</option>
                                     <option value={7}>7 days</option>
                                     <option value={10}>10 days</option>
-                                    <option value={30}>30 days</option>
                                 </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Reserve price (optional)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                                    <input
+                                        type="number"
+                                        name="reservePrice"
+                                        value={formData.reservePrice}
+                                        onChange={handleInputChange}
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md outline-none focus:border-secondary text-gray-900"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Buy It Now price (optional)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                                    <input
+                                        type="number"
+                                        name="buyItNowPrice"
+                                        value={formData.buyItNowPrice}
+                                        onChange={handleInputChange}
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md outline-none focus:border-secondary text-gray-900"
+                                    />
+                                </div>
                             </div>
                         </>
                     )}

@@ -150,6 +150,11 @@ namespace ebay.Services.Implementations
                 query = query.Where(p => p.Condition == request.Condition);
             }
 
+            if (request.IsAuction.HasValue)
+            {
+                query = query.Where(p => (p.IsAuction ?? false) == request.IsAuction.Value);
+            }
+
             if (request.MinPrice.HasValue)
             {
                 query = query.Where(p => p.Price >= request.MinPrice.Value);
@@ -416,8 +421,16 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
             if (string.IsNullOrWhiteSpace(request.Title))
                 throw new BadRequestException("Tiêu đề sản phẩm không được để trống");
 
-            if (request.Price <= 0 && !(request.IsAuction))
+            if (!request.IsAuction && request.Price <= 0)
                 throw new BadRequestException("Giá sản phẩm phải lớn hơn 0");
+
+            if (request.IsAuction && (!request.StartingBid.HasValue || request.StartingBid.Value <= 0))
+                throw new BadRequestException("Listing đấu giá cần StartingBid hợp lệ");
+
+            var normalizedStock = request.IsAuction ? 1 : request.Stock;
+            var normalizedBasePrice = request.IsAuction
+                ? (request.StartingBid ?? request.Price)
+                : request.Price;
 
             // Get seller's store
             var store = await _context.Stores.FirstOrDefaultAsync(s => s.SellerId == sellerId);
@@ -448,23 +461,31 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                 Title = request.Title,
                 Slug = GenerateSlug(request.Title),
                 Description = request.Description,
-                Price = request.Price,
+                Price = normalizedBasePrice,
                 OriginalPrice = request.OriginalPrice,
                 CategoryId = request.CategoryId,
                 SellerId = sellerId,
                 StoreId = store?.Id,
                 Condition = normalizedCondition,
                 Brand = request.Brand,
-                Stock = request.Stock,
+                Stock = normalizedStock,
                 ShippingFee = request.ShippingFee,
                 Weight = request.Weight,
                 Dimensions = request.Dimensions,
                 IsAuction = request.IsAuction,
-                StartingBid = request.IsAuction ? request.StartingBid : null,
+                StartingBid = request.IsAuction ? normalizedBasePrice : null,
+                ReservePrice = request.IsAuction ? request.ReservePrice : null,
+                BuyItNowPrice = request.IsAuction ? request.BuyItNowPrice : null,
+                CurrentBidPrice = request.IsAuction ? normalizedBasePrice : null,
+                WinningBidderId = null,
+                AuctionStatus = request.IsAuction ? "live" : null,
                 AuctionStartTime = request.IsAuction ? DateTime.UtcNow : null,
                 AuctionEndTime = request.IsAuction && request.AuctionDurationDays.HasValue
                     ? DateTime.UtcNow.AddDays(request.AuctionDurationDays.Value)
+                    : request.IsAuction
+                        ? DateTime.UtcNow.AddDays(7)
                     : null,
+                EndedAt = null,
                 Images = imageUrls,
                 IsActive = request.Status?.ToLower() == "draft" ? false : true,
                 Status = string.IsNullOrEmpty(request.Status) ? "active" : request.Status.ToLower(),
@@ -511,6 +532,37 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                 throw new ForbiddenException("Bạn không có quyền chỉnh sửa sản phẩm này");
             }
 
+            var now = DateTime.UtcNow;
+            var isAuctionListing = product.IsAuction == true;
+            var hasActiveBids = product.Bids.Any(b => b.IsRetracted != true);
+            var normalizedAuctionStatus = NormalizeAuctionStatus(product.AuctionStatus);
+            var isAuctionClosed = IsAuctionClosedStatus(normalizedAuctionStatus)
+                                 || (product.AuctionEndTime.HasValue && product.AuctionEndTime.Value <= now);
+            var isAuctionLive = isAuctionListing && !isAuctionClosed;
+
+            if (isAuctionLive)
+            {
+                if (request.IsAuction.HasValue && request.IsAuction.Value != true)
+                {
+                    throw new BadRequestException("Không thể chuyển listing đấu giá đang chạy sang fixed-price");
+                }
+
+                if (request.AuctionDurationDays.HasValue)
+                {
+                    throw new BadRequestException("Không thể thay đổi thời lượng khi phiên đấu giá đang chạy");
+                }
+
+                if (request.Stock.HasValue && request.Stock.Value != (product.Stock ?? 1))
+                {
+                    throw new BadRequestException("Không thể thay đổi số lượng kho khi phiên đấu giá đang chạy");
+                }
+
+                if (hasActiveBids && (request.StartingBid.HasValue || request.ReservePrice.HasValue || request.BuyItNowPrice.HasValue))
+                {
+                    throw new BadRequestException("Không thể thay đổi cấu hình giá đấu giá sau khi đã có bid");
+                }
+            }
+
             // Update fields if provided
             if (!string.IsNullOrWhiteSpace(request.Title) && request.Title != product.Title)
             {
@@ -519,27 +571,107 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                 product.Slug = GenerateSlug(request.Title);
             }
             if (request.Description != null) product.Description = request.Description;
-            if (request.Price.HasValue) product.Price = request.Price.Value;
+            if (request.Price.HasValue)
+            {
+                if (product.IsAuction == true)
+                    throw new BadRequestException("Listing đấu giá không hỗ trợ cập nhật trực tiếp trường Price");
+
+                product.Price = request.Price.Value;
+            }
             if (request.OriginalPrice.HasValue) product.OriginalPrice = request.OriginalPrice.Value;
             if (request.CategoryId.HasValue) product.CategoryId = request.CategoryId.Value;
             if (request.Condition != null) product.Condition = request.Condition;
             if (request.Brand != null) product.Brand = request.Brand;
-            if (request.Stock.HasValue) product.Stock = request.Stock.Value;
             if (request.ShippingFee.HasValue) product.ShippingFee = request.ShippingFee.Value;
             if (request.Weight.HasValue) product.Weight = request.Weight.Value;
             if (request.Dimensions != null) product.Dimensions = request.Dimensions;
-            if (request.IsAuction.HasValue)
+
+            if (request.IsAuction.HasValue && request.IsAuction.Value != (product.IsAuction ?? false))
             {
-                product.IsAuction = request.IsAuction.Value;
                 if (request.IsAuction.Value)
                 {
-                    if (request.StartingBid.HasValue) product.StartingBid = request.StartingBid.Value;
-                    if (request.AuctionDurationDays.HasValue)
-                    {
-                        product.AuctionStartTime = DateTime.UtcNow;
-                        product.AuctionEndTime = DateTime.UtcNow.AddDays(request.AuctionDurationDays.Value);
-                    }
+                    var normalizedStartingBid = request.StartingBid ?? product.Price;
+                    if (normalizedStartingBid <= 0)
+                        throw new BadRequestException("Listing đấu giá cần StartingBid hợp lệ");
+
+                    product.IsAuction = true;
+                    product.StartingBid = normalizedStartingBid;
+                    product.CurrentBidPrice = normalizedStartingBid;
+                    product.Price = normalizedStartingBid;
+                    product.ReservePrice = request.ReservePrice;
+                    product.BuyItNowPrice = request.BuyItNowPrice;
+                    product.AuctionStartTime = now;
+                    product.AuctionEndTime = now.AddDays(request.AuctionDurationDays ?? 7);
+                    product.AuctionStatus = "live";
+                    product.EndedAt = null;
+                    product.WinningBidderId = null;
+                    product.Stock = 1;
+                    product.Status = "active";
+                    product.IsActive = true;
                 }
+                else
+                {
+                    if (hasActiveBids)
+                        throw new BadRequestException("Không thể chuyển listing đấu giá đã có bid sang fixed-price");
+
+                    product.IsAuction = false;
+                    product.StartingBid = null;
+                    product.ReservePrice = null;
+                    product.BuyItNowPrice = null;
+                    product.CurrentBidPrice = null;
+                    product.WinningBidderId = null;
+                    product.AuctionStatus = null;
+                    product.AuctionStartTime = null;
+                    product.AuctionEndTime = null;
+                    product.EndedAt = null;
+                }
+            }
+
+            if (request.Stock.HasValue)
+            {
+                if (product.IsAuction == true && request.Stock.Value != 1)
+                    throw new BadRequestException("Listing đấu giá chỉ hỗ trợ số lượng kho bằng 1");
+
+                product.Stock = request.Stock.Value;
+            }
+            else if (product.IsAuction == true && (product.Stock ?? 1) != 1)
+            {
+                product.Stock = 1;
+            }
+
+            if (request.StartingBid.HasValue && product.IsAuction == true)
+            {
+                if (hasActiveBids)
+                    throw new BadRequestException("Không thể cập nhật StartingBid sau khi đã có bid");
+
+                product.StartingBid = request.StartingBid.Value;
+                product.CurrentBidPrice = request.StartingBid.Value;
+                product.Price = request.StartingBid.Value;
+            }
+
+            if (request.ReservePrice.HasValue && product.IsAuction == true)
+            {
+                if (hasActiveBids)
+                    throw new BadRequestException("Không thể cập nhật ReservePrice sau khi đã có bid");
+
+                product.ReservePrice = request.ReservePrice.Value;
+            }
+
+            if (request.BuyItNowPrice.HasValue && product.IsAuction == true)
+            {
+                if (hasActiveBids)
+                    throw new BadRequestException("Không thể cập nhật BuyItNowPrice sau khi đã có bid");
+
+                product.BuyItNowPrice = request.BuyItNowPrice.Value;
+            }
+
+            if (request.AuctionDurationDays.HasValue && product.IsAuction == true)
+            {
+                if (isAuctionLive)
+                    throw new BadRequestException("Không thể thay đổi thời lượng khi phiên đấu giá đang chạy");
+
+                var auctionStart = product.AuctionStartTime ?? now;
+                product.AuctionEndTime = auctionStart.AddDays(request.AuctionDurationDays.Value);
             }
 
             // Handle images: keep existing ones specified, delete the rest, add new ones
@@ -724,6 +856,36 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                 .ToList()
         };
 
+        private static decimal CalculateMinimumNextBid(decimal currentPrice)
+        {
+            var normalizedPrice = currentPrice <= 0 ? 0.01m : currentPrice;
+            return Math.Round(normalizedPrice + GetBidIncrement(normalizedPrice), 2, MidpointRounding.AwayFromZero);
+        }
+
+        private static decimal GetBidIncrement(decimal currentPrice)
+        {
+            if (currentPrice < 1m) return 0.05m;
+            if (currentPrice < 5m) return 0.25m;
+            if (currentPrice < 25m) return 0.50m;
+            if (currentPrice < 100m) return 1.00m;
+            if (currentPrice < 250m) return 2.50m;
+            if (currentPrice < 500m) return 5.00m;
+            if (currentPrice < 1000m) return 10.00m;
+            if (currentPrice < 2500m) return 25.00m;
+            if (currentPrice < 5000m) return 50.00m;
+            return 100.00m;
+        }
+
+        private static string NormalizeAuctionStatus(string? status)
+        {
+            return string.IsNullOrWhiteSpace(status) ? "live" : status.Trim().ToLowerInvariant();
+        }
+
+        private static bool IsAuctionClosedStatus(string normalizedStatus)
+        {
+            return normalizedStatus is "sold" or "ended" or "reserve_not_met" or "cancelled";
+        }
+
         
 public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
 {
@@ -749,8 +911,20 @@ public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
     SellerName = p.Seller?.Username ?? "Unknown",
     IsAuction = p.IsAuction ?? false,
     AuctionEndTime = p.AuctionEndTime,
-    CurrentBid = p.Bids != null && p.Bids.Any() ? p.Bids.Max(b => b.Amount) : p.StartingBid,
-    BidCount = p.Bids?.Count ?? 0,
+    CurrentBid = p.CurrentBidPrice ?? (p.Bids != null && p.Bids.Any(b => b.IsRetracted != true)
+        ? p.Bids.Where(b => b.IsRetracted != true).Max(b => b.Amount)
+        : p.StartingBid),
+    BidCount = p.Bids?.Count(b => b.IsRetracted != true) ?? 0,
+    ReservePrice = p.ReservePrice,
+    BuyItNowPrice = p.BuyItNowPrice,
+    ReserveMet = !p.ReservePrice.HasValue || (p.CurrentBidPrice ?? p.StartingBid ?? 0) >= p.ReservePrice.Value,
+    MinimumNextBid = p.IsAuction == true
+        ? ((p.Bids?.Any(b => b.IsRetracted != true) ?? false)
+            ? CalculateMinimumNextBid(p.CurrentBidPrice ?? p.StartingBid ?? p.Price)
+            : Math.Round((p.StartingBid ?? p.CurrentBidPrice ?? p.Price), 2, MidpointRounding.AwayFromZero))
+        : null,
+    AuctionStatus = p.AuctionStatus,
+    WinningBidderId = p.WinningBidderId,
     SoldCount = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
     CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
     Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,

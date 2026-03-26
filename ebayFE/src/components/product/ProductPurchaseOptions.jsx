@@ -12,6 +12,7 @@ import { useDebounceButton } from '../../hooks/useDebounceButton';
 import useWatchlistStore from '../../features/watchlist/useWatchlistStore';
 import SellerFeedbackModal from './SellerSection/SellerFeedbackModal';
 import api from '../../lib/axios';
+import useAuctionStore from '../../store/useAuctionStore';
 
 export default function ProductPurchaseOptions({ product }) {
     const [quantity, setQuantity] = useState(1);
@@ -26,6 +27,18 @@ export default function ProductPurchaseOptions({ product }) {
     const navigate = useNavigate();
     const isWatched = useWatchlistStore(s => s.watchIds.has(product?.id));
     const toggleWatch = useWatchlistStore(s => s.toggleWatch);
+    const isAuction = Boolean(product?.isAuction);
+    const auctionStatesByProduct = useAuctionStore(s => s.auctionStatesByProduct);
+    const fallbackAuctionState = useAuctionStore(s => s.auctionState);
+    const auctionState = auctionStatesByProduct?.[product?.id] ?? fallbackAuctionState;
+    const fetchAuctionState = useAuctionStore(s => s.fetchAuctionState);
+    const placeBid = useAuctionStore(s => s.placeBid);
+    const isOutOfStock = (product?.stock ?? 0) <= 0;
+    const auctionStatus = (auctionState?.auctionStatus || product?.auctionStatus || 'live').toLowerCase();
+    const isAuctionClosed = ['sold', 'ended', 'reserve_not_met', 'cancelled'].includes(auctionStatus);
+    const auctionMinNextBid = auctionState?.minimumNextBid ?? product?.minimumNextBid ?? product?.currentBid ?? product?.price;
+    const displayAuctionPrice = auctionState?.currentPrice ?? product?.currentBid ?? product?.price;
+    const displayPrice = isAuction ? displayAuctionPrice : product?.price;
 
     // Fetch seller profile for review count & positive %
     useEffect(() => {
@@ -36,14 +49,62 @@ export default function ProductPurchaseOptions({ product }) {
         }
     }, [product?.sellerId]);
 
+    useEffect(() => {
+        if (isAuction && product?.id) {
+            fetchAuctionState(product.id);
+        }
+    }, [isAuction, product?.id, fetchAuctionState]);
+
     const spamOpts = { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Vui lòng không nhấn quá nhanh!' };
 
     const { trigger: handleAddToCart, isBlocked: addBlocked } = useDebounceButton(async () => {
+        if (isAuction) {
+            toast.error('Listing đấu giá không hỗ trợ thêm vào giỏ hàng.');
+            return;
+        }
+
         await addItem(product, quantity);
         setIsModalOpen(true);
     }, spamOpts);
 
     const { trigger: handleBuyItNow, isBlocked: buyBlocked } = useDebounceButton(() => {
+        if (isAuction) {
+            if (isAuctionClosed) {
+                const endedMessage = auctionStatus === 'sold'
+                    ? 'Phiên đấu giá đã kết thúc và sản phẩm đã được bán.'
+                    : 'Phiên đấu giá đã kết thúc.';
+                toast.error(endedMessage);
+                return;
+            }
+
+            if (!isAuthenticated) {
+                navigate(`/login?redirect=/products/${product.id}`);
+            } else {
+                const input = window.prompt(
+                    `Nhập max bid của bạn (tối thiểu ${Number(auctionMinNextBid || 0).toLocaleString()})`,
+                    String(auctionMinNextBid || '')
+                );
+
+                if (!input) return;
+
+                const bidAmount = Number(input);
+                if (!Number.isFinite(bidAmount) || bidAmount <= 0) {
+                    toast.error('Giá bid không hợp lệ.');
+                    return;
+                }
+
+                placeBid(product.id, bidAmount).then(result => {
+                    if (result.success) {
+                        toast.success('Đặt bid thành công!');
+                        fetchAuctionState(product.id);
+                    } else {
+                        toast.error(result.message || 'Đặt bid thất bại.');
+                    }
+                });
+            }
+            return;
+        }
+
         if (isAuthenticated) {
             navigate(`/checkout?buyItNow=1&productId=${product.id}&quantity=${quantity}`);
         } else {
@@ -107,17 +168,29 @@ export default function ProductPurchaseOptions({ product }) {
             {/* Pricing & Buy Actions */}
             <div className="mt-6">
                 <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-[24px] font-bold text-gray-900">US ${product.price?.toLocaleString()}</span>
+                    <span className="text-[24px] font-bold text-gray-900">
+                        US ${displayPrice?.toLocaleString()}
+                    </span>
                 </div>
                 <div className="text-[14px] text-gray-500 flex items-center gap-2 mb-2">
                     <span>Approximately</span>
-                    <span className="font-bold text-gray-800">{(product.price * 26231)?.toLocaleString('vi-VN')} VND</span>
+                    <span className="font-bold text-gray-800">{(displayPrice * 26231)?.toLocaleString('vi-VN')} VND</span>
                 </div>
-                <div className="flex items-center gap-2 text-[#248232] text-[15px] mb-4">
-                    <span className="font-bold">{(product.price * 26231 - 15).toLocaleString('vi-VN')} ₫</span>
-                    <span className="text-gray-500 font-normal">with coupon code</span>
-                    <Link to="#" className="text-gray-500 underline text-[13px]">Price details</Link>
-                </div>
+                {isAuthenticated && !isAuction ? (
+                    <div className="flex items-center gap-2 text-[#248232] text-[15px] mb-4">
+                        <span className="font-bold">{(displayPrice * 26231 - 15).toLocaleString('vi-VN')} ₫</span>
+                        <span className="text-gray-500 font-normal">with coupon code</span>
+                        <Link to="#" className="text-gray-500 underline text-[13px]">Price details</Link>
+                    </div>
+                ) : (
+                <div className="text-[14px] text-gray-600 mb-4">
+                        {isAuction
+                            ? isAuctionClosed
+                                ? `Auction status: ${auctionStatus}. Final price ${Number(displayAuctionPrice || 0).toLocaleString()}.`
+                                : `Current bid ${Number(displayAuctionPrice || 0).toLocaleString()} - min next bid ${Number(auctionMinNextBid || 0).toLocaleString()}.`
+                            : 'Guest checkout supports eligible fixed-price items with Cash on Delivery (COD) only.'}
+                    </div>
+                )}
 
                 <div className="space-y-4 mb-6">
                     <div className="flex items-center gap-4">
@@ -129,25 +202,31 @@ export default function ProductPurchaseOptions({ product }) {
                     </div>
                     <div className="flex items-center gap-4">
                         <span className="w-20 text-[14px] text-gray-600">Quantity:</span>
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="number"
-                                min="1"
-                                max={product.stock > 0 ? product.stock : 1}
-                                value={quantity}
-                                onChange={(e) => setQuantity(Math.min(product.stock > 0 ? product.stock : 1, Math.max(1, parseInt(e.target.value) || 1)))}
-                                className="w-[60px] h-10 border border-gray-300 rounded px-3 text-center"
-                            />
-                            <span className="text-[14px] text-gray-500">
-                                {product.stock > 0 ? (
-                                    <>
-                                        {product.stock} available {product.soldCount > 0 && <span>&middot; {product.soldCount} sold</span>}
-                                    </>
-                                ) : (
-                                    <span className="text-[#dd1e31] font-bold">Out of stock</span>
-                                )}
-                            </span>
-                        </div>
+                        {isAuction ? (
+                            <div className="text-[14px] text-gray-500">
+                                <span className="font-semibold text-gray-900">1</span> per auction listing
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={product.stock > 0 ? product.stock : 1}
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(Math.min(product.stock > 0 ? product.stock : 1, Math.max(1, parseInt(e.target.value) || 1)))}
+                                    className="w-[60px] h-10 border border-gray-300 rounded px-3 text-center"
+                                />
+                                <span className="text-[14px] text-gray-500">
+                                    {product.stock > 0 ? (
+                                        <>
+                                            {product.stock} available {product.soldCount > 0 && <span>&middot; {product.soldCount} sold</span>}
+                                        </>
+                                    ) : (
+                                        <span className="text-[#dd1e31] font-bold">Out of stock</span>
+                                    )}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -155,18 +234,28 @@ export default function ProductPurchaseOptions({ product }) {
                 <div className="space-y-3">
                     <Button
                         onClick={handleBuyItNow}
-                        disabled={buyBlocked}
+                        disabled={buyBlocked || (isAuction && isAuctionClosed) || (!isAuction && isOutOfStock)}
                         className="w-full bg-[#3665f3] hover:bg-blue-700 h-[50px] rounded-full font-bold text-[16px] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Buy It Now
+                        {isAuction && isAuctionClosed
+                            ? 'Auction ended'
+                            : !isAuction && isOutOfStock
+                                ? 'Out of stock'
+                            : !isAuthenticated && isAuction
+                                ? 'Sign in to bid'
+                                : isAuction
+                                    ? 'Bid now'
+                                    : 'Buy It Now'}
                     </Button>
-                    <Button
-                        onClick={isInCart ? () => navigate('/cart') : handleAddToCart}
-                        disabled={!isInCart && addBlocked}
-                        className="w-full bg-white border border-[#3665f3] text-[#3665f3] hover:bg-blue-50 h-[50px] rounded-full font-bold text-[16px] disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        {isInCart ? 'See in cart' : 'Add to cart'}
-                    </Button>
+                    {!isAuction && (
+                        <Button
+                            onClick={isInCart ? () => navigate('/cart') : handleAddToCart}
+                            disabled={isOutOfStock || (!isInCart && addBlocked)}
+                            className="w-full bg-white border border-[#3665f3] text-[#3665f3] hover:bg-blue-50 h-[50px] rounded-full font-bold text-[16px] disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {isInCart ? 'See in cart' : 'Add to cart'}
+                        </Button>
+                    )}
                     <Button
                         onClick={() => {
                             if (!isAuthenticated) {
@@ -238,12 +327,20 @@ export default function ProductPurchaseOptions({ product }) {
                     <div className="flex gap-4">
                         <span className="w-20 text-gray-500 pt-1">Payments:</span>
                         <div className="flex flex-wrap gap-2 items-center">
-                            <img src="https://ir.ebaystatic.com/cr/v/c1/pa-p-pp-32px.svg" alt="PayPal" className="h-5" title="PayPal" />
-                            <img src="https://ir.ebaystatic.com/cr/v/c1/pa-p-gp-32px.svg" alt="Google Pay" className="h-5" title="Google Pay" />
-                            <img src="https://ir.ebaystatic.com/cr/v/c1/pa-p-vi-32px.svg" alt="Visa" className="h-5" title="Visa" />
-                            <img src="https://ir.ebaystatic.com/cr/v/c1/pa-p-mc-32px.svg" alt="Mastercard" className="h-5" title="Mastercard" />
-                            <img src="https://ir.ebaystatic.com/cr/v/c1/pa-p-ds-32px.svg" alt="Discover" className="h-5" title="Discover" />
-                            <img src="https://ir.ebaystatic.com/cr/v/c1/pa-p-dc-32px.svg" alt="Diners Club" className="h-5" title="Diners Club" />
+                            {isAuthenticated ? (
+                                <>
+                                    {['PayPal', 'Google Pay', 'Visa', 'Mastercard', 'Discover', 'Diners Club'].map(method => (
+                                        <span
+                                            key={method}
+                                            className="inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700"
+                                        >
+                                            {method}
+                                        </span>
+                                    ))}
+                                </>
+                            ) : (
+                                <p className="text-gray-900">Guest checkout payment: Cash on Delivery (COD) only for eligible fixed-price items.</p>
+                            )}
                         </div>
                     </div>
                 </div>

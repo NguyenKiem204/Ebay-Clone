@@ -16,6 +16,8 @@ namespace ebay.DTOs.Requests
         public decimal? OriginalPrice { get; set; }
         public bool? IsAuction { get; set; }
         public decimal? StartingBid { get; set; }
+        public decimal? ReservePrice { get; set; }
+        public decimal? BuyItNowPrice { get; set; }
         public int? AuctionDurationDays { get; set; }
         public decimal? Weight { get; set; }
         public string? Dimensions { get; set; }

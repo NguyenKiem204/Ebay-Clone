@@ -16,15 +16,26 @@ const ProductDetailsPage = lazy(() => import('./pages/ProductDetailsPage'));
 const RelatedItemsPage = lazy(() => import('./pages/RelatedItemsPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const PaymentSimulationPage = lazy(() => import('./pages/PaymentSimulationPage'));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage'));
+const GuestOrderLookupPage = lazy(() => import('./pages/GuestOrderLookupPage'));
+const GuestOrderDetailPage = lazy(() => import('./pages/GuestOrderDetailPage'));
+const GuestCasesPage = lazy(() => import('./pages/GuestCasesPage'));
+const GuestCaseDetailPage = lazy(() => import('./pages/GuestCaseDetailPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage'));
+const CasesPage = lazy(() => import('./pages/CasesPage'));
+const CaseDetailPage = lazy(() => import('./pages/CaseDetailPage'));
 const SavedPage = lazy(() => import('./pages/SavedPage'));
 const WatchlistPage = lazy(() => import('./pages/WatchlistPage'));
 
 // Seller Pages (Lazy Loaded)
 const SellerOverviewPage = lazy(() => import('./pages/seller/SellerOverviewPage'));
 const SellerOrdersPage = lazy(() => import('./pages/seller/SellerOrdersPage'));
+const SellerOrderDetailPage = lazy(() => import('./pages/seller/SellerOrderDetailPage'));
+const SellerCasesQueuePage = lazy(() => import('./pages/seller/SellerCasesQueuePage'));
+const SellerCaseDetailPage = lazy(() => import('./pages/seller/SellerCaseDetailPage'));
 const SellerListingsPage = lazy(() => import('./pages/seller/SellerListingsPage'));
 const SellerCreateListingPage = lazy(() => import('./pages/seller/SellerCreateListingPage'));
 const SellerEditListingPage = lazy(() => import('./pages/seller/SellerEditListingPage'));
@@ -82,12 +93,40 @@ const router = createBrowserRouter([
         element: <Suspense fallback={<PageLoader />}><OrderSuccessPage /></Suspense>,
       },
       {
+        path: 'guest/orders/lookup',
+        element: <Suspense fallback={<PageLoader />}><GuestOrderLookupPage /></Suspense>,
+      },
+      {
+        path: 'guest/orders/detail',
+        element: <Suspense fallback={<PageLoader />}><GuestOrderDetailPage /></Suspense>,
+      },
+      {
+        path: 'guest/cases',
+        element: <Suspense fallback={<PageLoader />}><GuestCasesPage /></Suspense>,
+      },
+      {
+        path: 'guest/cases/:caseKind/:id',
+        element: <Suspense fallback={<PageLoader />}><GuestCaseDetailPage /></Suspense>,
+      },
+      {
         path: 'profile',
         element: <Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>,
       },
       {
         path: 'orders',
         element: <Suspense fallback={<PageLoader />}><OrdersPage /></Suspense>,
+      },
+      {
+        path: 'orders/:id',
+        element: <Suspense fallback={<PageLoader />}><OrderDetailPage /></Suspense>,
+      },
+      {
+        path: 'cases',
+        element: <Suspense fallback={<PageLoader />}><CasesPage /></Suspense>,
+      },
+      {
+        path: 'cases/:caseKind/:id',
+        element: <Suspense fallback={<PageLoader />}><CaseDetailPage /></Suspense>,
       },
       {
         path: 'saved',
@@ -112,6 +151,10 @@ const router = createBrowserRouter([
   {
     path: '/checkout',
     element: <Suspense fallback={<PageLoader />}><CheckoutPage /></Suspense>
+  },
+  {
+    path: '/payment/simulate',
+    element: <Suspense fallback={<PageLoader />}><PaymentSimulationPage /></Suspense>
   },
   {
     path: '/register',
@@ -176,6 +219,18 @@ const router = createBrowserRouter([
         element: <Suspense fallback={<PageLoader />}><SellerOrdersPage /></Suspense>
       },
       {
+        path: 'orders/:orderId',
+        element: <Suspense fallback={<PageLoader />}><SellerOrderDetailPage /></Suspense>
+      },
+      {
+        path: 'cases',
+        element: <Suspense fallback={<PageLoader />}><SellerCasesQueuePage /></Suspense>
+      },
+      {
+        path: 'cases/:caseKind/:id',
+        element: <Suspense fallback={<PageLoader />}><SellerCaseDetailPage /></Suspense>
+      },
+      {
         path: 'listings',
         element: <Suspense fallback={<PageLoader />}><SellerListingsPage /></Suspense>
       },
@@ -205,10 +260,17 @@ const router = createBrowserRouter([
 
 import { Toaster } from 'react-hot-toast';
 
+let hasBootstrappedAuthCheck = false;
+
 export default function App() {
   const { checkAuth, loading } = useAuthStore();
 
   useEffect(() => {
+    if (hasBootstrappedAuthCheck) {
+      return;
+    }
+
+    hasBootstrappedAuthCheck = true;
     checkAuth();
   }, [checkAuth]);
 

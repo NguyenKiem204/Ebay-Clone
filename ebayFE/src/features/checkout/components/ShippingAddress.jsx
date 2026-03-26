@@ -26,6 +26,8 @@ export default function ShippingAddress({
     setSavedAddresses,
     selectedSavedIdx,
     setSelectedSavedIdx,
+    onCreateMemberAddress,
+    isSavingMemberAddress = false,
     isEditing,
     onEdit,
 }) {
@@ -139,7 +141,16 @@ export default function ShippingAddress({
             onCancel={() => setIsAddingNew(false)}
             onDone={(formData) => {
                 if (isAuthenticated) {
-                    // Save this address to the list
+                    if (typeof onCreateMemberAddress === 'function') {
+                        return onCreateMemberAddress(formData).then((saved) => {
+                            if (saved) {
+                                setIsAddingNew(false);
+                                onGuestDone?.();
+                            }
+                        });
+                    }
+
+                    // Fallback local-only behavior
                     const newList = [...(savedAddresses || []), { ...formData }];
                     setSavedAddresses(newList);
                     setSelectedSavedIdx(newList.length - 1);
@@ -147,6 +158,7 @@ export default function ShippingAddress({
                 }
                 onGuestDone?.();
             }}
+            isSubmitting={isSavingMemberAddress}
         />
     );
 }
@@ -155,7 +167,7 @@ export default function ShippingAddress({
 // ────────────────────────────────────────────────────────────
 // Unified "Ship to" form – used by both Guest and User
 // ────────────────────────────────────────────────────────────
-function ShipToForm({ guestShipping, setGuestShipping, isAuthenticated, isAddingNew, onCancel, onDone }) {
+function ShipToForm({ guestShipping, setGuestShipping, isAuthenticated, isAddingNew, onCancel, onDone, isSubmitting = false }) {
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
 
@@ -167,7 +179,7 @@ function ShipToForm({ guestShipping, setGuestShipping, isAuthenticated, isAdding
 
     const validate = () => {
         const errs = {};
-        if (!g.email || !/\S+@\S+\.\S+/.test(g.email)) errs.email = 'Enter an email address.';
+        if (!isAuthenticated && (!g.email || !/\S+@\S+\.\S+/.test(g.email))) errs.email = 'Enter an email address.';
         if (!g.firstName?.trim()) errs.firstName = 'Enter first name.';
         if (!g.lastName?.trim()) errs.lastName = 'Enter last name.';
         if (!g.street?.trim()) errs.street = 'Enter street address.';
@@ -179,9 +191,11 @@ function ShipToForm({ guestShipping, setGuestShipping, isAuthenticated, isAdding
         return Object.keys(errs).length === 0;
     };
 
-    const handleDone = () => {
+    const handleDone = async () => {
         setTouched({ email: true, firstName: true, lastName: true, street: true, city: true, state: true, zip: true, phone: true });
-        if (validate()) onDone?.(g);
+        if (!validate()) return;
+
+        await onDone?.(g);
     };
 
     const inputCls = (field) =>
@@ -217,7 +231,7 @@ function ShipToForm({ guestShipping, setGuestShipping, isAuthenticated, isAdding
                         />
                         <label className={labelCls('email')}>Email</label>
                     </div>
-                    {touched.email && errors.email && <p className="text-[#e53238] text-[12px] mt-1 font-medium">Error: {errors.email}</p>}
+                    {!isAuthenticated && touched.email && errors.email && <p className="text-[#e53238] text-[12px] mt-1 font-medium">Error: {errors.email}</p>}
                     <p className="text-[13px] text-gray-500 mt-1">We'll send your order confirmation after checkout.</p>
                 </div>
 
@@ -364,9 +378,10 @@ function ShipToForm({ guestShipping, setGuestShipping, isAuthenticated, isAdding
                 {/* Done Button */}
                 <Button
                     onClick={handleDone}
+                    disabled={isSubmitting}
                     className="bg-[#3665f3] hover:bg-blue-700 rounded-full font-bold text-[15px] px-10 h-11"
                 >
-                    Done
+                    {isSubmitting ? 'Saving...' : 'Done'}
                 </Button>
             </div>
         </div>

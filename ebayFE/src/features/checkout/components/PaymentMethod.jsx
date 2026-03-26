@@ -1,6 +1,9 @@
 import { Button } from '../../../components/ui/Button';
+import useAuthStore from '../../../store/useAuthStore';
 
 export default function PaymentMethod({ method, isEditing, onEdit, onSelect, onContinue, isActive }) {
+    const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+
     if (!isActive && !isEditing) {
         return (
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 opacity-100">
@@ -39,19 +42,24 @@ export default function PaymentMethod({ method, isEditing, onEdit, onSelect, onC
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-xl font-bold text-gray-900 mb-6">2. Payment method</h2>
             <div className="space-y-4">
-                <label className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition ${method === 'PayPal' ? 'border-secondary bg-blue-50/10' : 'border-gray-200 hover:border-secondary'}`}>
-                    <input
-                        type="radio"
-                        name="payment"
-                        className="w-5 h-5 text-secondary focus:ring-secondary"
-                        checked={method === 'PayPal'}
-                        onChange={() => onSelect('PayPal')}
-                    />
-                    <div className="flex items-center gap-2">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-6 object-contain" />
-                        <span className="font-bold text-primary text-lg">PayPal</span>
-                    </div>
-                </label>
+                {isAuthenticated && (
+                    <label className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition ${method === 'PayPal' ? 'border-secondary bg-blue-50/10' : 'border-gray-200 hover:border-secondary'}`}>
+                        <input
+                            type="radio"
+                            name="payment"
+                            className="w-5 h-5 text-secondary focus:ring-secondary"
+                            checked={method === 'PayPal'}
+                            onChange={() => onSelect('PayPal')}
+                        />
+                        <div className="flex items-center gap-2">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-6 object-contain" />
+                            <div>
+                                <span className="font-bold text-primary text-lg">PayPal</span>
+                                <p className="text-xs text-gray-500">Simulated payment approval for demo</p>
+                            </div>
+                        </div>
+                    </label>
+                )}
 
                 <label className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition ${method === 'COD' ? 'border-secondary bg-blue-50/10' : 'border-gray-200 hover:border-secondary'}`}>
                     <input
@@ -70,6 +78,12 @@ export default function PaymentMethod({ method, isEditing, onEdit, onSelect, onC
                         <span className="font-bold text-gray-800">Cash on Delivery (COD)</span>
                     </div>
                 </label>
+
+                {!isAuthenticated && (
+                    <p className="text-sm text-gray-600">
+                        Guest checkout currently supports Cash on Delivery (COD) only.
+                    </p>
+                )}
 
                 <Button
                     onClick={onContinue}

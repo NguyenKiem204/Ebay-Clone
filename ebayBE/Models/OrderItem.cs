@@ -19,6 +19,12 @@ public partial class OrderItem
 
     public decimal TotalPrice { get; set; }
 
+    public string? ProductTitleSnapshot { get; set; }
+
+    public string? ProductImageSnapshot { get; set; }
+
+    public string? SellerDisplayNameSnapshot { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual Order Order { get; set; } = null!;

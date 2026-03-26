@@ -61,7 +61,7 @@ export default function ProductsPage() {
         params.append('Page', page.toString());
         params.append('PageSize', '20');
 
-        if (filter === 'auctions') params.append('Condition', 'auctions'); // Or however auction is handled
+        if (filter === 'auctions') params.append('IsAuction', 'true');
         if (filter === 'deals') params.append('MaxPrice', '1000000');
         
         if (sortBy) params.append('SortBy', sortBy);

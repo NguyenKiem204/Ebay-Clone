@@ -3,6 +3,7 @@ import api from '../lib/axios';
 
 const useOrderStore = create((set) => ({
     orders: [],
+    selectedOrder: null,
     loading: false,
     error: null,
 
@@ -20,21 +21,44 @@ const useOrderStore = create((set) => ({
         }
     },
 
-    cancelOrder: async (orderId) => {
+    fetchOrderById: async (orderId) => {
+        set({ loading: true, error: null, selectedOrder: null });
+        try {
+            const response = await api.get(`/api/Order/${orderId}`);
+            set({ selectedOrder: response.data.data, loading: false });
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            set({
+                error: error.response?.data?.message || 'Failed to fetch order details',
+                loading: false
+            });
+            return { success: false, error: error.response?.data?.message };
+        }
+    },
+
+    clearSelectedOrder: () => set({ selectedOrder: null, error: null }),
+
+    requestCancellation: async (orderId, reason = null) => {
         set({ loading: true, error: null });
         try {
-            await api.put(`/api/Order/${orderId}/cancel`);
-            // Refresh orders after cancellation
+            await api.post(`/api/Order/${orderId}/cancel-request`, {
+                reason
+            });
+
             const response = await api.get('/api/Order');
             set({ orders: response.data.data, loading: false });
             return { success: true };
         } catch (error) {
             set({
-                error: error.response?.data?.message || 'Failed to cancel order',
+                error: error.response?.data?.message || 'Failed to request cancellation',
                 loading: false
             });
             return { success: false, error: error.response?.data?.message };
         }
+    },
+
+    cancelOrder: async (orderId) => {
+        return useOrderStore.getState().requestCancellation(orderId, null);
     }
 }));
 
