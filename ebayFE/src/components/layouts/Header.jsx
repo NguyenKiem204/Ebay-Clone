@@ -260,9 +260,8 @@ export default function Header() {
                                                                         navigate(item.link);
                                                                     }
                                                                 }}
-                                                                className={`flex w-full gap-3 border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
-                                                                    item.isRead ? 'bg-white' : 'bg-blue-50/50'
-                                                                }`}
+                                                                className={`flex w-full gap-3 border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${item.isRead ? 'bg-white' : 'bg-blue-50/50'
+                                                                    }`}
                                                             >
                                                                 <div className={`mt-1 h-2.5 w-2.5 rounded-full ${item.isRead ? 'bg-transparent' : 'bg-[#3665f3]'}`} />
                                                                 <div className="min-w-0 flex-1">
