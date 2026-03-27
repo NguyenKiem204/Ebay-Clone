@@ -72,7 +72,7 @@ export default function AddressTab() {
 
     const handleSetDefault = async (id) => {
         try {
-            await api.patch(`/api/Address/${id}/set-default`);
+            await api.patch(`/api/Address/${id}/default`);
             toast.success('Default address updated');
             fetchAddresses();
         } catch (err) {

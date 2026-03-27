@@ -24,9 +24,11 @@ export default function ProductsPage() {
     const navCategorySlugs = queryParams.getAll('categorySlugs');
     const keyword = queryParams.get('q');
     const page = parseInt(queryParams.get('page') || '1');
-    const sortBy = queryParams.get('sortBy');
+    const sortBy = queryParams.get('sortBy') || 'relevance';
     const minPrice = queryParams.get('minPrice');
     const maxPrice = queryParams.get('maxPrice');
+    const isAuctionFilter = filter === 'auctions';
+    const isAuctionSort = sortBy === 'ending_soonest' || sortBy === 'most_bids';
 
     const activeCategory = categoryQuery || (navCategorySlugs.length === 1 ? navCategorySlugs[0] : '');
 
@@ -61,8 +63,9 @@ export default function ProductsPage() {
         params.append('Page', page.toString());
         params.append('PageSize', '20');
 
-        if (filter === 'auctions') params.append('Condition', 'auctions'); // Or however auction is handled
+        if (filter === 'auctions') params.append('IsAuction', 'true');
         if (filter === 'deals') params.append('MaxPrice', '1000000');
+        if (filter === 'auctions' && sortBy === 'ending_soonest') params.append('EndingSoon', 'true');
         
         if (sortBy) params.append('SortBy', sortBy);
         if (minPrice) params.append('MinPrice', minPrice);
@@ -137,16 +140,19 @@ export default function ProductsPage() {
                     <div className="flex items-center gap-2">
                         <label className="text-sm text-gray-600 hidden sm:block">Sort:</label>
                         <select
+                            value={isAuctionFilter ? sortBy : (isAuctionSort ? 'relevance' : sortBy)}
                             className="border-gray-300 border rounded text-sm focus:ring-secondary focus:border-secondary py-1.5 pl-3 pr-8"
                             onChange={(e) => {
                                 queryParams.set('sortBy', e.target.value);
                                 navigate(`?${queryParams.toString()}`);
                             }}
                         >
-                            <option value="newest">Newly Listed</option>
+                            <option value="relevance">Relevance</option>
                             <option value="price_asc">Price: lowest first</option>
                             <option value="price_desc">Price: highest first</option>
-                            <option value="popular">Best Match</option>
+                            <option value="newest">Newly listed</option>
+                            <option value="ending_soonest" disabled={!isAuctionFilter}>Ending soonest</option>
+                            <option value="most_bids" disabled={!isAuctionFilter}>Most bids</option>
                         </select>
                     </div>
                 </div>
@@ -227,8 +233,12 @@ export default function ProductsPage() {
                                     className="rounded border-gray-300 text-secondary focus:ring-secondary"
                                     checked={filter === 'auctions'}
                                     onChange={() => {
-                                        if (filter === 'auctions') queryParams.delete('filter');
-                                        else queryParams.set('filter', 'auctions');
+                                        if (filter === 'auctions') {
+                                            queryParams.delete('filter');
+                                            if (isAuctionSort) queryParams.set('sortBy', 'relevance');
+                                        } else {
+                                            queryParams.set('filter', 'auctions');
+                                        }
                                         navigate(`?${queryParams.toString()}`);
                                     }}
                                 />

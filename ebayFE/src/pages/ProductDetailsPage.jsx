@@ -11,6 +11,7 @@ import SellerSection from '../components/product/SellerSection/SellerSection';
 import { RecommendedItems } from '../components/product/RecommendedItems';
 import useHistoryStore from '../features/history/useHistoryStore';
 import { useRecommendations } from '../features/history/useRecommendations';
+import { resolveMediaUrl, resolveMediaUrls } from '../lib/media';
 
 export default function ProductDetailsPage() {
     const { id } = useParams();
@@ -52,8 +53,8 @@ export default function ProductDetailsPage() {
     }
 
     const images = product.images && product.images.length > 0
-        ? product.images
-        : (product.thumbnail ? [product.thumbnail] : []);
+        ? resolveMediaUrls(product.images)
+        : (product.thumbnail ? [resolveMediaUrl(product.thumbnail)] : []);
 
     return (
         <div className="container mx-auto px-4 pt-1 pb-8 max-w-[1280px]">

@@ -30,7 +30,6 @@ export default function LoginForm() {
 
     const googleLoginTrigger = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
-            setIsLoading(true);
             setError(null);
             try {
                 const userInfo = await axios.get(
@@ -57,11 +56,17 @@ export default function LoginForm() {
                 setIsLoading(false);
             }
         },
-        onError: () => setError('Đăng nhập Google thất bại')
+        onError: () => {
+            setError('Đăng nhập Google thất bại');
+            setIsLoading(false);
+        }
     });
 
     const handleSocialLogin = async (provider) => {
         if (provider.toLowerCase() === 'google') {
+            if (isLoading) return;
+            setIsLoading(true);
+            setError(null);
             googleLoginTrigger();
             return;
         }

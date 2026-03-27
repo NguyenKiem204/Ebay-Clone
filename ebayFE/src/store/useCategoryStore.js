@@ -8,22 +8,22 @@ const useCategoryStore = create((set) => ({
     error: null,
 
     fetchCategories: async () => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
             const response = await api.get('/api/Category');
             const { data } = response.data;
-            set({ categories: data, loading: false });
+            set({ categories: data, error: null, loading: false });
         } catch (error) {
             set({ error: 'Failed to fetch categories', loading: false });
         }
     },
 
     fetchNavGroups: async () => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
             const response = await api.get('/api/Category/nav');
             const { data } = response.data;
-            set({ navGroups: data, loading: false });
+            set({ navGroups: data, error: null, loading: false });
         } catch (error) {
             set({ error: 'Failed to fetch nav groups', loading: false });
         }

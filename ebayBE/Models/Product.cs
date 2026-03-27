@@ -31,6 +31,18 @@ public partial class Product
 
     public decimal? StartingBid { get; set; }
 
+    public decimal? ReservePrice { get; set; }
+
+    public decimal? BuyItNowPrice { get; set; }
+
+    public decimal? CurrentBidPrice { get; set; }
+
+    public int? WinningBidderId { get; set; }
+
+    public string? AuctionStatus { get; set; }
+
+    public DateTime? EndedAt { get; set; }
+
     public string? Condition { get; set; }
 
     public string? Brand { get; set; }

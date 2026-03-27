@@ -9,7 +9,7 @@ public partial class Payment
 
     public int OrderId { get; set; }
 
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
 
     public decimal Amount { get; set; }
 
@@ -27,5 +27,5 @@ public partial class Payment
 
     public virtual Order Order { get; set; } = null!;
 
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; }
 }

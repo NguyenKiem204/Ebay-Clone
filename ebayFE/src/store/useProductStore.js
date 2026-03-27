@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import api from '../lib/axios';
 
-const useProductStore = create((set) => ({
+const useProductStore = create((set, get) => ({
     latestProducts: [],
     bestDeals: [],
     trendingProducts: [],
+    activeAuctions: [],
     banners: [],
     searchResults: [],
     totalItems: 0,
@@ -12,6 +13,7 @@ const useProductStore = create((set) => ({
     relatedProducts: [],
     loading: false,
     error: null,
+    activeProductRequestId: 0,
 
     // Seller-specific state
     sellerProducts: [],
@@ -30,7 +32,7 @@ const useProductStore = create((set) => ({
     },
 
     fetchLandingPage: async () => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
             const response = await api.get('/api/Product/landing');
             const { data } = response.data;
@@ -39,6 +41,7 @@ const useProductStore = create((set) => ({
                 latestProducts: data.latestProducts,
                 bestDeals: data.bestDeals,
                 trendingProducts: data.trendingProducts,
+                error: null,
                 loading: false
             });
         } catch (error) {
@@ -46,14 +49,26 @@ const useProductStore = create((set) => ({
         }
     },
 
+    fetchActiveAuctions: async (limit = 4) => {
+        try {
+            const response = await api.get('/api/auctions/active', { params: { limit } });
+            const { data } = response.data;
+            set({ activeAuctions: data || [] });
+        } catch (error) {
+            console.error('Failed to fetch active auctions', error);
+            set({ activeAuctions: [] });
+        }
+    },
+
     searchProducts: async (params) => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
             const response = await api.get('/api/Product', { params });
             const { data } = response.data;
             set({
                 searchResults: data.items,
                 totalItems: data.totalItems,
+                error: null,
                 loading: false
             });
         } catch (error) {
@@ -62,25 +77,56 @@ const useProductStore = create((set) => ({
     },
 
     fetchProductById: async (id) => {
-        set({ loading: true, currentProduct: null });
+        const requestId = get().activeProductRequestId + 1;
+        set({
+            loading: true,
+            currentProduct: null,
+            error: null,
+            activeProductRequestId: requestId
+        });
         try {
             const response = await api.get(`/api/Product/${id}`);
             const { data } = response.data;
-            set({ currentProduct: data, loading: false });
+
+            // Ignore stale responses when users navigate quickly between products.
+            if (get().activeProductRequestId !== requestId) {
+                return { success: false, stale: true };
+            }
+
+            set({ currentProduct: data, error: null, loading: false });
             return { success: true, data };
         } catch (error) {
+            if (get().activeProductRequestId !== requestId) {
+                return { success: false, stale: true };
+            }
+
             set({ error: 'Failed to fetch product details', loading: false });
             return { success: false, error: error.response?.data?.message || 'Failed to fetch product' };
         }
     },
 
     fetchProductBySlug: async (slug) => {
-        set({ loading: true, currentProduct: null });
+        const requestId = get().activeProductRequestId + 1;
+        set({
+            loading: true,
+            currentProduct: null,
+            error: null,
+            activeProductRequestId: requestId
+        });
         try {
             const response = await api.get(`/api/Product/slug/${slug}`);
             const { data } = response.data;
-            set({ currentProduct: data, loading: false });
+
+            if (get().activeProductRequestId !== requestId) {
+                return;
+            }
+
+            set({ currentProduct: data, error: null, loading: false });
         } catch (error) {
+            if (get().activeProductRequestId !== requestId) {
+                return;
+            }
+
             set({ error: 'Failed to fetch product details', loading: false });
         }
     },

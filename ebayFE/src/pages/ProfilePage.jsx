@@ -4,6 +4,7 @@ import useAuthStore from '../store/useAuthStore';
 import PersonalInfoView from '../features/auth/components/PersonalInfoView';
 import AddressTab from '../features/auth/components/AddressTab';
 import SecurityTab from '../features/auth/components/SecurityTab';
+import MyAuctionsPanel from '../features/auction/components/MyAuctionsPanel';
 
 export default function ProfilePage() {
     const { user } = useAuthStore();
@@ -107,7 +108,7 @@ export default function ProfilePage() {
                 {/* Main Content Area */}
                 <main className="flex-grow min-w-0">
                     <div className="bg-white rounded-lg p-2">
-                        {activeTab === 'personal' && <PersonalInfoView />}
+                        {activeTab === 'personal' && <PersonalInfoView setActiveTab={setActiveTab} />}
                         {activeTab === 'addresses' && <AddressTab />}
                         {activeTab === 'security' && <SecurityTab />}
                         {activeTab === 'feedback' && (

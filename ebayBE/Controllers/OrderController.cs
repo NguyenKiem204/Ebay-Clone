@@ -13,10 +13,14 @@ namespace ebay.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IOrderCancellationService _orderCancellationService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(
+            IOrderService orderService,
+            IOrderCancellationService orderCancellationService)
         {
             _orderService = orderService;
+            _orderCancellationService = orderCancellationService;
         }
 
         private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -26,6 +30,13 @@ namespace ebay.Controllers
         {
             var data = await _orderService.CreateOrderAsync(GetUserId(), request);
             return CreatedAtAction(nameof(GetById), new { id = data.Id }, ApiResponse<OrderResponseDto>.SuccessResponse(data, "Đặt hàng thành công"));
+        }
+
+        [HttpPost("review")]
+        public async Task<ActionResult<ApiResponse<MemberCheckoutReviewResponseDto>>> ReviewCheckout(CreateOrderRequestDto request)
+        {
+            var data = await _orderService.ReviewCheckoutAsync(GetUserId(), request);
+            return Ok(ApiResponse<MemberCheckoutReviewResponseDto>.SuccessResponse(data));
         }
 
         [HttpGet]
@@ -42,11 +53,38 @@ namespace ebay.Controllers
             return Ok(ApiResponse<OrderResponseDto>.SuccessResponse(data));
         }
 
-        [HttpPut("{id}/cancel")]
-        public async Task<ActionResult<ApiResponse<object>>> Cancel(int id)
+        [HttpPost("{id}/cancel-request")]
+        public async Task<ActionResult<ApiResponse<OrderCancellationRequestSummaryDto>>> RequestCancellation(
+            int id,
+            [FromBody] CreateOrderCancellationRequestDto? request,
+            CancellationToken cancellationToken)
         {
-            await _orderService.CancelOrderAsync(GetUserId(), id);
-            return Ok(ApiResponse<object>.SuccessResponse(null!, "Hủy đơn hàng thành công"));
+            var data = await _orderCancellationService.RequestCancellationAsync(
+                GetUserId(),
+                id,
+                request?.Reason,
+                cancellationToken);
+
+            return Ok(ApiResponse<OrderCancellationRequestSummaryDto>.SuccessResponse(
+                data,
+                "Đã gửi yêu cầu hủy đơn hàng"));
+        }
+
+        [HttpPut("{id}/cancel")]
+        public async Task<ActionResult<ApiResponse<OrderCancellationRequestSummaryDto>>> Cancel(
+            int id,
+            [FromBody] CreateOrderCancellationRequestDto? request,
+            CancellationToken cancellationToken)
+        {
+            var data = await _orderCancellationService.RequestCancellationAsync(
+                GetUserId(),
+                id,
+                request?.Reason,
+                cancellationToken);
+
+            return Ok(ApiResponse<OrderCancellationRequestSummaryDto>.SuccessResponse(
+                data,
+                "Đã gửi yêu cầu hủy đơn hàng"));
         }
     }
 }

@@ -10,5 +10,11 @@ namespace ebay.DTOs.Responses
         public decimal ShippingFee { get; set; }
         public string? SellerName { get; set; }
         public DateTime? SavedAt { get; set; }
+        public bool IsAuction { get; set; }
+        public decimal? CurrentPrice { get; set; }
+        public int BidCount { get; set; }
+        public DateTime? AuctionEndTime { get; set; }
+        public string? AuctionStatus { get; set; }
+        public string UserBidStatus { get; set; } = "NONE";
     }
 }

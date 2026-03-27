@@ -22,6 +22,12 @@ namespace ebay.Middlewares
 
             public async Task InvokeAsync(HttpContext context)
             {
+                if (HttpMethods.IsOptions(context.Request.Method))
+                {
+                    await _next(context);
+                    return;
+                }
+
                 var endpoint = context.GetEndpoint();
                 var rateLimitAttribute = endpoint?.Metadata.GetMetadata<RateLimitAttribute>();
 

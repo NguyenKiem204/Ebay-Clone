@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import useHistoryStore from '../features/history/useHistoryStore';
 
+let hasSyncedGuestHistoryAfterAuth = false;
+
 /**
  * Invisible component mounted in MainLayout.
  * - On login:  clear old data → sync guest cookie history → fetch from DB
@@ -18,11 +20,18 @@ export default function HistoryInitializer() {
         clear();
 
         if (isAuthenticated) {
+            if (hasSyncedGuestHistoryAfterAuth) {
+                fetchHistory();
+                return;
+            }
+
+            hasSyncedGuestHistoryAfterAuth = true;
             (async () => {
                 await syncGuestHistory();
                 await fetchHistory(); // bắt buộc await
             })();
         } else {
+            hasSyncedGuestHistoryAfterAuth = false;
             fetchHistory();
         }
     }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps

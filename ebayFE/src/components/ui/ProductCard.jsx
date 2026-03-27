@@ -1,9 +1,17 @@
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import useSavedStore from '../../features/saved/useSavedStore';
+import {
+    formatAuctionRelativeTime,
+    getAuctionStatusMeta,
+    normalizeAuctionLifecycle
+} from '../../features/auction/utils/auctionPresentation';
+import { resolveMediaUrl } from '../../lib/media';
 
 export function ProductCard({ product }) {
+    const [nowTick, setNowTick] = useState(() => Date.now());
     const { isAuthenticated } = useAuthStore();
     const isSaved = useSavedStore(s => s.savedIds.has(product?.id));
     const toggleSaved = useSavedStore(s => s.toggleSaved);
@@ -26,6 +34,31 @@ export function ProductCard({ product }) {
         toggleSaved(product.id);
     };
 
+    const auctionStatus = product.isAuction
+        ? normalizeAuctionLifecycle({
+            auctionStatus: product.auctionStatus,
+            auctionStartTime: product.auctionStartTime,
+            auctionEndTime: product.auctionEndTime,
+            winningBidderId: product.winningBidderId
+        })
+        : null;
+    const auctionStatusMeta = auctionStatus ? getAuctionStatusMeta(auctionStatus) : null;
+    const auctionTimeCopy = auctionStatus === 'scheduled'
+        ? formatAuctionRelativeTime(product.auctionStartTime, 'Starts in', nowTick)
+        : formatAuctionRelativeTime(product.auctionEndTime, 'Ends in', nowTick);
+
+    useEffect(() => {
+        if (!product.isAuction) {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(() => {
+            setNowTick(Date.now());
+        }, 1000);
+
+        return () => window.clearInterval(intervalId);
+    }, [product.isAuction]);
+
     return (
         <div className="group relative bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-shadow h-full">
             {product.discount > 0 && (
@@ -47,13 +80,22 @@ export function ProductCard({ product }) {
 
             <Link to={`/products/${product.id}`} className="block relative pt-[100%] overflow-hidden bg-white px-2">
                 <img
-                    src={product.thumbnail || product.imageUrl}
+                    src={resolveMediaUrl(product.thumbnail || product.imageUrl)}
                     alt={product.title || product.name}
                     className="absolute inset-0 w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 p-2"
                 />
             </Link>
 
             <div className="p-3 flex flex-col flex-grow">
+                {product.isAuction && auctionStatusMeta && (
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${auctionStatusMeta.badgeClassName}`}>
+                            {auctionStatusMeta.label}
+                        </span>
+                        <span className="text-[10px] text-gray-500">{auctionTimeCopy}</span>
+                    </div>
+                )}
+
                 <Link to={`/products/${product.id}`} className="text-[13px] leading-tight font-normal text-gray-800 line-clamp-2 hover:underline mb-1 flex-grow">
                     {product.title || product.name}
                 </Link>
@@ -77,9 +119,16 @@ export function ProductCard({ product }) {
                         )}
                     </div>
                     {product.isAuction && (
-                        <div className="text-[11px] text-secondary font-medium mt-0.5">
-                            {product.bidCount || 0} {product.bidCount === 1 ? 'bid' : 'bids'}
-                        </div>
+                        <>
+                            <div className="text-[11px] text-secondary font-medium mt-0.5">
+                                {product.bidCount || 0} {product.bidCount === 1 ? 'bid' : 'bids'}
+                            </div>
+                            {product.buyItNowPrice && (
+                                <div className="text-[11px] text-[#3665f3] font-medium mt-0.5">
+                                    Buy It Now: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.buyItNowPrice)}
+                                </div>
+                            )}
+                        </>
                     )}
                     {!product.isAuction && product.originalPrice && product.originalPrice > product.price && (
                         <div className="text-[11px] text-gray-500 line-through">
@@ -101,7 +150,7 @@ export function ProductCard({ product }) {
                         className="flex w-full items-center justify-center text-[12px] h-8 bg-secondary hover:bg-blue-700 text-white rounded-full font-bold"
                     >
                         <ShoppingCart size={14} className="mr-1.5" />
-                        {product.isAuction ? 'Bid now' : 'View item'}
+                        {product.isAuction ? 'View auction' : 'View item'}
                     </Link>
                 </div>
             </div>

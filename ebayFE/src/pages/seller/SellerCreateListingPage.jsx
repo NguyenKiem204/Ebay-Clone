@@ -1,10 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, Camera, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Plus, X, Camera, Loader2, Check, AlertCircle, Clock3 } from 'lucide-react';
 import useProductStore from '../../store/useProductStore';
 import useCategoryStore from '../../store/useCategoryStore';
-import { BASE_URL } from '../../lib/axios';
 import toast from 'react-hot-toast';
+import {
+    AUCTION_DURATION_PRESETS,
+    extractApiErrorMessages,
+    findAuctionDurationPreset,
+    formatAuctionDuration,
+    getAuctionDurationParts,
+    getAuctionDurationTotalMinutes
+} from '../../features/seller/utils/auctionDuration';
 
 export default function SellerCreateListingPage() {
     const navigate = useNavigate();
@@ -24,16 +31,32 @@ export default function SellerCreateListingPage() {
         shippingFee: 0,
         isAuction: false,
         startingBid: '',
-        auctionDurationDays: 7,
+        reservePrice: '',
+        buyItNowPrice: '',
+        auctionDurationMinutes: 10080,
     });
 
     const [imageFiles, setImageFiles] = useState([]); // File objects
     const [imagePreviews, setImagePreviews] = useState([]); // Data URLs for preview
     const [notification, setNotification] = useState(null);
+    const [auctionDurationMode, setAuctionDurationMode] = useState('10080');
+    const [customAuctionHours, setCustomAuctionHours] = useState('24');
+    const [customAuctionMinutes, setCustomAuctionMinutes] = useState('0');
 
     useEffect(() => {
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        if (auctionDurationMode !== 'custom') {
+            setAuctionDurationMode(findAuctionDurationPreset(formData.auctionDurationMinutes));
+        }
+    }, [formData.auctionDurationMinutes, auctionDurationMode]);
+
+    const auctionDurationSummary = useMemo(
+        () => formatAuctionDuration(formData.auctionDurationMinutes),
+        [formData.auctionDurationMinutes]
+    );
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -41,6 +64,41 @@ export default function SellerCreateListingPage() {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+    };
+
+    const handleAuctionPresetChange = (value) => {
+        setAuctionDurationMode(value);
+
+        if (value === 'custom') {
+            const parts = getAuctionDurationParts(formData.auctionDurationMinutes);
+            setCustomAuctionHours(parts.hours);
+            setCustomAuctionMinutes(parts.minutes);
+            return;
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            auctionDurationMinutes: parseInt(value, 10)
+        }));
+    };
+
+    const handleAuctionCustomChange = (field, value) => {
+        const sanitized = value.replace(/[^\d]/g, '');
+        const nextHours = field === 'hours' ? sanitized : customAuctionHours;
+        const nextMinutes = field === 'minutes' ? sanitized : customAuctionMinutes;
+
+        if (field === 'hours') {
+            setCustomAuctionHours(sanitized);
+        } else {
+            setCustomAuctionMinutes(sanitized);
+        }
+
+        const totalMinutes = getAuctionDurationTotalMinutes(nextHours, nextMinutes);
+        setFormData(prev => ({
+            ...prev,
+            auctionDurationMinutes: totalMinutes
+        }));
+        setAuctionDurationMode('custom');
     };
 
     const handleImageUpload = (e) => {
@@ -74,6 +132,10 @@ export default function SellerCreateListingPage() {
             setNotification({ type: 'error', message: 'Tiêu đề sản phẩm phải có ít nhất 10 ký tự' });
             return;
         }
+        if (!formData.categoryId) {
+            setNotification({ type: 'error', message: 'Please select a category for this listing.' });
+            return;
+        }
         if (!formData.isAuction && (!formData.price || parseFloat(formData.price) <= 0)) {
             setNotification({ type: 'error', message: 'Vui lòng nhập giá sản phẩm hợp lệ' });
             return;
@@ -83,22 +145,51 @@ export default function SellerCreateListingPage() {
             return;
         }
 
+        if (formData.isAuction) {
+            const startingBid = parseFloat(formData.startingBid);
+            const reservePrice = parseFloat(formData.reservePrice);
+            const buyItNowPrice = parseFloat(formData.buyItNowPrice);
+
+            if (!startingBid || startingBid <= 0) {
+                setNotification({ type: 'error', message: 'Please enter a valid starting bid for the auction.' });
+                return;
+            }
+
+            if ((parseInt(formData.auctionDurationMinutes, 10) || 0) < 15) {
+                setNotification({ type: 'error', message: 'Auction duration must be at least 15 minutes.' });
+                return;
+            }
+
+            if (formData.reservePrice && reservePrice < startingBid) {
+                setNotification({ type: 'error', message: 'Reserve price must be greater than or equal to the starting bid.' });
+                return;
+            }
+
+            if (formData.buyItNowPrice && buyItNowPrice < startingBid * 1.3) {
+                setNotification({ type: 'error', message: 'Buy It Now price must be at least 130% of the starting bid.' });
+                return;
+            }
+        }
+
         const data = new FormData();
+        const normalizedStock = formData.isAuction ? 1 : (parseInt(formData.stock, 10) || 1);
         data.append('Title', formData.title);
         data.append('Description', formData.description);
         data.append('Price', parseFloat(formData.price) || 0);
         if (formData.originalPrice) data.append('OriginalPrice', parseFloat(formData.originalPrice));
-        if (formData.categoryId) data.append('CategoryId', parseInt(formData.categoryId));
+        if (formData.categoryId) data.append('CategoryId', parseInt(formData.categoryId, 10));
         data.append('Condition', formData.condition);
         if (formData.brand) data.append('Brand', formData.brand);
-        data.append('Stock', parseInt(formData.stock) || 1);
+        data.append('Stock', normalizedStock);
         data.append('ShippingFee', parseFloat(formData.shippingFee) || 0);
         data.append('IsAuction', formData.isAuction);
         data.append('Status', status);
 
         if (formData.isAuction) {
             data.append('StartingBid', parseFloat(formData.startingBid) || 0);
-            data.append('AuctionDurationDays', parseInt(formData.auctionDurationDays));
+            if (formData.reservePrice) data.append('ReservePrice', parseFloat(formData.reservePrice));
+            if (formData.buyItNowPrice) data.append('BuyItNowPrice', parseFloat(formData.buyItNowPrice));
+            data.append('AuctionDurationMinutes', parseInt(formData.auctionDurationMinutes, 10) || 0);
         }
 
         imageFiles.forEach(file => {
@@ -113,7 +204,7 @@ export default function SellerCreateListingPage() {
             setNotification({
                 type: 'error',
                 message: result.error || 'Có lỗi xảy ra',
-                details: result.errors
+                details: extractApiErrorMessages(result.errors)
             });
         }
     };
@@ -280,8 +371,12 @@ export default function SellerCreateListingPage() {
                             value={formData.stock}
                             onChange={handleInputChange}
                             min={1}
+                            disabled={formData.isAuction}
                             className="w-full border border-gray-300 rounded-md px-4 py-3 outline-none focus:border-secondary"
                         />
+                        {formData.isAuction && (
+                            <p className="text-[11px] text-gray-400">Auction listing supports only quantity = 1.</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -319,7 +414,7 @@ export default function SellerCreateListingPage() {
                             type="radio"
                             name="pricingType"
                             checked={formData.isAuction}
-                            onChange={() => setFormData(prev => ({ ...prev, isAuction: true }))}
+                            onChange={() => setFormData(prev => ({ ...prev, isAuction: true, stock: 1 }))}
                             className="w-5 h-5 text-secondary border-gray-300 focus:ring-secondary/20 cursor-pointer"
                         />
                         <span className={`font-bold transition-colors ${formData.isAuction ? 'text-gray-900' : 'text-gray-500'}`}>Auction</span>
@@ -380,20 +475,103 @@ export default function SellerCreateListingPage() {
                                     />
                                 </div>
                             </div>
+                            <div className="space-y-4 md:col-span-2">
+                                <div className="flex items-center gap-2">
+                                    <Clock3 size={16} className="text-secondary" />
+                                    <label className="text-sm font-medium text-gray-700">Auction duration</label>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                                    {AUCTION_DURATION_PRESETS.map((preset) => (
+                                        <button
+                                            key={preset.minutes}
+                                            type="button"
+                                            onClick={() => handleAuctionPresetChange(String(preset.minutes))}
+                                            className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                                                auctionDurationMode === String(preset.minutes)
+                                                    ? 'border-secondary bg-blue-50 text-secondary shadow-sm'
+                                                    : 'border-gray-200 text-gray-600 hover:border-secondary/40 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            {preset.label}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAuctionPresetChange('custom')}
+                                        className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                                            auctionDurationMode === 'custom'
+                                                ? 'border-secondary bg-blue-50 text-secondary shadow-sm'
+                                                : 'border-gray-200 text-gray-600 hover:border-secondary/40 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        Custom
+                                    </button>
+                                </div>
+
+                                {auctionDurationMode === 'custom' && (
+                                    <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Hours</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                value={customAuctionHours}
+                                                onChange={(e) => handleAuctionCustomChange('hours', e.target.value)}
+                                                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-secondary"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Minutes</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="59"
+                                                step="1"
+                                                value={customAuctionMinutes}
+                                                onChange={(e) => handleAuctionCustomChange('minutes', e.target.value)}
+                                                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-secondary"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-gray-700">
+                                    <p className="font-semibold text-gray-900">Ends in {auctionDurationSummary}</p>
+                                    <p className="mt-1 text-xs text-gray-500">Choose a quick preset or set a custom hour/minute duration.</p>
+                                </div>
+                            </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Duration</label>
-                                <select
-                                    name="auctionDurationDays"
-                                    value={formData.auctionDurationDays}
-                                    onChange={handleInputChange}
-                                    className="w-full border border-gray-300 rounded-md px-4 py-3 outline-none focus:border-secondary"
-                                >
-                                    <option value={3}>3 days</option>
-                                    <option value={5}>5 days</option>
-                                    <option value={7}>7 days</option>
-                                    <option value={10}>10 days</option>
-                                    <option value={30}>30 days</option>
-                                </select>
+                                <label className="text-sm font-medium text-gray-700">Reserve price (optional)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                                    <input
+                                        type="number"
+                                        name="reservePrice"
+                                        value={formData.reservePrice}
+                                        onChange={handleInputChange}
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md outline-none focus:border-secondary text-gray-900"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Buy It Now price (optional)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                                    <input
+                                        type="number"
+                                        name="buyItNowPrice"
+                                        value={formData.buyItNowPrice}
+                                        onChange={handleInputChange}
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md outline-none focus:border-secondary text-gray-900"
+                                    />
+                                </div>
                             </div>
                         </>
                     )}

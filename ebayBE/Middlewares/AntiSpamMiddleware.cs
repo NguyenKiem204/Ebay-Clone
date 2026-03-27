@@ -21,6 +21,12 @@ namespace ebay.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
+            if (HttpMethods.IsOptions(context.Request.Method))
+            {
+                await _next(context);
+                return;
+            }
+
             var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             
             if (ipAddress == "127.0.0.1" || ipAddress == "::ffff:127.0.0.1" || ipAddress == "::1")

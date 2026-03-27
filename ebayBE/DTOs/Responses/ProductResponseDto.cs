@@ -30,9 +30,16 @@ namespace ebay.DTOs.Responses
         public int SavedCount { get; set; }
         public int InCartCount { get; set; }
         public bool IsAuction { get; set; }
+        public DateTime? AuctionStartTime { get; set; }
         public DateTime? AuctionEndTime { get; set; }
         public decimal? CurrentBid { get; set; }
         public int BidCount { get; set; }
+        public decimal? ReservePrice { get; set; }
+        public decimal? BuyItNowPrice { get; set; }
+        public bool ReserveMet { get; set; }
+        public decimal? MinimumNextBid { get; set; }
+        public string? AuctionStatus { get; set; }
+        public int? WinningBidderId { get; set; }
         public int SoldCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<CouponResponseDto>? ActiveCoupons { get; set; }

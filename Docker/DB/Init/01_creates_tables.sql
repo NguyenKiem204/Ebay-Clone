@@ -127,7 +127,13 @@ CREATE TABLE products (
     is_auction BOOLEAN DEFAULT FALSE,
     auction_start_time TIMESTAMP,
     auction_end_time TIMESTAMP,
+    auction_status VARCHAR(30),
     starting_bid DECIMAL(10,2),
+    reserve_price DECIMAL(10,2),
+    buy_it_now_price DECIMAL(10,2),
+    current_bid_price DECIMAL(10,2),
+    winning_bidder_id INT REFERENCES users(id) ON DELETE SET NULL,
+    ended_at TIMESTAMP,
     condition VARCHAR(20), -- new, used, refurbished
     brand VARCHAR(100),
     weight DECIMAL(8,2), -- in kg
@@ -145,6 +151,7 @@ CREATE TABLE products (
 );
 
 CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_products_auction_status ON products(auction_status);
 CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_products_seller ON products(seller_id);
 CREATE INDEX idx_products_slug ON products(slug);
@@ -203,9 +210,9 @@ CREATE TABLE coupons (
     code VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
     discount_type VARCHAR(20) NOT NULL,
-    discount_value DECIMAL(10,2) NOT NULL,
-    min_order_amount DECIMAL(10,2) DEFAULT 0,
-    max_discount DECIMAL(10,2),
+    discount_value DECIMAL(18,2) NOT NULL,
+    min_order_amount DECIMAL(18,2) DEFAULT 0,
+    max_discount DECIMAL(18,2),
     start_date TIMESTAMP NOT NULL,
     end_date TIMESTAMP NOT NULL,
     max_usage INT,
@@ -235,8 +242,19 @@ CREATE INDEX idx_coupons_code ON coupons(code);
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     order_number VARCHAR(50) NOT NULL UNIQUE,
-    buyer_id INT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-    address_id INT NOT NULL REFERENCES addresses(id) ON DELETE SET NULL,
+    buyer_id INT REFERENCES users(id) ON DELETE SET NULL,
+    address_id INT REFERENCES addresses(id) ON DELETE SET NULL,
+    customer_type TEXT NOT NULL,
+    guest_full_name TEXT,
+    guest_email TEXT,
+    guest_phone TEXT,
+    ship_full_name TEXT,
+    ship_phone TEXT,
+    ship_street TEXT,
+    ship_city TEXT,
+    ship_state TEXT,
+    ship_postal_code TEXT,
+    ship_country TEXT,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     subtotal DECIMAL(10,2) NOT NULL,
     shipping_fee DECIMAL(10,2) DEFAULT 0,
@@ -246,6 +264,9 @@ CREATE TABLE orders (
     coupon_id INT REFERENCES coupons(id) ON DELETE SET NULL,
     discount_amount DECIMAL(10,2) DEFAULT 0,
     note TEXT,
+    is_auction_order BOOLEAN DEFAULT FALSE,
+    payment_due_at TIMESTAMP,
+    payment_reminder_sent_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -256,6 +277,7 @@ CREATE INDEX idx_orders_buyer ON orders(buyer_id);
 CREATE INDEX idx_orders_number ON orders(order_number);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_date ON orders(order_date DESC);
+CREATE INDEX idx_orders_payment_due_at ON orders(payment_due_at);
 
 -- Order Items Table
 CREATE TABLE order_items (
@@ -266,6 +288,9 @@ CREATE TABLE order_items (
     quantity INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
     total_price DECIMAL(10,2) NOT NULL,
+    product_title_snapshot TEXT,
+    product_image_snapshot TEXT,
+    seller_display_name_snapshot TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -276,7 +301,7 @@ CREATE INDEX idx_order_items_seller ON order_items(seller_id);
 CREATE TABLE payments (
     id SERIAL PRIMARY KEY,
     order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL,
     amount DECIMAL(10,2) NOT NULL,
     method VARCHAR(50) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
@@ -291,6 +316,26 @@ CREATE TABLE payments (
 
 CREATE INDEX idx_payments_order ON payments(order_id);
 CREATE INDEX idx_payments_user ON payments(user_id);
+
+-- Guest Checkout Idempotency Table
+CREATE TABLE guest_checkout_idempotency (
+    id SERIAL PRIMARY KEY,
+    idempotency_key VARCHAR(255) NOT NULL UNIQUE,
+    request_hash VARCHAR(64) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    order_id INT REFERENCES orders(id) ON DELETE SET NULL,
+    response_payload JSONB,
+    processing_expires_at TIMESTAMP NOT NULL,
+    replay_expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_guest_checkout_idempotency_status CHECK (status IN ('processing', 'completed'))
+);
+
+CREATE INDEX idx_guest_checkout_idempotency_order ON guest_checkout_idempotency(order_id);
+CREATE INDEX idx_guest_checkout_idempotency_processing_expires ON guest_checkout_idempotency(processing_expires_at);
+CREATE INDEX idx_guest_checkout_idempotency_replay_expires ON guest_checkout_idempotency(replay_expires_at);
 
 -- Shipping Info Table
 CREATE TABLE shipping_info (
@@ -370,8 +415,11 @@ CREATE TABLE bids (
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     bidder_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     amount DECIMAL(10,2) NOT NULL,
+    max_amount DECIMAL(10,2),
     bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_winning BOOLEAN DEFAULT FALSE,
+    is_retracted BOOLEAN DEFAULT FALSE,
+    retracted_at TIMESTAMP,
     
     CONSTRAINT chk_bid_amount CHECK (amount > 0)
 );
@@ -387,39 +435,120 @@ CREATE INDEX idx_bids_time ON bids(bid_time DESC);
 CREATE TABLE return_requests (
     id SERIAL PRIMARY KEY,
     order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    order_item_id INT REFERENCES order_items(id) ON DELETE SET NULL,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    request_type VARCHAR(30) NOT NULL DEFAULT 'return',
+    reason_code VARCHAR(50),
     reason TEXT NOT NULL,
+    resolution_type VARCHAR(30) NOT NULL DEFAULT 'refund',
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     admin_notes TEXT,
     refund_amount DECIMAL(10,2),
     approved_at TIMESTAMP,
     rejected_at TIMESTAMP,
+    closed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT chk_return_status CHECK (status IN ('pending', 'approved', 'rejected', 'completed'))
+    CONSTRAINT chk_return_status CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
+    CONSTRAINT chk_return_request_type CHECK (request_type IN ('return', 'snad', 'damaged')),
+    CONSTRAINT chk_return_resolution_type CHECK (resolution_type IN ('refund', 'replacement', 'exchange'))
 );
 
 CREATE INDEX idx_returns_order ON return_requests(order_id);
+CREATE INDEX idx_returns_order_item ON return_requests(order_item_id);
 CREATE INDEX idx_returns_user ON return_requests(user_id);
 
 CREATE TABLE disputes (
     id SERIAL PRIMARY KEY,
     order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    raised_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    order_item_id INT REFERENCES order_items(id) ON DELETE SET NULL,
+    raised_by INT REFERENCES users(id) ON DELETE SET NULL,
+    case_type VARCHAR(40) NOT NULL DEFAULT 'other',
     description TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'open',
     resolution TEXT,
+    escalated_from_return_request_id INT REFERENCES return_requests(id) ON DELETE SET NULL,
+    closed_reason VARCHAR(50),
     resolved_by INT REFERENCES users(id) ON DELETE SET NULL,
     resolved_at TIMESTAMP,
+    closed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT chk_dispute_status CHECK (status IN ('open', 'in_progress', 'resolved', 'closed'))
+    CONSTRAINT chk_dispute_status CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
+    CONSTRAINT chk_dispute_case_type CHECK (case_type IN ('inr', 'snad', 'damaged', 'return_escalation', 'other'))
 );
 
 CREATE INDEX idx_disputes_order ON disputes(order_id);
+CREATE INDEX idx_disputes_order_item ON disputes(order_item_id);
+CREATE INDEX idx_disputes_return_request ON disputes(escalated_from_return_request_id);
 CREATE INDEX idx_disputes_user ON disputes(raised_by);
+
+CREATE TABLE case_events (
+    id SERIAL PRIMARY KEY,
+    return_request_id INT REFERENCES return_requests(id) ON DELETE CASCADE,
+    dispute_id INT REFERENCES disputes(id) ON DELETE CASCADE,
+    event_type VARCHAR(40) NOT NULL,
+    actor_type VARCHAR(20) NOT NULL,
+    actor_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    message TEXT NOT NULL,
+    metadata_json JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_case_event_scope CHECK (return_request_id IS NOT NULL OR dispute_id IS NOT NULL),
+    CONSTRAINT chk_case_event_event_type CHECK (event_type IN ('created', 'status_changed', 'comment_added', 'evidence_added', 'escalated', 'resolution_proposed', 'resolved', 'closed', 'system_note')),
+    CONSTRAINT chk_case_event_actor_type CHECK (actor_type IN ('buyer', 'seller', 'admin', 'system'))
+);
+
+CREATE INDEX idx_case_events_return_request ON case_events(return_request_id);
+CREATE INDEX idx_case_events_dispute ON case_events(dispute_id);
+CREATE INDEX idx_case_events_actor_user ON case_events(actor_user_id);
+CREATE INDEX idx_case_events_created ON case_events(created_at);
+
+CREATE TABLE case_attachments (
+    id SERIAL PRIMARY KEY,
+    return_request_id INT REFERENCES return_requests(id) ON DELETE CASCADE,
+    dispute_id INT REFERENCES disputes(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
+    content_type VARCHAR(100),
+    file_size_bytes BIGINT NOT NULL,
+    label VARCHAR(100),
+    evidence_type VARCHAR(50),
+    uploaded_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_case_attachment_scope CHECK (
+        (return_request_id IS NOT NULL AND dispute_id IS NULL) OR
+        (return_request_id IS NULL AND dispute_id IS NOT NULL)
+    )
+);
+
+CREATE INDEX idx_case_attachments_return_request ON case_attachments(return_request_id);
+CREATE INDEX idx_case_attachments_dispute ON case_attachments(dispute_id);
+CREATE INDEX idx_case_attachments_uploaded_by ON case_attachments(uploaded_by_user_id);
+CREATE INDEX idx_case_attachments_created ON case_attachments(created_at);
+
+CREATE TABLE order_cancellation_requests (
+    id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    requested_by_user_id INT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    resolved_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    reason TEXT,
+    seller_response TEXT,
+    responded_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_order_cancellation_request_status CHECK (status IN ('pending', 'approved', 'rejected'))
+);
+
+CREATE INDEX idx_order_cancellation_requests_order ON order_cancellation_requests(order_id);
+CREATE INDEX idx_order_cancellation_requests_requested_by ON order_cancellation_requests(requested_by_user_id);
+CREATE INDEX idx_order_cancellation_requests_resolved_by ON order_cancellation_requests(resolved_by_user_id);
+CREATE INDEX idx_order_cancellation_requests_status ON order_cancellation_requests(status);
 
 -- ============================================
 -- MESSAGING
@@ -579,18 +708,6 @@ CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
 CREATE TRIGGER update_cart_items_updated_at BEFORE UPDATE ON cart_items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to generate order number
-CREATE OR REPLACE FUNCTION generate_order_number()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.order_number = 'ORD-' || TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDD') || '-' || LPAD(NEW.id::TEXT, 6, '0');
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER set_order_number BEFORE INSERT ON orders
-    FOR EACH ROW EXECUTE FUNCTION generate_order_number();
-
 -- ============================================
 -- VIEWS
 -- ============================================
@@ -669,5 +786,42 @@ VALUES ('20260320004716_AddWatchlistTable', '9.0.2') ON CONFLICT DO NOTHING;
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
 VALUES ('20260320033846_AddProductViewHistoryTable', '9.0.2') ON CONFLICT DO NOTHING;
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260320004759_SyncModelSnapshot', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20260320154259_SyncUserColumnNames', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325043057_AddGuestCheckoutPhase1Schema', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325065911_AddGuestCheckoutIdempotencyPersistence', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325083039_ExtendReturnRequestFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325095426_ExtendDisputeFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325095924_AddCaseEventTimelineFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325123555_AddCaseAttachmentEvidenceFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325143000_AllowGuestReturnRequests', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325152000_AllowGuestDisputes', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260326071654_AddOrderCancellationRequestFlow', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260326090000_AddAuctionProxyBiddingFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260326123000_AddAuctionOrderPaymentDeadlineFields', '9.0.2') ON CONFLICT DO NOTHING;

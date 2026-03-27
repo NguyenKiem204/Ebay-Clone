@@ -4,79 +4,79 @@ using ebay.Exceptions;
 using ebay.Models;
 using ebay.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ebay.Services.Implementations
 {
     public class OrderService : IOrderService
     {
         private readonly EbayDbContext _context;
+        private readonly ICheckoutCoreService _checkoutCoreService;
         private readonly ICouponService _couponService;
+        private readonly IOrderNotificationService _orderNotificationService;
+        private readonly IOrderNumberGenerator _orderNumberGenerator;
+        private readonly IOrderProjectionMapper _orderProjectionMapper;
+        private readonly IOrderCancellationService _orderCancellationService;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<OrderService> _logger;
 
-        public OrderService(EbayDbContext context, ICouponService couponService)
+        public OrderService(
+            EbayDbContext context,
+            ICheckoutCoreService checkoutCoreService,
+            ICouponService couponService,
+            IOrderNotificationService orderNotificationService,
+            IOrderNumberGenerator orderNumberGenerator,
+            IOrderProjectionMapper orderProjectionMapper,
+            IOrderCancellationService orderCancellationService,
+            IEmailService emailService,
+            ILogger<OrderService> logger)
         {
             _context = context;
+            _checkoutCoreService = checkoutCoreService;
             _couponService = couponService;
+            _orderNotificationService = orderNotificationService;
+            _orderNumberGenerator = orderNumberGenerator;
+            _orderProjectionMapper = orderProjectionMapper;
+            _orderCancellationService = orderCancellationService;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<OrderResponseDto> CreateOrderAsync(int userId, CreateOrderRequestDto request)
         {
-            // 1. Get Address
-            var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == request.AddressId && a.UserId == userId);
-            if (address == null) throw new BadRequestException("Địa chỉ giao hàng không hợp lệ");
-
-            // 2. Get Cart Items OR Buy It Now Item
-            var cartItems = new List<CartItem>();
-
-            if (request.BuyItNowProductId.HasValue && request.BuyItNowQuantity.HasValue)
-            {
-                var product = await _context.Products.Include(p => p.Images).FirstOrDefaultAsync(p => p.Id == request.BuyItNowProductId.Value);
-                if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
-                
-                // Create a temporary in-memory cart item for processing
-                cartItems.Add(new CartItem 
-                { 
-                    ProductId = product.Id, 
-                    Product = product, 
-                    Quantity = request.BuyItNowQuantity.Value 
-                });
-            }
-            else
-            {
-                var cartItemsQuery = _context.CartItems
-                    .Include(ci => ci.Product)
-                        .ThenInclude(p => p.Images)
-                    .Where(ci => ci.Cart.UserId == userId);
-
-                if (request.SelectedCartItemIds != null && request.SelectedCartItemIds.Any())
-                {
-                    cartItemsQuery = cartItemsQuery.Where(ci => request.SelectedCartItemIds.Contains(ci.Id));
-                }
-
-                cartItems = await cartItemsQuery.ToListAsync();
-                if (!cartItems.Any()) throw new BadRequestException("Giỏ hàng hoặc lựa chọn trống");
-            }
+            var address = await GetValidatedAddressAsync(userId, request.AddressId);
+            var cartItems = await ResolveCheckoutCartItemsAsync(userId, request);
+            EnsureBuyerDoesNotPurchaseOwnListings(userId, cartItems);
+            var memberEmailRecipient = await GetMemberEmailRecipientAsync(userId);
 
             // 3. Start Transaction
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                decimal subtotal = 0;
-                decimal shippingFee = 0;
+                var checkoutCoreResult = await _checkoutCoreService.PrepareAsync(
+                    cartItems.Select(item => new CheckoutCoreItemRequest
+                    {
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        AllowAuctionBuyItNow = request.BuyItNowProductId.HasValue && item.Product?.IsAuction == true
+                    }));
 
-                // 4. Validate Stock & Calculate Totals
+                if (!checkoutCoreResult.IsValid)
+                {
+                    var errors = checkoutCoreResult.Issues
+                        .Select(issue => issue.Message)
+                        .Distinct()
+                        .ToList();
+
+                    throw new BadRequestException("Checkout không hợp lệ", errors);
+                }
+
+                var normalizedItemsByProductId = checkoutCoreResult.NormalizedItems
+                    .ToDictionary(item => item.ProductId);
+
                 foreach (var item in cartItems)
                 {
-                    if (item.Product.Status != "active" || item.Product.IsActive != true)
-                        throw new BadRequestException($"Sản phẩm {item.Product.Title} hiện không còn bán");
-
-                    if ((item.Product.Stock ?? 0) < item.Quantity)
-                        throw new BadRequestException($"Sản phẩm {item.Product.Title} không đủ số lượng trong kho");
-
-                    subtotal += item.Product.Price * item.Quantity;
-                    shippingFee += item.Product.ShippingFee ?? 0;
-
-                    // Deduct stock
-                    item.Product.Stock -= item.Quantity;
+                    item.Product.Stock = (item.Product.Stock ?? 0) - item.Quantity;
                 }
 
                 // 5. Coupon Validation
@@ -84,7 +84,7 @@ namespace ebay.Services.Implementations
                 int? couponId = null;
                 if (!string.IsNullOrWhiteSpace(request.CouponCode))
                 {
-                    var couponResult = await _couponService.ValidateCouponAsync(request.CouponCode, subtotal, userId);
+                    var couponResult = await _couponService.ValidateCouponAsync(request.CouponCode, checkoutCoreResult.Subtotal, userId);
                     if (couponResult.Valid)
                     {
                         discountAmount = couponResult.DiscountAmount;
@@ -94,52 +94,84 @@ namespace ebay.Services.Implementations
                     }
                 }
 
-                var totalPrice = subtotal + shippingFee - discountAmount;
+                var totalPrice = checkoutCoreResult.Subtotal + checkoutCoreResult.ShippingFee - discountAmount + checkoutCoreResult.Tax;
+                var now = DateTime.UtcNow;
+
+                foreach (var item in cartItems.Where(item => request.BuyItNowProductId.HasValue && item.Product?.IsAuction == true))
+                {
+                    item.Product.CurrentBidPrice = item.Product.BuyItNowPrice ?? item.Product.CurrentBidPrice ?? item.Product.Price;
+                    item.Product.WinningBidderId = userId;
+                    item.Product.AuctionStatus = "sold";
+                    item.Product.EndedAt = now;
+                    item.Product.AuctionEndTime = now;
+                    item.Product.IsActive = false;
+                    item.Product.Status = "ended";
+                }
 
                 // 6. Create Order record
                 var order = new Order
                 {
+                    CustomerType = "member",
                     BuyerId = userId,
-                    OrderNumber = "EBAY-" + DateTime.Now.Ticks.ToString().Substring(10),
-                    Subtotal = subtotal,
-                    ShippingFee = shippingFee,
+                    OrderNumber = _orderNumberGenerator.Generate(),
+                    AddressId = request.AddressId,
+                    ShipFullName = address.FullName,
+                    ShipPhone = address.Phone,
+                    ShipStreet = address.Street,
+                    ShipCity = address.City,
+                    ShipState = address.State,
+                    ShipPostalCode = address.PostalCode,
+                    ShipCountry = address.Country,
+                    OrderDate = now,
+                    Subtotal = checkoutCoreResult.Subtotal,
+                    ShippingFee = checkoutCoreResult.ShippingFee,
                     DiscountAmount = discountAmount,
+                    Tax = checkoutCoreResult.Tax,
                     TotalPrice = totalPrice,
                     CouponId = couponId,
                     Status = "pending",
-                    AddressId = request.AddressId,
                     Note = request.Note,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = now,
+                    UpdatedAt = now
                 };
 
                 await _context.Orders.AddAsync(order);
                 await _context.SaveChangesAsync(); // To get Order.Id
 
                 // 7. Create Order Items
-                var orderItems = cartItems.Select(ci => new OrderItem
+                var orderItems = cartItems.Select(ci =>
                 {
-                    OrderId = order.Id,
-                    ProductId = ci.ProductId,
-                    SellerId = ci.Product.SellerId,
-                    Quantity = ci.Quantity,
-                    UnitPrice = ci.Product.Price, // Capture price at moment of purchase
-                    TotalPrice = ci.Product.Price * ci.Quantity,
-                    CreatedAt = DateTime.UtcNow
+                    var normalizedItem = normalizedItemsByProductId[ci.ProductId];
+
+                    return new OrderItem
+                    {
+                        OrderId = order.Id,
+                        ProductId = ci.ProductId,
+                        SellerId = ci.Product.SellerId,
+                        Quantity = ci.Quantity,
+                        UnitPrice = normalizedItem.UnitPrice,
+                        TotalPrice = normalizedItem.UnitPrice * ci.Quantity,
+                        ProductTitleSnapshot = ci.Product.Title,
+                        ProductImageSnapshot = ci.Product.Images != null && ci.Product.Images.Any() ? ci.Product.Images[0] : null,
+                        SellerDisplayNameSnapshot = ResolveSellerDisplayName(ci.Product),
+                        CreatedAt = now
+                    };
                 }).ToList();
 
                 await _context.OrderItems.AddRangeAsync(orderItems);
 
                 // 8. Create Initial Payment Record
-                await _context.Payments.AddAsync(new Payment
+                var payment = new Payment
                 {
                     OrderId = order.Id,
                     UserId = userId,
                     Amount = totalPrice,
                     Method = request.PaymentMethod == "PayPal" ? "paypal" : "cod",
                     Status = "pending",
-                    CreatedAt = DateTime.UtcNow
-                });
+                    CreatedAt = now
+                };
+
+                await _context.Payments.AddAsync(payment);
 
                 // 9. Clear Cart Items
                 if (!request.BuyItNowProductId.HasValue)
@@ -147,31 +179,21 @@ namespace ebay.Services.Implementations
                     _context.CartItems.RemoveRange(cartItems);
                 }
 
-                // 10. Notification
-                await _context.Notifications.AddAsync(new Notification
-                {
-                    UserId = userId,
-                    Type = "order_success",
-                    Title = "Đặt hàng thành công",
-                    Body = $"Đơn hàng {order.OrderNumber} của bạn đã được tiếp nhận.",
-                    IsRead = false,
-                    Link = $"/orders/{order.Id}",
-                    CreatedAt = DateTime.UtcNow
-                });
-
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return MapToDto(order, address, orderItems.Select(oi => {
-                    var prod = cartItems.First(ci => ci.ProductId == oi.ProductId).Product;
-                    return new OrderItemResponseDto {
-                        ProductId = oi.ProductId,
-                        Title = prod.Title,
-                        Image = prod.Images != null && prod.Images.Any() ? prod.Images[0] : null,
-                        Price = oi.UnitPrice,
-                        Quantity = oi.Quantity
-                    };
-                }).ToList());
+                order.Address = address;
+                order.OrderItems = orderItems;
+                order.Payments = new List<Payment> { payment };
+
+                await _orderNotificationService.TryCreateOrderPlacedNotificationAsync(
+                    userId,
+                    order.Id,
+                    order.OrderNumber);
+
+                await TrySendMemberConfirmationEmailAsync(order, payment, memberEmailRecipient);
+
+                return _orderProjectionMapper.MapMemberOrder(order);
             }
             catch (Exception)
             {
@@ -180,10 +202,77 @@ namespace ebay.Services.Implementations
             }
         }
 
+        public async Task<MemberCheckoutReviewResponseDto> ReviewCheckoutAsync(int userId, CreateOrderRequestDto request)
+        {
+            var address = await GetValidatedAddressAsync(userId, request.AddressId);
+            var cartItems = await ResolveCheckoutCartItemsAsync(userId, request);
+            EnsureBuyerDoesNotPurchaseOwnListings(userId, cartItems);
+
+            var checkoutCoreResult = await _checkoutCoreService.PrepareAsync(
+                cartItems.Select(item => new CheckoutCoreItemRequest
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    AllowAuctionBuyItNow = request.BuyItNowProductId.HasValue && item.Product?.IsAuction == true
+                }));
+
+            if (!checkoutCoreResult.IsValid)
+            {
+                var errors = checkoutCoreResult.Issues
+                    .Select(issue => issue.Message)
+                    .Distinct()
+                    .ToList();
+
+                throw new BadRequestException("Checkout không hợp lệ", errors);
+            }
+
+            decimal discountAmount = 0;
+            if (!string.IsNullOrWhiteSpace(request.CouponCode))
+            {
+                var couponResult = await _couponService.ValidateCouponAsync(request.CouponCode, checkoutCoreResult.Subtotal, userId);
+                if (couponResult.Valid)
+                {
+                    discountAmount = couponResult.DiscountAmount;
+                }
+            }
+
+            var totalAmount = checkoutCoreResult.Subtotal + checkoutCoreResult.ShippingFee - discountAmount + checkoutCoreResult.Tax;
+
+            return new MemberCheckoutReviewResponseDto
+            {
+                AddressId = address.Id,
+                PaymentMethod = request.PaymentMethod,
+                ShippingAddress = MapShippingAddress(address),
+                Subtotal = checkoutCoreResult.Subtotal,
+                ShippingFee = checkoutCoreResult.ShippingFee,
+                DiscountAmount = discountAmount,
+                Tax = checkoutCoreResult.Tax,
+                TotalAmount = totalAmount,
+                Items = checkoutCoreResult.NormalizedItems
+                    .Select(item => new MemberCheckoutReviewItemResponseDto
+                    {
+                        ProductId = item.ProductId,
+                        Title = item.Title,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.UnitPrice,
+                        LineSubtotal = item.LineSubtotal,
+                        ShippingFee = item.ShippingFee,
+                        LineTotal = item.LineTotal
+                    })
+                    .ToList()
+            };
+        }
+
         public async Task<List<OrderResponseDto>> GetUserOrdersAsync(int userId, string? status = null)
         {
             var query = _context.Orders
+                .AsNoTracking()
                 .Include(o => o.Address)
+                .Include(o => o.OrderCancellationRequests)
+                .Include(o => o.Payments)
+                .Include(o => o.ShippingInfo)
+                .Include(o => o.ReturnRequests)
+                .Include(o => o.Disputes)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .Where(o => o.BuyerId == userId);
@@ -194,87 +283,188 @@ namespace ebay.Services.Implementations
             }
 
             var orders = await query.OrderByDescending(o => o.CreatedAt).ToListAsync();
-            return orders.Select(o => MapToDto(o, o.Address!, null)).ToList();
+            return orders.Select(o => _orderProjectionMapper.MapMemberOrder(o)).ToList();
         }
 
         public async Task<OrderResponseDto> GetOrderByIdAsync(int userId, int orderId)
         {
             var order = await _context.Orders
+                .AsNoTracking()
                 .Include(o => o.Address)
+                .Include(o => o.OrderCancellationRequests)
+                .Include(o => o.Payments)
+                .Include(o => o.ShippingInfo)
+                .Include(o => o.ReturnRequests)
+                .Include(o => o.Disputes)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .FirstOrDefaultAsync(o => o.Id == orderId && o.BuyerId == userId);
 
             if (order == null) throw new NotFoundException("Đơn hàng không tồn tại");
 
-            return MapToDto(order, order.Address!, null);
+            return _orderProjectionMapper.MapMemberOrder(order);
         }
 
         public async Task CancelOrderAsync(int userId, int orderId)
         {
-            var order = await _context.Orders
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .FirstOrDefaultAsync(o => o.Id == orderId && o.BuyerId == userId);
+            await _orderCancellationService.RequestCancellationAsync(
+                userId,
+                orderId,
+                reason: null);
+        }
 
-            if (order == null) throw new NotFoundException("Đơn hàng không tồn tại");
+        private static string ResolveSellerDisplayName(Product product)
+        {
+            if (!string.IsNullOrWhiteSpace(product.Store?.StoreName))
+            {
+                return product.Store.StoreName;
+            }
 
-            if (order.Status != "pending")
-                throw new BadRequestException("Chỉ có thể hủy đơn hàng đang chờ xử lý");
+            return product.Seller.Username;
+        }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try {
-                order.Status = "cancelled";
-                order.UpdatedAt = DateTime.UtcNow;
+        private async Task<MemberEmailRecipient> GetMemberEmailRecipientAsync(int userId)
+        {
+            var member = await _context.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => new MemberEmailRecipient(
+                    user.Email,
+                    user.Username,
+                    user.FirstName,
+                    user.LastName))
+                .FirstOrDefaultAsync();
 
-                // Return stock
-                foreach (var item in order.OrderItems)
-                {
-                    item.Product.Stock += item.Quantity;
-                }
+            if (member == null)
+            {
+                throw new BadRequestException("Người dùng không hợp lệ");
+            }
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-            } catch {
-                await transaction.RollbackAsync();
-                throw;
+            return member;
+        }
+
+        private async Task TrySendMemberConfirmationEmailAsync(Order order, Payment payment, MemberEmailRecipient member)
+        {
+            if (string.IsNullOrWhiteSpace(member.Email))
+            {
+                _logger.LogWarning(
+                    "Member confirmation email skipped because Email is missing for user {UserId}, order {OrderNumber}",
+                    order.BuyerId,
+                    order.OrderNumber);
+                return;
+            }
+
+            var displayName = ResolveMemberDisplayName(member);
+
+            try
+            {
+                await _emailService.SendMemberOrderConfirmationAsync(
+                    member.Email,
+                    displayName,
+                    order.OrderNumber,
+                    order.TotalPrice,
+                    payment.Method,
+                    payment.Status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send member confirmation email for order {OrderNumber}", order.OrderNumber);
             }
         }
 
-        private static OrderResponseDto MapToDto(Order o, Address addr, List<OrderItemResponseDto>? items)
+        private static string ResolveMemberDisplayName(MemberEmailRecipient member)
         {
-            var payment = o.Payments.FirstOrDefault();
-            return new OrderResponseDto
+            var fullName = $"{member.FirstName} {member.LastName}".Trim();
+            if (!string.IsNullOrWhiteSpace(fullName))
             {
-                Id = o.Id,
-                OrderNumber = o.OrderNumber,
-                Subtotal = o.Subtotal,
-                ShippingFee = o.ShippingFee ?? 0,
-                DiscountAmount = o.DiscountAmount ?? 0,
-                TotalAmount = o.TotalPrice,
-                Status = o.Status ?? "pending",
-                PaymentStatus = payment?.Status ?? "pending",
-                PaymentMethod = payment?.Method ?? "COD",
-                CreatedAt = o.CreatedAt ?? DateTime.UtcNow,
-                ShippingAddress = new AddressResponseDto
+                return fullName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(member.Username))
+            {
+                return member.Username;
+            }
+
+            return "bạn";
+        }
+
+        private async Task<Address> GetValidatedAddressAsync(int userId, int addressId)
+        {
+            var address = await _context.Addresses.FirstOrDefaultAsync(a => a.Id == addressId && a.UserId == userId);
+            if (address == null) throw new BadRequestException("Địa chỉ giao hàng không hợp lệ");
+
+            return address;
+        }
+
+        private async Task<List<CartItem>> ResolveCheckoutCartItemsAsync(int userId, CreateOrderRequestDto request)
+        {
+            if (request.BuyItNowProductId.HasValue && request.BuyItNowQuantity.HasValue)
+            {
+                var product = await _context.Products
+                    .Include(p => p.Seller)
+                    .Include(p => p.Store)
+                    .FirstOrDefaultAsync(p => p.Id == request.BuyItNowProductId.Value);
+
+                if (product == null) throw new NotFoundException("Sản phẩm không tồn tại");
+
+                return new List<CartItem>
                 {
-                    FullName = addr.FullName,
-                    Phone = addr.Phone,
-                    Street = addr.Street,
-                    City = addr.City,
-                    State = addr.State,
-                    PostalCode = addr.PostalCode,
-                    Country = addr.Country
-                },
-                Items = items ?? o.OrderItems.Select(oi => new OrderItemResponseDto
-                {
-                    ProductId = oi.ProductId,
-                    Title = oi.Product?.Title ?? "Unknown",
-                    Image = oi.Product?.Images != null && oi.Product.Images.Any() ? oi.Product.Images[0] : null,
-                    Price = oi.UnitPrice,
-                    Quantity = oi.Quantity
-                }).ToList()
+                    new()
+                    {
+                        ProductId = product.Id,
+                        Product = product,
+                        Quantity = request.BuyItNowQuantity.Value
+                    }
+                };
+            }
+
+            var cartItemsQuery = _context.CartItems
+                .Include(ci => ci.Product)
+                    .ThenInclude(p => p.Seller)
+                .Include(ci => ci.Product)
+                    .ThenInclude(p => p.Store)
+                .Where(ci => ci.Cart.UserId == userId);
+
+            if (request.SelectedCartItemIds != null && request.SelectedCartItemIds.Any())
+            {
+                cartItemsQuery = cartItemsQuery.Where(ci => request.SelectedCartItemIds.Contains(ci.Id));
+            }
+
+            var cartItems = await cartItemsQuery.ToListAsync();
+            if (!cartItems.Any()) throw new BadRequestException("Giỏ hàng hoặc lựa chọn trống");
+
+            return cartItems;
+        }
+
+        private static void EnsureBuyerDoesNotPurchaseOwnListings(int userId, IEnumerable<CartItem> cartItems)
+        {
+            var ownListing = cartItems.FirstOrDefault(item => item.Product?.SellerId == userId);
+            if (ownListing != null)
+            {
+                throw new BadRequestException("Bạn không thể mua listing của chính mình");
+            }
+        }
+
+        private static AddressResponseDto MapShippingAddress(Address address)
+        {
+            return new AddressResponseDto
+            {
+                Id = address.Id,
+                FullName = address.FullName,
+                Phone = address.Phone,
+                Street = address.Street,
+                City = address.City,
+                State = address.State,
+                PostalCode = address.PostalCode,
+                Country = address.Country,
+                IsDefault = address.IsDefault == true
             };
         }
+
+        private sealed record MemberEmailRecipient(
+            string Email,
+            string Username,
+            string? FirstName,
+            string? LastName);
     }
 }

@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import api from '../../lib/axios';
 
 const MAX_HISTORY = 10;
+const TRACK_DEDUPE_WINDOW_MS = 1200;
+
+let lastTrackedProductId = null;
+let lastTrackedAt = 0;
+let syncGuestHistoryInFlight = null;
 
 const useHistoryStore = create((set, get) => ({
     historyItems: [],   // array of HistoryItemResponseDto
@@ -14,6 +19,17 @@ const useHistoryStore = create((set, get) => ({
      */
     trackView: (product) => {
         if (!product?.id) return;
+
+        const nowMs = Date.now();
+        if (
+            lastTrackedProductId === product.id &&
+            nowMs - lastTrackedAt < TRACK_DEDUPE_WINDOW_MS
+        ) {
+            return;
+        }
+
+        lastTrackedProductId = product.id;
+        lastTrackedAt = nowMs;
 
         // Optimistic local update
         set(state => {
@@ -56,11 +72,21 @@ const useHistoryStore = create((set, get) => ({
      * No need to send the cookie value in the body.
      */
     syncGuestHistory: async () => {
-        try {
-            await api.post('/api/History/sync');
-        } catch {
-            // ignore — no guest cookie or nothing to sync
+        if (syncGuestHistoryInFlight) {
+            return syncGuestHistoryInFlight;
         }
+
+        syncGuestHistoryInFlight = (async () => {
+            try {
+                await api.post('/api/History/sync');
+            } catch {
+                // ignore — no guest cookie or nothing to sync
+            } finally {
+                syncGuestHistoryInFlight = null;
+            }
+        })();
+
+        return syncGuestHistoryInFlight;
     },
 
     clear: () => set({ historyItems: [] }),

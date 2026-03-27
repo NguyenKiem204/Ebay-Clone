@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button';
 import { useCheckout } from '../features/checkout/hooks/useCheckout';
 import ShippingAddress from '../features/checkout/components/ShippingAddress';
 import PaymentMethod from '../features/checkout/components/PaymentMethod';
+import CouponSection from '../features/checkout/components/CouponSection';
 
 import { useState, useEffect } from 'react';
 import api from '../lib/axios';
@@ -21,6 +22,8 @@ const CheckoutItem = ({ item, updateQuantity }) => {
     const sellerName = sellerProfile?.username || item.sellerName || 'Unknown';
     const positivePercent = sellerProfile ? `${sellerProfile.positivePercent}%` : '...';
     const avatarUrl = sellerProfile?.avatarUrl;
+
+    const displayShipping = item.shippingPrice ?? 0;
 
     return (
         <div className="mb-8 border-b border-gray-200 pb-8 last:border-b-0 last:pb-0 last:mb-0">
@@ -50,6 +53,11 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                             {item.soldCount} SOLD
                         </span>
                     )}
+                    {item.isAuction && (
+                        <span className="inline-block self-start border border-violet-200 bg-violet-50 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase">
+                            Auction Buy It Now
+                        </span>
+                    )}
                     <h3 className="text-[15px] text-black leading-tight mb-2 hover:underline cursor-pointer">
                         {item.title}
                     </h3>
@@ -69,9 +77,10 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                             className="w-full appearance-none bg-white border border-gray-400 hover:border-gray-500 rounded py-2 pl-3 pr-8 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                             value={item.quantity}
                             onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                            disabled={item.isAuction}
                         >
-                            {[...Array(10).keys()].map(n => (
-                                <option key={n + 1} value={n + 1}>Quantity: {n + 1}</option>
+                            {(item.isAuction ? [1] : [...Array(10).keys()].map(n => n + 1)).map(value => (
+                                <option key={value} value={value}>Quantity: {value}</option>
                             ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -85,7 +94,7 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                         <p className="text-[14px] text-gray-900">eBay International Shipping</p>
                         <p className="text-[14px] text-gray-900">30 days returns accepted <span className="text-gray-400 border border-gray-300 rounded-full inline-flex items-center justify-center w-4 h-4 text-[10px] ml-1 cursor-pointer">i</span></p>
                         <p className="font-bold text-[14px] text-gray-900 mt-2">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(145530)}
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayShipping)}
                         </p>
                         <p className="text-[13px] text-gray-500 mt-1">Import fees may apply on delivery</p>
                     </div>
@@ -99,6 +108,16 @@ export default function CheckoutPage() {
     const {
         items,
         subtotal,
+        guestQuote,
+        memberReviewQuote,
+        isReviewLoading,
+        couponCode,
+        setCouponCode,
+        appliedCoupon,
+        couponError,
+        isApplyingCoupon,
+        applyCoupon,
+        removeCoupon,
         isLoading,
         error,
         addresses,
@@ -117,11 +136,22 @@ export default function CheckoutPage() {
         savedAddresses,
         setSavedAddresses,
         selectedSavedIdx,
-        setSelectedSavedIdx
+        setSelectedSavedIdx,
+        saveMemberAddress,
+        isSavingMemberAddress
     } = useCheckout();
 
-    const shippingCost = items.length > 0 ? 145530 : 0;
-    const total = subtotal + shippingCost;
+    const fallbackShippingCost = items.reduce((sum, item) => sum + (item.shippingPrice ?? 0), 0);
+    const hasMemberCanonicalQuote = isAuthenticated && !!memberReviewQuote;
+    const hasGuestCanonicalQuote = !isAuthenticated && !!guestQuote;
+    const activeQuote = hasMemberCanonicalQuote ? memberReviewQuote : (hasGuestCanonicalQuote ? guestQuote : null);
+    const displaySubtotal = activeQuote ? activeQuote.subtotal : subtotal;
+    const shippingCost = activeQuote ? activeQuote.shippingFee : fallbackShippingCost;
+    const discountAmount = activeQuote?.discountAmount ?? 0;
+    const total = activeQuote ? activeQuote.totalAmount : displaySubtotal + shippingCost;
+    const shouldShowGuestNeutralSubtotal = !isAuthenticated && !guestQuote;
+    const shouldShowGuestNeutralTotals = !isAuthenticated && !guestQuote;
+    const shouldShowMemberNeutralTotals = isAuthenticated && !!selectedAddressId && items.length > 0 && (!memberReviewQuote || isReviewLoading);
 
     return (
         <div className="bg-[#f7f7f7] min-h-screen pb-12 w-full font-sans">
@@ -175,6 +205,8 @@ export default function CheckoutPage() {
                         setSavedAddresses={setSavedAddresses}
                         selectedSavedIdx={selectedSavedIdx}
                         setSelectedSavedIdx={setSelectedSavedIdx}
+                        onCreateMemberAddress={saveMemberAddress}
+                        isSavingMemberAddress={isSavingMemberAddress}
                         isEditing={!isGuestDone}
                         onEdit={() => setIsGuestDone(false)}
                     />
@@ -188,6 +220,17 @@ export default function CheckoutPage() {
                         onContinue={() => {}}
                     />
 
+                    <CouponSection
+                        isAuthenticated={isAuthenticated}
+                        couponCode={couponCode}
+                        onCouponCodeChange={setCouponCode}
+                        appliedCoupon={appliedCoupon}
+                        couponError={couponError}
+                        isApplyingCoupon={isApplyingCoupon}
+                        onApplyCoupon={applyCoupon}
+                        onRemoveCoupon={removeCoupon}
+                    />
+
                 </div>
 
                 {/* Right Column (Span 4) */}
@@ -198,20 +241,48 @@ export default function CheckoutPage() {
                         <div className="space-y-3 mb-6">
                             <div className="flex justify-between text-gray-900 text-[14px]">
                                 <span>Item ({items.reduce((sum, i) => sum + i.quantity, 0)})</span>
-                                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal)}</span>
+                                <span>
+                                    {(shouldShowGuestNeutralSubtotal || shouldShowMemberNeutralTotals)
+                                        ? 'Calculating...'
+                                        : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displaySubtotal)}
+                                </span>
                             </div>
                             <div className="flex justify-between text-gray-900 text-[14px]">
                                 <span>Shipping</span>
-                                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingCost)}</span>
+                                <span>
+                                    {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
+                                        ? 'Calculating...'
+                                        : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingCost)}
+                                </span>
                             </div>
+                            {(discountAmount > 0 || appliedCoupon) && (
+                                <div className="flex justify-between text-[14px] text-green-700">
+                                    <span>
+                                        Coupon{appliedCoupon?.code ? ` (${appliedCoupon.code})` : ''}
+                                    </span>
+                                    <span>
+                                        {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
+                                            ? 'Calculating...'
+                                            : `-${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}`}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="border-t border-gray-300 pt-4 flex justify-between items-center mb-6">
                             <span className="text-[16px] font-bold text-gray-900">Order total</span>
                             <span className="text-[18px] font-bold text-gray-900">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
+                                {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
+                                    ? 'Calculating...'
+                                    : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
                             </span>
                         </div>
+
+                        {hasMemberCanonicalQuote && (
+                            <p className="mb-4 text-[12px] text-gray-500">
+                                Totals are verified from your current checkout review.
+                            </p>
+                        )}
 
                         <Button
                             onClick={handlePlaceOrder}

@@ -293,15 +293,30 @@ namespace ebay.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("bidder_id");
 
+                    b.Property<bool?>("IsRetracted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_retracted");
+
                     b.Property<bool?>("IsWinning")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_winning");
 
+                    b.Property<decimal?>("MaxAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("max_amount");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("integer")
                         .HasColumnName("product_id");
+
+                    b.Property<DateTime?>("RetractedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("retracted_at");
 
                     b.HasKey("Id")
                         .HasName("bids_pkey");
@@ -398,6 +413,149 @@ namespace ebay.Migrations
                     b.HasIndex(new[] { "CartId" }, "idx_cart_items_cart");
 
                     b.ToTable("cart_items", (string)null);
+                });
+
+            modelBuilder.Entity("ebay.Models.CaseAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("DisputeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("dispute_id");
+
+                    b.Property<string>("EvidenceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("evidence_type");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("file_path");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_file_name");
+
+                    b.Property<int?>("ReturnRequestId")
+                        .HasColumnType("integer")
+                        .HasColumnName("return_request_id");
+
+                    b.Property<int?>("UploadedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("uploaded_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("case_attachments_pkey");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "idx_case_attachments_created");
+
+                    b.HasIndex(new[] { "DisputeId" }, "idx_case_attachments_dispute");
+
+                    b.HasIndex(new[] { "ReturnRequestId" }, "idx_case_attachments_return_request");
+
+                    b.HasIndex(new[] { "UploadedByUserId" }, "idx_case_attachments_uploaded_by");
+
+                    b.ToTable("case_attachments", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_case_attachment_scope", "(return_request_id IS NOT NULL AND dispute_id IS NULL) OR (return_request_id IS NULL AND dispute_id IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("ebay.Models.CaseEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("actor_type");
+
+                    b.Property<int?>("ActorUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("DisputeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("dispute_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata_json");
+
+                    b.Property<int?>("ReturnRequestId")
+                        .HasColumnType("integer")
+                        .HasColumnName("return_request_id");
+
+                    b.HasKey("Id")
+                        .HasName("case_events_pkey");
+
+                    b.HasIndex(new[] { "ActorUserId" }, "idx_case_events_actor_user");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "idx_case_events_created");
+
+                    b.HasIndex(new[] { "DisputeId" }, "idx_case_events_dispute");
+
+                    b.HasIndex(new[] { "ReturnRequestId" }, "idx_case_events_return_request");
+
+                    b.ToTable("case_events", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_case_event_actor_type", "actor_type IN ('buyer', 'seller', 'admin', 'system')");
+
+                            t.HasCheckConstraint("chk_case_event_event_type", "event_type IN ('created', 'status_changed', 'comment_added', 'evidence_added', 'escalated', 'resolution_proposed', 'resolved', 'closed', 'system_note')");
+
+                            t.HasCheckConstraint("chk_case_event_scope", "return_request_id IS NOT NULL OR dispute_id IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("ebay.Models.Category", b =>
@@ -639,6 +797,23 @@ namespace ebay.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CaseType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("case_type")
+                        .HasDefaultValueSql("'other'::character varying");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<string>("ClosedReason")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("closed_reason");
+
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -650,11 +825,19 @@ namespace ebay.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<int?>("EscalatedFromReturnRequestId")
+                        .HasColumnType("integer")
+                        .HasColumnName("escalated_from_return_request_id");
+
                     b.Property<int>("OrderId")
                         .HasColumnType("integer")
                         .HasColumnName("order_id");
 
-                    b.Property<int>("RaisedBy")
+                    b.Property<int?>("OrderItemId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<int?>("RaisedBy")
                         .HasColumnType("integer")
                         .HasColumnName("raised_by");
 
@@ -691,9 +874,89 @@ namespace ebay.Migrations
 
                     b.HasIndex(new[] { "OrderId" }, "idx_disputes_order");
 
+                    b.HasIndex(new[] { "OrderItemId" }, "idx_disputes_order_item");
+
+                    b.HasIndex(new[] { "EscalatedFromReturnRequestId" }, "idx_disputes_return_request");
+
                     b.HasIndex(new[] { "RaisedBy" }, "idx_disputes_user");
 
-                    b.ToTable("disputes", (string)null);
+                    b.ToTable("disputes", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_dispute_case_type", "case_type IN ('inr', 'snad', 'damaged', 'return_escalation', 'other')");
+                        });
+                });
+
+            modelBuilder.Entity("ebay.Models.GuestCheckoutIdempotency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_id");
+
+                    b.Property<DateTime>("ProcessingExpiresAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("processing_expires_at");
+
+                    b.Property<DateTime>("ReplayExpiresAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("replay_expires_at");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.Property<string>("ResponsePayload")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("response_payload");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id")
+                        .HasName("guest_checkout_idempotency_pkey");
+
+                    b.HasIndex(new[] { "IdempotencyKey" }, "guest_checkout_idempotency_idempotency_key_key")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "OrderId" }, "idx_guest_checkout_idempotency_order");
+
+                    b.HasIndex(new[] { "ProcessingExpiresAt" }, "idx_guest_checkout_idempotency_processing_expires");
+
+                    b.HasIndex(new[] { "ReplayExpiresAt" }, "idx_guest_checkout_idempotency_replay_expires");
+
+                    b.ToTable("guest_checkout_idempotency", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_guest_checkout_idempotency_status", "status::text = ANY (ARRAY['processing'::character varying, 'completed'::character varying]::text[])");
+                        });
                 });
 
             modelBuilder.Entity("ebay.Models.Inventory", b =>
@@ -870,11 +1133,11 @@ namespace ebay.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AddressId")
+                    b.Property<int?>("AddressId")
                         .HasColumnType("integer")
                         .HasColumnName("address_id");
 
-                    b.Property<int>("BuyerId")
+                    b.Property<int?>("BuyerId")
                         .HasColumnType("integer")
                         .HasColumnName("buyer_id");
 
@@ -888,12 +1151,35 @@ namespace ebay.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("CustomerType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("customer_type");
+
                     b.Property<decimal?>("DiscountAmount")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("discount_amount")
                         .HasDefaultValueSql("0");
+
+                    b.Property<string>("GuestEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("guest_email");
+
+                    b.Property<string>("GuestFullName")
+                        .HasColumnType("text")
+                        .HasColumnName("guest_full_name");
+
+                    b.Property<string>("GuestPhone")
+                        .HasColumnType("text")
+                        .HasColumnName("guest_phone");
+
+                    b.Property<bool?>("IsAuctionOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_auction_order");
 
                     b.Property<string>("Note")
                         .HasColumnType("text")
@@ -910,6 +1196,42 @@ namespace ebay.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("order_number");
+
+                    b.Property<DateTime?>("PaymentDueAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("payment_due_at");
+
+                    b.Property<DateTime?>("PaymentReminderSentAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("payment_reminder_sent_at");
+
+                    b.Property<string>("ShipCity")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_city");
+
+                    b.Property<string>("ShipCountry")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_country");
+
+                    b.Property<string>("ShipFullName")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_full_name");
+
+                    b.Property<string>("ShipPhone")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_phone");
+
+                    b.Property<string>("ShipPostalCode")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_postal_code");
+
+                    b.Property<string>("ShipState")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_state");
+
+                    b.Property<string>("ShipStreet")
+                        .HasColumnType("text")
+                        .HasColumnName("ship_street");
 
                     b.Property<decimal?>("ShippingFee")
                         .ValueGeneratedOnAdd()
@@ -963,12 +1285,84 @@ namespace ebay.Migrations
 
                     b.HasIndex(new[] { "OrderNumber" }, "idx_orders_number");
 
+                    b.HasIndex(new[] { "PaymentDueAt" }, "idx_orders_payment_due_at");
+
                     b.HasIndex(new[] { "Status" }, "idx_orders_status");
 
                     b.HasIndex(new[] { "OrderNumber" }, "orders_order_number_key")
                         .IsUnique();
 
                     b.ToTable("orders", (string)null);
+                });
+
+            modelBuilder.Entity("ebay.Models.OrderCancellationRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("RequestedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<int?>("ResolvedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resolved_by_user_id");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("responded_at");
+
+                    b.Property<string>("SellerResponse")
+                        .HasColumnType("text")
+                        .HasColumnName("seller_response");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status")
+                        .HasDefaultValueSql("'pending'::character varying");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id")
+                        .HasName("order_cancellation_requests_pkey");
+
+                    b.HasIndex(new[] { "OrderId" }, "idx_order_cancellation_requests_order");
+
+                    b.HasIndex(new[] { "RequestedByUserId" }, "idx_order_cancellation_requests_requested_by");
+
+                    b.HasIndex(new[] { "ResolvedByUserId" }, "idx_order_cancellation_requests_resolved_by");
+
+                    b.HasIndex(new[] { "Status" }, "idx_order_cancellation_requests_status");
+
+                    b.ToTable("order_cancellation_requests", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_order_cancellation_request_status", "status IN ('pending', 'approved', 'rejected')");
+                        });
                 });
 
             modelBuilder.Entity("ebay.Models.OrderItem", b =>
@@ -994,9 +1388,21 @@ namespace ebay.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("product_id");
 
+                    b.Property<string>("ProductImageSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("product_image_snapshot");
+
+                    b.Property<string>("ProductTitleSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("product_title_snapshot");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer")
                         .HasColumnName("quantity");
+
+                    b.Property<string>("SellerDisplayNameSnapshot")
+                        .HasColumnType("text")
+                        .HasColumnName("seller_display_name_snapshot");
 
                     b.Property<int>("SellerId")
                         .HasColumnType("integer")
@@ -1076,7 +1482,7 @@ namespace ebay.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("transaction_id");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
 
@@ -1107,10 +1513,20 @@ namespace ebay.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("auction_start_time");
 
+                    b.Property<string>("AuctionStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("auction_status");
+
                     b.Property<string>("Brand")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("brand");
+
+                    b.Property<decimal?>("BuyItNowPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("buy_it_now_price");
 
                     b.Property<int?>("CategoryId")
                         .HasColumnType("integer")
@@ -1127,6 +1543,11 @@ namespace ebay.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<decimal?>("CurrentBidPrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("current_bid_price");
+
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
@@ -1135,6 +1556,10 @@ namespace ebay.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("dimensions");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("ended_at");
 
                     b.PrimitiveCollection<List<string>>("Images")
                         .HasColumnType("text[]")
@@ -1161,6 +1586,11 @@ namespace ebay.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("price");
+
+                    b.Property<decimal?>("ReservePrice")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("reserve_price");
 
                     b.Property<int>("SellerId")
                         .HasColumnType("integer")
@@ -1224,10 +1654,16 @@ namespace ebay.Migrations
                         .HasColumnType("numeric(8,2)")
                         .HasColumnName("weight");
 
+                    b.Property<int?>("WinningBidderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("winning_bidder_id");
+
                     b.HasKey("Id")
                         .HasName("products_pkey");
 
                     b.HasIndex("StoreId");
+
+                    b.HasIndex(new[] { "AuctionStatus" }, "idx_products_auction_status");
 
                     b.HasIndex(new[] { "CategoryId" }, "idx_products_category");
 
@@ -1380,6 +1816,10 @@ namespace ebay.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("approved_at");
 
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("closed_at");
+
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -1390,10 +1830,19 @@ namespace ebay.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("order_id");
 
+                    b.Property<int?>("OrderItemId")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_item_id");
+
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("reason");
+
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("reason_code");
 
                     b.Property<decimal?>("RefundAmount")
                         .HasPrecision(10, 2)
@@ -1403,6 +1852,22 @@ namespace ebay.Migrations
                     b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("rejected_at");
+
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("request_type")
+                        .HasDefaultValueSql("'return'::character varying");
+
+                    b.Property<string>("ResolutionType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("resolution_type")
+                        .HasDefaultValueSql("'refund'::character varying");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1418,7 +1883,7 @@ namespace ebay.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
 
@@ -1427,9 +1892,16 @@ namespace ebay.Migrations
 
                     b.HasIndex(new[] { "OrderId" }, "idx_returns_order");
 
+                    b.HasIndex(new[] { "OrderItemId" }, "idx_returns_order_item");
+
                     b.HasIndex(new[] { "UserId" }, "idx_returns_user");
 
-                    b.ToTable("return_requests", (string)null);
+                    b.ToTable("return_requests", null, t =>
+                        {
+                            t.HasCheckConstraint("chk_return_request_type", "request_type IN ('return', 'snad', 'damaged')");
+
+                            t.HasCheckConstraint("chk_return_resolution_type", "resolution_type IN ('refund', 'replacement', 'exchange')");
+                        });
                 });
 
             modelBuilder.Entity("ebay.Models.Review", b =>
@@ -2152,6 +2624,60 @@ namespace ebay.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ebay.Models.CaseAttachment", b =>
+                {
+                    b.HasOne("ebay.Models.Dispute", "Dispute")
+                        .WithMany("CaseAttachments")
+                        .HasForeignKey("DisputeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("case_attachments_dispute_id_fkey");
+
+                    b.HasOne("ebay.Models.ReturnRequest", "ReturnRequest")
+                        .WithMany("CaseAttachments")
+                        .HasForeignKey("ReturnRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("case_attachments_return_request_id_fkey");
+
+                    b.HasOne("ebay.Models.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("case_attachments_uploaded_by_user_id_fkey");
+
+                    b.Navigation("Dispute");
+
+                    b.Navigation("ReturnRequest");
+
+                    b.Navigation("UploadedByUser");
+                });
+
+            modelBuilder.Entity("ebay.Models.CaseEvent", b =>
+                {
+                    b.HasOne("ebay.Models.User", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("case_events_actor_user_id_fkey");
+
+                    b.HasOne("ebay.Models.Dispute", "Dispute")
+                        .WithMany()
+                        .HasForeignKey("DisputeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("case_events_dispute_id_fkey");
+
+                    b.HasOne("ebay.Models.ReturnRequest", "ReturnRequest")
+                        .WithMany()
+                        .HasForeignKey("ReturnRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("case_events_return_request_id_fkey");
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("Dispute");
+
+                    b.Navigation("ReturnRequest");
+                });
+
             modelBuilder.Entity("ebay.Models.Category", b =>
                 {
                     b.HasOne("ebay.Models.Category", "Parent")
@@ -2212,6 +2738,12 @@ namespace ebay.Migrations
 
             modelBuilder.Entity("ebay.Models.Dispute", b =>
                 {
+                    b.HasOne("ebay.Models.ReturnRequest", "EscalatedFromReturnRequest")
+                        .WithMany()
+                        .HasForeignKey("EscalatedFromReturnRequestId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("disputes_escalated_from_return_request_id_fkey");
+
                     b.HasOne("ebay.Models.Order", "Order")
                         .WithMany("Disputes")
                         .HasForeignKey("OrderId")
@@ -2219,11 +2751,16 @@ namespace ebay.Migrations
                         .IsRequired()
                         .HasConstraintName("disputes_order_id_fkey");
 
+                    b.HasOne("ebay.Models.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("disputes_order_item_id_fkey");
+
                     b.HasOne("ebay.Models.User", "RaisedByNavigation")
                         .WithMany("DisputeRaisedByNavigations")
                         .HasForeignKey("RaisedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("disputes_raised_by_fkey");
 
                     b.HasOne("ebay.Models.User", "ResolvedByNavigation")
@@ -2232,11 +2769,26 @@ namespace ebay.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("disputes_resolved_by_fkey");
 
+                    b.Navigation("EscalatedFromReturnRequest");
+
                     b.Navigation("Order");
+
+                    b.Navigation("OrderItem");
 
                     b.Navigation("RaisedByNavigation");
 
                     b.Navigation("ResolvedByNavigation");
+                });
+
+            modelBuilder.Entity("ebay.Models.GuestCheckoutIdempotency", b =>
+                {
+                    b.HasOne("ebay.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("guest_checkout_idempotency_order_id_fkey");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ebay.Models.Inventory", b =>
@@ -2298,14 +2850,12 @@ namespace ebay.Migrations
                         .WithMany("Orders")
                         .HasForeignKey("AddressId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired()
                         .HasConstraintName("orders_address_id_fkey");
 
                     b.HasOne("ebay.Models.User", "Buyer")
                         .WithMany("Orders")
                         .HasForeignKey("BuyerId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired()
                         .HasConstraintName("orders_buyer_id_fkey");
 
                     b.HasOne("ebay.Models.Coupon", "Coupon")
@@ -2319,6 +2869,31 @@ namespace ebay.Migrations
                     b.Navigation("Buyer");
 
                     b.Navigation("Coupon");
+                });
+
+            modelBuilder.Entity("ebay.Models.OrderCancellationRequest", b =>
+                {
+                    b.HasOne("ebay.Models.Order", "Order")
+                        .WithMany("OrderCancellationRequests")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("order_cancellation_requests_order_id_fkey");
+
+                    b.HasOne("ebay.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("order_cancellation_requests_requested_by_user_id_fkey");
+
+                    b.HasOne("ebay.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("ResolvedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("order_cancellation_requests_resolved_by_user_id_fkey");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ebay.Models.OrderItem", b =>
@@ -2364,7 +2939,6 @@ namespace ebay.Migrations
                         .WithMany("Payments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired()
                         .HasConstraintName("payments_user_id_fkey");
 
                     b.Navigation("Order");
@@ -2441,14 +3015,21 @@ namespace ebay.Migrations
                         .IsRequired()
                         .HasConstraintName("return_requests_order_id_fkey");
 
+                    b.HasOne("ebay.Models.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("return_requests_order_item_id_fkey");
+
                     b.HasOne("ebay.Models.User", "User")
                         .WithMany("ReturnRequests")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("return_requests_user_id_fkey");
 
                     b.Navigation("Order");
+
+                    b.Navigation("OrderItem");
 
                     b.Navigation("User");
                 });
@@ -2521,7 +3102,7 @@ namespace ebay.Migrations
             modelBuilder.Entity("ebay.Models.WatchlistItem", b =>
                 {
                     b.HasOne("ebay.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("WatchlistItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -2586,6 +3167,11 @@ namespace ebay.Migrations
                     b.Navigation("Orders");
                 });
 
+            modelBuilder.Entity("ebay.Models.Dispute", b =>
+                {
+                    b.Navigation("CaseAttachments");
+                });
+
             modelBuilder.Entity("ebay.Models.Message", b =>
                 {
                     b.Navigation("InverseParentMessage");
@@ -2596,6 +3182,8 @@ namespace ebay.Migrations
                     b.Navigation("CouponUsages");
 
                     b.Navigation("Disputes");
+
+                    b.Navigation("OrderCancellationRequests");
 
                     b.Navigation("OrderItems");
 
@@ -2620,7 +3208,14 @@ namespace ebay.Migrations
 
                     b.Navigation("Reviews");
 
+                    b.Navigation("WatchlistItems");
+
                     b.Navigation("Wishlists");
+                });
+
+            modelBuilder.Entity("ebay.Models.ReturnRequest", b =>
+                {
+                    b.Navigation("CaseAttachments");
                 });
 
             modelBuilder.Entity("ebay.Models.Store", b =>
