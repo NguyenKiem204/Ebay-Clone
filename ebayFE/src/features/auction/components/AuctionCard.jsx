@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '../../../components/ui/Button';
 import {
     formatAuctionRelativeTime,
     getAuctionStatusMeta,
@@ -24,6 +23,7 @@ export default function AuctionCard({ auction }) {
         ? formatAuctionRelativeTime(auction.auctionStartTime, 'Starts in', nowTick)
         : formatAuctionRelativeTime(auction.auctionEndTime || auction.endTime, 'Ends in', nowTick);
     const buyItNowPrice = auction.buyItNowPrice;
+    const detailPath = `/products/${auction.id}`;
 
     useEffect(() => {
         const intervalId = window.setInterval(() => {
@@ -35,7 +35,7 @@ export default function AuctionCard({ auction }) {
 
     return (
         <div className="group relative bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-            <Link to={`/products/${auction.id}`} className="block relative pt-[100%] overflow-hidden bg-gray-50">
+            <Link to={detailPath} className="block relative pt-[100%] overflow-hidden bg-gray-50">
                 <img
                     src={image}
                     alt={auction.title}
@@ -51,29 +51,32 @@ export default function AuctionCard({ auction }) {
                     <span className="text-[11px] text-gray-500">{timeCopy}</span>
                 </div>
 
-                <Link to={`/products/${auction.id}`} className="text-sm font-medium text-gray-800 line-clamp-2 hover:underline mb-2 flex-grow">
+                <Link to={detailPath} className="text-sm font-medium text-gray-800 line-clamp-2 hover:underline mb-2 flex-grow">
                     {auction.title}
                 </Link>
 
                 <div className="mt-auto">
                     <div className="text-xl font-bold text-gray-900 mb-1">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentPrice)}
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(currentPrice)}
                     </div>
 
                     <div className="flex items-center justify-between text-xs mb-3">
                         <span className="text-gray-500">{bidCount} {bidCount === 1 ? 'bid' : 'bids'}</span>
                         {buyItNowPrice ? (
                             <span className="font-medium text-[#3665f3]">
-                                Buy It Now {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyItNowPrice)}
+                                Buy It Now {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(buyItNowPrice)}
                             </span>
                         ) : (
                             <span className="text-gray-500">{statusMeta.description}</span>
                         )}
                     </div>
 
-                    <Button className="w-full text-sm font-bold" variant="outline">
+                    <Link
+                        to={detailPath}
+                        className="flex h-11 w-full items-center justify-center rounded-md border-2 border-primary text-sm font-bold text-primary transition-colors hover:bg-red-50"
+                    >
                         {auctionStatus === 'live' ? 'View auction' : 'View details'}
-                    </Button>
+                    </Link>
                 </div>
             </div>
         </div>

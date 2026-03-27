@@ -18,7 +18,10 @@ const useSavedStore = create((set, get) => ({
                 });
             }
         } catch {
-            // silently ignore (e.g. 401 if not logged in)
+            set({
+                savedItems: [],
+                savedIds: new Set(),
+            });
         } finally {
             set({ loading: false });
         }

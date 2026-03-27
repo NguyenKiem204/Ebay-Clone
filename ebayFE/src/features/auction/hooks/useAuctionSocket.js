@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import useAuctionStore from '../../../store/useAuctionStore';
+import { isUserInteractingWithForm } from '../../../lib/autoRefresh';
 
 /**
  * Phase 3 realtime-lite hook.
@@ -24,6 +25,9 @@ export default function useAuctionSocket(auctionId, options = {}) {
         let cancelled = false;
 
         const refresh = async () => {
+            if (isUserInteractingWithForm()) {
+                return;
+            }
             await fetchAuctionState(auctionId);
             if (!cancelled) {
                 setLastUpdated(Date.now());

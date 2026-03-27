@@ -501,7 +501,12 @@ export const useCheckout = () => {
 
             if (!response?.success || !response?.data?.valid) {
                 setAppliedCoupon(null);
-                setCouponError(response?.data?.message || response?.message || 'This coupon could not be applied.');
+                const backendMessage = response?.data?.message || response?.message || '';
+                setCouponError(
+                    /không hợp lệ|khong hop le|invalid/i.test(backendMessage)
+                        ? 'This coupon code is invalid.'
+                        : backendMessage || 'This coupon could not be applied.'
+                );
                 return false;
             }
 
@@ -516,7 +521,12 @@ export const useCheckout = () => {
             return true;
         } catch (err) {
             setAppliedCoupon(null);
-            setCouponError(err.response?.data?.message || err.message || 'This coupon could not be applied.');
+            const backendMessage = err.response?.data?.message || err.message || '';
+            setCouponError(
+                /không hợp lệ|khong hop le|invalid/i.test(backendMessage)
+                    ? 'This coupon code is invalid.'
+                    : backendMessage || 'This coupon could not be applied.'
+            );
             return false;
         } finally {
             setIsApplyingCoupon(false);

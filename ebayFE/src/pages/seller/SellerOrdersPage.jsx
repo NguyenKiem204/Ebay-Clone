@@ -14,11 +14,11 @@ const TABS = [
 ];
 
 const formatDateTime = (value) => (
-    value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
+    value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
 const formatVND = (amount) => (
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
 const formatCodeLabel = (value) => {
@@ -323,11 +323,11 @@ export default function SellerOrdersPage() {
 
                                         <p className="text-sm text-gray-600">
                                             Buyer: <span className="font-semibold text-gray-900">{order.buyerDisplayName}</span>
-                                            <span className="mx-2 text-gray-300">•</span>
+                                            <span className="mx-2 text-gray-300">â€¢</span>
                                             <span>{formatCodeLabel(order.customerType)}</span>
                                             {order.buyerEmail && (
                                                 <>
-                                                    <span className="mx-2 text-gray-300">•</span>
+                                                    <span className="mx-2 text-gray-300">â€¢</span>
                                                     <span>{order.buyerEmail}</span>
                                                 </>
                                             )}
@@ -369,7 +369,7 @@ export default function SellerOrdersPage() {
                                                         </span>
                                                     </div>
                                                     <p className="text-sm text-gray-600">
-                                                        Qty {primaryItem.quantity} • {formatVND(primaryItem.totalPrice)}
+                                                        Qty {primaryItem.quantity} â€¢ {formatVND(primaryItem.totalPrice)}
                                                     </p>
                                                     {additionalItems > 0 && (
                                                         <p className="text-sm text-gray-500 mt-2">

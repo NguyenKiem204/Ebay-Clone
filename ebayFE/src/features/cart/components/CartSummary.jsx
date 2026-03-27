@@ -107,7 +107,7 @@ export default function CartSummary({ subtotal, totalItems }) {
                 setIsCheckingEligibility(false);
             }
         },
-        { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Vui lòng không nhấn quá nhanh!' }
+        { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Vui lÃ²ng khÃ´ng nháº¥n quÃ¡ nhanh!' }
     );
 
     return (
@@ -120,7 +120,7 @@ export default function CartSummary({ subtotal, totalItems }) {
                     <span>
                         {shouldShowCalculatedSubtotal
                             ? 'Calculated at checkout'
-                            : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displaySubtotal)}
+                            : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displaySubtotal)}
                     </span>
                 </div>
                 <div className="flex justify-between text-[15px] text-gray-900">
@@ -131,7 +131,7 @@ export default function CartSummary({ subtotal, totalItems }) {
                     <span>
                         {shouldShowCalculatedShipping
                             ? 'Calculated at checkout'
-                            : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayShipping)}
+                            : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayShipping)}
                     </span>
                 </div>
             </div>
@@ -141,7 +141,7 @@ export default function CartSummary({ subtotal, totalItems }) {
                 <span className="text-[18px] font-bold text-gray-900">
                     {shouldShowCalculatedTotal
                         ? 'Calculated at checkout'
-                        : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayTotal)}
+                        : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayTotal)}
                 </span>
             </div>
 

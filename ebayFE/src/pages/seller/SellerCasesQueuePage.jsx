@@ -4,11 +4,11 @@ import useAuthStore from '../../store/useAuthStore';
 import opsCaseService from '../../features/cases/services/opsCaseService';
 
 const formatDateTime = (value) => (
-    value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
+    value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
 const formatVND = (amount) => (
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
 const formatAge = (hours) => {
@@ -273,7 +273,7 @@ export default function SellerCasesQueuePage() {
                                                 <div className="space-y-1">
                                                     <p className="font-semibold text-gray-900">{item.order.orderNumber}</p>
                                                     <p className="text-xs text-gray-600 capitalize">
-                                                        {item.order.status} • {item.order.paymentStatus}
+                                                        {item.order.status} â€¢ {item.order.paymentStatus}
                                                     </p>
                                                     <p className="text-xs text-gray-600">
                                                         {formatVND(item.order.totalAmount)}
@@ -303,9 +303,9 @@ export default function SellerCasesQueuePage() {
                                                     <p className="text-xs text-gray-500">
                                                         Age {formatAge(item.sla.ageHours)}
                                                         {item.sla.isOverdue && item.sla.hoursOverdue != null
-                                                            ? ` • ${item.sla.hoursOverdue}h overdue`
+                                                            ? ` â€¢ ${item.sla.hoursOverdue}h overdue`
                                                             : item.sla.hoursUntilDue != null
-                                                                ? ` • ${item.sla.hoursUntilDue}h left`
+                                                                ? ` â€¢ ${item.sla.hoursUntilDue}h left`
                                                                 : ''}
                                                     </p>
                                                 </div>
@@ -323,7 +323,7 @@ export default function SellerCasesQueuePage() {
                                                 <div className="space-y-1 max-w-sm">
                                                     <p className="text-gray-900">{item.latestEvent.message}</p>
                                                     <p className="text-xs text-gray-500 capitalize">
-                                                        {item.latestEvent.actorType} • {formatDateTime(item.latestEvent.createdAt)}
+                                                        {item.latestEvent.actorType} â€¢ {formatDateTime(item.latestEvent.createdAt)}
                                                     </p>
                                                 </div>
                                             ) : (

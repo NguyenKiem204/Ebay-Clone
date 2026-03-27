@@ -166,10 +166,16 @@ export default function CouponList({ onEdit, onCreateClick, onCouponsLoaded }) {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-1.5 text-gray-700">
                                         {coupon.discountType === 'percentage' ? <Percent className="w-3.5 h-3.5" /> : <Tag className="w-3.5 h-3.5" />}
-                                        <span>{coupon.discountType === 'percentage' ? `${coupon.discountValue}% off` : `${coupon.discountValue?.toLocaleString()}đ off`}</span>
+                                        <span>
+                                            {coupon.discountType === 'percentage'
+                                                ? `${coupon.discountValue}% off`
+                                                : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(coupon.discountValue || 0)} off`}
+                                        </span>
                                     </div>
                                     <div className="text-[11px] text-gray-400 mt-1">
-                                        Min order: {coupon.minOrderAmount ? `${coupon.minOrderAmount.toLocaleString()}đ` : 'None'}
+                                        Min order: {coupon.minOrderAmount
+                                            ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(coupon.minOrderAmount)
+                                            : 'None'}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 font-medium text-gray-700">

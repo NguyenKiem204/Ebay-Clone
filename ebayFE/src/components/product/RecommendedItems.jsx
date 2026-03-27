@@ -21,14 +21,14 @@ export function RecommendedItems({ recommendations }) {
                                     className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 p-2"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-200 text-3xl">📦</div>
+                                <div className="w-full h-full flex items-center justify-center text-gray-200 text-3xl">Ã°Å¸â€œÂ¦</div>
                             )}
                         </div>
                         <p className="text-[13px] text-[#333] line-clamp-2 leading-tight group-hover:underline">
                             {product.title}
                         </p>
                         <p className="text-[14px] font-bold text-gray-900 mt-1">
-                            ₫{Number(product.price).toLocaleString('vi-VN')}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(product.price || 0))}
                         </p>
                     </Link>
                 ))}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import api from '../../../lib/axios';
+import { isUserInteractingWithForm } from '../../../lib/autoRefresh';
 
 const tabs = [
     { id: 'participating', label: 'Participating' },
@@ -78,6 +79,9 @@ export default function MyAuctionsPanel() {
 
     useEffect(() => {
         const timer = window.setInterval(async () => {
+            if (isUserInteractingWithForm()) {
+                return;
+            }
             try {
                 const response = await api.get(`/api/auctions/my?status=${activeTab}&page=1&pageSize=20`);
                 setItems(response.data?.data?.items || []);
@@ -94,7 +98,7 @@ export default function MyAuctionsPanel() {
             <div className="border-b border-gray-100 px-10 py-8">
                 <h2 className="text-2xl font-black text-gray-900">My Auctions</h2>
                 <p className="mt-1 text-sm font-medium text-gray-500">Track the auctions you are bidding on, leading, or have already finished.</p>
-                <p className="mt-2 text-xs text-gray-400">This list refreshes automatically every 30 seconds.</p>
+                <p className="mt-2 text-xs text-gray-400">This list refreshes automatically every 30 seconds when you are not typing in a form.</p>
             </div>
 
             <div className="border-b border-gray-100 px-10 py-4">

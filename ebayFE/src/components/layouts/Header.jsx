@@ -6,6 +6,7 @@ import useCategoryStore from '../../store/useCategoryStore';
 import useCartStore from '../../features/cart/hooks/useCartStore';
 import useNotificationStore from '../../store/useNotificationStore';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
+import { isUserInteractingWithForm } from '../../lib/autoRefresh';
 
 function formatTimeAgo(value) {
     if (!value) {
@@ -77,6 +78,36 @@ function getNotificationCopy(item) {
                 title: 'Order delivered',
                 body: 'Your order has been marked as delivered.'
             };
+        case 'product_review_received':
+            return {
+                title: 'New product review',
+                body: 'A buyer left a new review on one of your listings.'
+            };
+        case 'seller_feedback_received':
+            return {
+                title: 'New seller feedback',
+                body: 'A buyer left transaction feedback for your sale.'
+            };
+        case 'seller_reply':
+            return {
+                title: 'Seller replied',
+                body: 'A seller replied to your product review.'
+            };
+        case 'promotion_created':
+            return {
+                title: 'Promotion created',
+                body: 'Your promotion is now active in Marketing.'
+            };
+        case 'promotion_updated':
+            return {
+                title: 'Promotion updated',
+                body: 'Your promotion details were updated successfully.'
+            };
+        case 'promotion_ended':
+            return {
+                title: 'Promotion ended',
+                body: 'Your promotion has ended and is no longer active.'
+            };
         default:
             return {
                 title: item?.title || 'Notification',
@@ -118,7 +149,9 @@ export default function Header() {
         }
 
         const timer = window.setInterval(() => {
-            fetchNotifications();
+            if (!isUserInteractingWithForm()) {
+                fetchNotifications();
+            }
         }, 30000);
 
         return () => window.clearInterval(timer);
@@ -203,7 +236,12 @@ export default function Header() {
                         >
                             Watchlist <ChevronDown size={12} />
                         </button>
-                        <Link to="/profile" className="flex items-center gap-1 hover:underline">My eBay <ChevronDown size={12} /></Link>
+                        <button
+                            onClick={() => handleSecureAction(() => navigate('/profile?view=overview'), '/profile?view=overview')}
+                            className="flex items-center gap-1 hover:underline"
+                        >
+                            My eBay <ChevronDown size={12} />
+                        </button>
                         <div className="relative">
                             <button
                                 onClick={() => handleSecureAction(() => {

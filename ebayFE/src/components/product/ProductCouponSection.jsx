@@ -21,14 +21,16 @@ export default function ProductCouponSection({ coupons }) {
                     
                     <div className="flex items-baseline gap-2">
                         <span className="text-xl font-bold text-secondary">
-                            {mainCoupon.discountType === 'percentage' ? `${mainCoupon.discountValue}% OFF` : `-${mainCoupon.discountValue.toLocaleString()}đ`}
+                            {mainCoupon.discountType === 'percentage'
+                                ? `${mainCoupon.discountValue}% OFF`
+                                : `-${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(mainCoupon.discountValue)}`}
                         </span>
                         <span className="text-xs text-gray-500">Mã: <span className="font-bold text-gray-700">{mainCoupon.code}</span></span>
                     </div>
 
                     <p className="text-[11px] text-gray-500 mt-1">
                         {mainCoupon.minOrderAmount > 0 
-                            ? `Áp dụng cho đơn hàng từ ${mainCoupon.minOrderAmount.toLocaleString()}đ.` 
+                            ? `Applies to orders from ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(mainCoupon.minOrderAmount)}.` 
                             : 'Không giới hạn đơn hàng tối thiểu.'}
                         {' '}Kết thúc sau {new Date(mainCoupon.endDate).toLocaleDateString()}.
                     </p>

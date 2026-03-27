@@ -18,7 +18,10 @@ const useWatchlistStore = create((set, get) => ({
                 });
             }
         } catch {
-            // silently ignore
+            set({
+                watchItems: [],
+                watchIds: new Set(),
+            });
         } finally {
             set({ loading: false });
         }

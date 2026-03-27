@@ -82,11 +82,11 @@ export function TodaysDeals() {
                                 </h3>
                                 <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
                                     <span className="font-bold text-[17px] text-gray-900">
-                                        ₫{product.price.toLocaleString('vi-VN')}
+                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
                                     </span>
                                     {product.discountPrice && (
                                         <span className="text-gray-500 text-sm line-through">
-                                            ₫{product.discountPrice.toLocaleString('vi-VN')}
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.discountPrice)}
                                         </span>
                                     )}
                                 </div>

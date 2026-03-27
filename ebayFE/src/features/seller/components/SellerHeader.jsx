@@ -7,6 +7,7 @@ const SELLER_NAV_ITEMS = [
     // ... (giữ nguyên nav items)
     { label: 'Overview', path: '/seller' },
     { label: 'Orders', path: '/seller/orders' },
+    { label: 'Reviews', path: '/seller/reviews' },
     { label: 'Cases', path: '/seller/cases' },
     { label: 'Listings', path: '/seller/listings' },
     { label: 'Marketing', path: '/seller/marketing' },

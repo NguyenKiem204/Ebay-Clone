@@ -12,21 +12,35 @@ import { RecommendedItems } from '../components/product/RecommendedItems';
 import useHistoryStore from '../features/history/useHistoryStore';
 import { useRecommendations } from '../features/history/useRecommendations';
 import { resolveMediaUrl, resolveMediaUrls } from '../lib/media';
+import ProductReviewsSection from '../features/reviews/components/ProductReviewsSection';
 
 export default function ProductDetailsPage() {
     const { id } = useParams();
-    const { currentProduct: product, relatedProducts, loading, error, fetchProductById, fetchRelatedProducts } = useProductStore();
+    const { currentProduct: product, relatedProducts, loading, error, fetchProductById, fetchProductBySlug, fetchRelatedProducts } = useProductStore();
     const trackView = useHistoryStore(s => s.trackView);
     const historyItems = useHistoryStore(s => s.historyItems);
     const excludeIds = historyItems.map(i => i.productId);
     const { recommendations } = useRecommendations(product?.id, excludeIds);
 
     useEffect(() => {
-        if (id) {
+        if (!id) {
+            return;
+        }
+
+        if (/^\d+$/.test(String(id))) {
             fetchProductById(id);
             fetchRelatedProducts(id);
+            return;
         }
-    }, [id, fetchProductById, fetchRelatedProducts]);
+
+        fetchProductBySlug(id);
+    }, [id, fetchProductById, fetchProductBySlug, fetchRelatedProducts]);
+
+    useEffect(() => {
+        if (product?.id) {
+            fetchRelatedProducts(product.id);
+        }
+    }, [fetchRelatedProducts, product?.id]);
 
     // Track view when product data is loaded
     useEffect(() => {
@@ -67,7 +81,7 @@ export default function ProductDetailsPage() {
                 <div className="md:col-span-7">
                     <div className="sticky top-24">
                         <ImageGallery images={images} title={product.title} savedCount={product.savedCount} inCartCount={product.inCartCount} />
-                        <SimilarItemsList images={images} />
+                        <SimilarItemsList relatedProducts={relatedProducts} productId={product.id} />
                     </div>
                 </div>
 
@@ -85,6 +99,8 @@ export default function ProductDetailsPage() {
 
             {/* Bottom Tabs (About this item) */}
             <AboutThisItem product={product} />
+
+            <ProductReviewsSection productId={product.id} />
 
             {/* New About this Seller & Feedback Section */}
             <SellerSection product={product} />
