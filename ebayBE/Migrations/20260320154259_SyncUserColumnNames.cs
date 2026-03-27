@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -30,15 +30,21 @@ namespace ebay.Migrations
                 name: "coupon_usage_coupon_id_order_id_key",
                 table: "coupon_usage");
 
-            migrationBuilder.RenameColumn(
-                name: "ExternalProviderId",
-                table: "users",
-                newName: "external_provider_id");
-
-            migrationBuilder.RenameColumn(
-                name: "ExternalProvider",
-                table: "users",
-                newName: "external_provider");
+            // Use safe SQL because SyncModelSnapshot migration may have already renamed these columns.
+            migrationBuilder.Sql(@"
+                DO $$
+                BEGIN
+                    BEGIN
+                        ALTER TABLE users RENAME COLUMN ""ExternalProviderId"" TO external_provider_id;
+                    EXCEPTION WHEN undefined_column THEN
+                        NULL;
+                    END;
+                    BEGIN
+                        ALTER TABLE users RENAME COLUMN ""ExternalProvider"" TO external_provider;
+                    EXCEPTION WHEN undefined_column THEN
+                        NULL;
+                    END;
+                END $$;");
 
             migrationBuilder.RenameIndex(
                 name: "idx_coupon_usage_user",

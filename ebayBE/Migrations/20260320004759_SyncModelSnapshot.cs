@@ -10,47 +10,42 @@ namespace ebay.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // migrationBuilder.RenameColumn(
-            //     name: "ExternalProviderId",
-            //     table: "users",
-            //     newName: "external_provider_id");
-
-            // migrationBuilder.RenameColumn(
-            //     name: "ExternalProvider",
-            //     table: "users",
-            //     newName: "external_provider");
-            
-            // Use raw SQL for conditional rename
+            // Safely rename columns using EXCEPTION blocks (idempotent).
+            // Handles 3 scenarios:
+            // 1. Column is "ExternalProviderId" (PascalCase) - rename it
+            // 2. Column is already "external_provider_id" - skip rename, skip AlterColumn (already correct type)
+            // 3. Column doesn't exist at all - skip everything
             migrationBuilder.Sql(@"
-                DO $$ 
-                BEGIN 
-                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ExternalProviderId') THEN
+                DO $$
+                BEGIN
+                    -- Rename ExternalProviderId -> external_provider_id
+                    BEGIN
                         ALTER TABLE users RENAME COLUMN ""ExternalProviderId"" TO external_provider_id;
-                    END IF;
-                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='ExternalProvider') THEN
+                    EXCEPTION WHEN undefined_column THEN
+                        NULL; -- Already renamed or doesn't exist
+                    END;
+
+                    -- Rename ExternalProvider -> external_provider
+                    BEGIN
                         ALTER TABLE users RENAME COLUMN ""ExternalProvider"" TO external_provider;
-                    END IF;
+                    EXCEPTION WHEN undefined_column THEN
+                        NULL; -- Already renamed or doesn't exist
+                    END;
+
+                    -- Alter column type for external_provider_id (text -> varchar(255))
+                    BEGIN
+                        ALTER TABLE users ALTER COLUMN external_provider_id TYPE character varying(255);
+                    EXCEPTION WHEN undefined_column THEN
+                        NULL;
+                    END;
+
+                    -- Alter column type for external_provider (text -> varchar(50))
+                    BEGIN
+                        ALTER TABLE users ALTER COLUMN external_provider TYPE character varying(50);
+                    EXCEPTION WHEN undefined_column THEN
+                        NULL;
+                    END;
                 END $$;");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "external_provider_id",
-                table: "users",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "external_provider",
-                table: "users",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
         }
 
         /// <inheritdoc />
