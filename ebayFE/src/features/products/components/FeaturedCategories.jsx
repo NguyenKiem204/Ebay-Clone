@@ -6,7 +6,7 @@ export function FeaturedCategories({ categories = [] }) {
 
     return (
         <section className="mb-12 w-full">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">The future in your hands Code moi nhat</h2>
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">The future in your hands</h2>
             <div className="flex md:grid md:grid-cols-7 overflow-x-auto pb-6 gap-4 lg:gap-4 xl:gap-6 snap-x w-full">
                 {categories.map((cat) => (
                     <Link
