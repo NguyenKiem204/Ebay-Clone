@@ -7,6 +7,7 @@ namespace ebay.Services.Interfaces
     {
         Task<LandingPageResponseDto> GetLandingPageProductsAsync();
         Task<PagedResponseDto<ProductResponseDto>> SearchProductsAsync(ProductSearchRequestDto request);
+        Task<List<ProductResponseDto>> GetActiveAuctionsAsync(int limit = 4);
         Task<ProductResponseDto> GetProductByIdAsync(int id);
         Task<ProductResponseDto> GetProductBySlugAsync(string slug);
         Task<List<ProductResponseDto>> GetRelatedProductsAsync(int productId, int count = 10);

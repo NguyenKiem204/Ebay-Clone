@@ -12,6 +12,7 @@ namespace ebay.Services.Implementations
         private readonly EbayDbContext _context;
         private readonly IOrderNumberGenerator _orderNumberGenerator;
         private readonly IOrderNotificationService _orderNotificationService;
+        private readonly IAuctionNotificationService _auctionNotificationService;
         private readonly IEmailService _emailService;
         private readonly ILogger<AuctionSettlementService> _logger;
 
@@ -19,12 +20,14 @@ namespace ebay.Services.Implementations
             EbayDbContext context,
             IOrderNumberGenerator orderNumberGenerator,
             IOrderNotificationService orderNotificationService,
+            IAuctionNotificationService auctionNotificationService,
             IEmailService emailService,
             ILogger<AuctionSettlementService> logger)
         {
             _context = context;
             _orderNumberGenerator = orderNumberGenerator;
             _orderNotificationService = orderNotificationService;
+            _auctionNotificationService = auctionNotificationService;
             _emailService = emailService;
             _logger = logger;
         }
@@ -39,13 +42,13 @@ namespace ebay.Services.Implementations
             var now = DateTime.UtcNow;
             var dueAuctionIds = await _context.Products
                 .AsNoTracking()
-                .Where(p =>
-                    p.IsAuction == true &&
-                    (p.AuctionStatus == null || p.AuctionStatus == "live") &&
-                    p.AuctionEndTime.HasValue &&
-                    p.AuctionEndTime.Value <= now)
-                .OrderBy(p => p.AuctionEndTime)
-                .Select(p => p.Id)
+                .Where(product =>
+                    product.IsAuction == true &&
+                    (product.AuctionStatus == null || product.AuctionStatus == "live") &&
+                    product.AuctionEndTime.HasValue &&
+                    product.AuctionEndTime.Value <= now)
+                .OrderBy(product => product.AuctionEndTime)
+                .Select(product => product.Id)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
 
@@ -76,10 +79,10 @@ namespace ebay.Services.Implementations
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
             var product = await _context.Products
-                .Include(p => p.Bids)
-                .Include(p => p.Seller)
-                .Include(p => p.Store)
-                .FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
+                .Include(item => item.Bids)
+                .Include(item => item.Seller)
+                .Include(item => item.Store)
+                .FirstOrDefaultAsync(item => item.Id == productId, cancellationToken);
 
             if (product == null)
             {
@@ -98,7 +101,12 @@ namespace ebay.Services.Implementations
             }
 
             var activeBids = product.Bids
-                .Where(b => b.IsRetracted != true)
+                .Where(bid => bid.IsRetracted != true)
+                .ToList();
+
+            var participantIds = activeBids
+                .Select(bid => bid.BidderId)
+                .Distinct()
                 .ToList();
 
             var computed = AuctionPricingEngine.ComputeAuctionState(product, activeBids);
@@ -134,9 +142,9 @@ namespace ebay.Services.Implementations
                 if (existingOrder == null)
                 {
                     var address = await _context.Addresses
-                        .Where(a => a.UserId == winnerId)
-                        .OrderByDescending(a => a.IsDefault == true)
-                        .ThenBy(a => a.Id)
+                        .Where(address => address.UserId == winnerId)
+                        .OrderByDescending(address => address.IsDefault == true)
+                        .ThenBy(address => address.Id)
                         .FirstOrDefaultAsync(cancellationToken);
 
                     var subtotal = computed.CurrentPrice;
@@ -204,17 +212,19 @@ namespace ebay.Services.Implementations
 
                     notifyContext = new AuctionSettlementNotificationContext
                     {
+                        ProductId = product.Id,
                         WinnerId = winnerId,
                         OrderId = order.Id,
                         OrderNumber = order.OrderNumber,
                         ProductTitle = product.Title,
-                        FinalPrice = subtotal
+                        FinalPrice = subtotal,
+                        LosingBidderIds = participantIds.Where(id => id != winnerId).ToList()
                     };
                 }
                 else
                 {
                     var existingOrderEntity = await _context.Orders
-                        .FirstOrDefaultAsync(o => o.Id == existingOrder.OrderId, cancellationToken);
+                        .FirstOrDefaultAsync(order => order.Id == existingOrder.OrderId, cancellationToken);
 
                     if (existingOrderEntity != null && existingOrderEntity.IsAuctionOrder != true)
                     {
@@ -225,17 +235,30 @@ namespace ebay.Services.Implementations
 
                     notifyContext = new AuctionSettlementNotificationContext
                     {
+                        ProductId = product.Id,
                         WinnerId = winnerId,
                         OrderId = existingOrder.OrderId,
                         OrderNumber = existingOrder.OrderNumber,
                         ProductTitle = product.Title,
-                        FinalPrice = computed.CurrentPrice
+                        FinalPrice = computed.CurrentPrice,
+                        LosingBidderIds = participantIds.Where(id => id != winnerId).ToList()
                     };
                 }
             }
             else
             {
                 product.AuctionStatus = computed.ReserveMet ? "ended" : "reserve_not_met";
+
+                if (participantIds.Count > 0)
+                {
+                    notifyContext = new AuctionSettlementNotificationContext
+                    {
+                        ProductId = product.Id,
+                        ProductTitle = product.Title,
+                        FinalPrice = computed.CurrentPrice,
+                        LosingBidderIds = participantIds
+                    };
+                }
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -243,7 +266,7 @@ namespace ebay.Services.Implementations
 
             if (notifyContext != null)
             {
-                await NotifyWinnerAsync(notifyContext, cancellationToken);
+                await NotifyParticipantsAsync(notifyContext, cancellationToken);
             }
 
             _logger.LogInformation(
@@ -266,13 +289,38 @@ namespace ebay.Services.Implementations
             return product.Seller.Username;
         }
 
-        private async Task NotifyWinnerAsync(AuctionSettlementNotificationContext context, CancellationToken cancellationToken)
+        private async Task NotifyParticipantsAsync(AuctionSettlementNotificationContext context, CancellationToken cancellationToken)
         {
-            await _orderNotificationService.TryCreateOrderPlacedNotificationAsync(
-                context.WinnerId,
-                context.OrderId,
-                context.OrderNumber,
-                cancellationToken);
+            if (context.WinnerId > 0 && context.OrderId > 0)
+            {
+                await _orderNotificationService.TryCreateOrderPlacedNotificationAsync(
+                    context.WinnerId,
+                    context.OrderId,
+                    context.OrderNumber,
+                    cancellationToken);
+
+                await _auctionNotificationService.TryCreateAuctionWonNotificationAsync(
+                    context.WinnerId,
+                    context.ProductId,
+                    context.OrderId,
+                    context.ProductTitle,
+                    context.FinalPrice,
+                    cancellationToken);
+            }
+
+            foreach (var bidderId in context.LosingBidderIds.Distinct())
+            {
+                await _auctionNotificationService.TryCreateAuctionLostNotificationAsync(
+                    bidderId,
+                    context.ProductId,
+                    context.ProductTitle,
+                    cancellationToken);
+            }
+
+            if (context.WinnerId <= 0)
+            {
+                return;
+            }
 
             var winner = await _context.Users
                 .AsNoTracking()
@@ -298,7 +346,7 @@ namespace ebay.Services.Implementations
             var displayName = $"{winner.FirstName} {winner.LastName}".Trim();
             if (string.IsNullOrWhiteSpace(displayName))
             {
-                displayName = !string.IsNullOrWhiteSpace(winner.Username) ? winner.Username : "bạn";
+                displayName = !string.IsNullOrWhiteSpace(winner.Username) ? winner.Username : "there";
             }
 
             try
@@ -318,11 +366,13 @@ namespace ebay.Services.Implementations
 
         private sealed class AuctionSettlementNotificationContext
         {
+            public int ProductId { get; set; }
             public int WinnerId { get; set; }
             public int OrderId { get; set; }
             public string OrderNumber { get; set; } = string.Empty;
             public string ProductTitle { get; set; } = string.Empty;
             public decimal FinalPrice { get; set; }
+            public List<int> LosingBidderIds { get; set; } = [];
         }
     }
 }

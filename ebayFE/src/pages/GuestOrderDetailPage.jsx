@@ -2,24 +2,37 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import guestCaseService from '../features/checkout/services/guestCaseService';
 import { Button } from '../components/ui/Button';
-
-const DEFAULT_QUALITY_ISSUE_FORM = {
-    orderItemId: '',
-    caseType: 'snad',
-    description: ''
-};
+import caseEvidenceService from '../features/cases/services/caseEvidenceService';
 
 const DEFAULT_RETURN_FORM = {
     orderItemId: '',
     reasonCode: '',
-    resolutionType: 'refund',
-    reason: ''
+    resolutionType: 'return_for_refund',
+    description: '',
+    evidenceFile: null
 };
 
 const DEFAULT_INR_FORM = {
     orderItemId: '',
-    description: ''
+    reasonCode: '',
+    description: '',
+    evidenceFile: null
 };
+
+const RETURN_REASON_OPTIONS = [
+    { value: 'doesnt_match', label: "Doesn't match the listing" },
+    { value: 'damaged', label: 'Arrived damaged' },
+    { value: 'missing_parts', label: 'Missing parts or accessories' },
+    { value: 'changed_mind', label: 'Changed my mind' },
+    { value: 'other', label: 'Other' }
+];
+
+const INR_REASON_OPTIONS = [
+    { value: 'not_received', label: 'Item not received' },
+    { value: 'tracking_not_updated', label: 'Tracking is not updating' },
+    { value: 'wrong_address', label: 'Delivered to the wrong address' },
+    { value: 'other', label: 'Other' }
+];
 
 const formatDateTime = (value) => (
     value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
@@ -173,10 +186,6 @@ export default function GuestOrderDetailPage() {
     const [inrForm, setInrForm] = useState(DEFAULT_INR_FORM);
     const [submittingInr, setSubmittingInr] = useState(false);
     const [inrFeedback, setInrFeedback] = useState(null);
-    const [showQualityIssueForm, setShowQualityIssueForm] = useState(false);
-    const [qualityIssueForm, setQualityIssueForm] = useState(DEFAULT_QUALITY_ISSUE_FORM);
-    const [submittingQualityIssue, setSubmittingQualityIssue] = useState(false);
-    const [qualityIssueFeedback, setQualityIssueFeedback] = useState(null);
 
     useEffect(() => {
         if (recoveryGuestAccess) {
@@ -279,10 +288,9 @@ export default function GuestOrderDetailPage() {
     const lookupState = recoveryGuestAccess?.email
         ? { email: recoveryGuestAccess.email }
         : undefined;
-    const orderStatus = order?.status?.toLowerCase() || '';
-    const canSuggestReturn = orderStatus === 'delivered';
-    const canSuggestInr = Boolean(orderStatus) && !['delivered', 'cancelled'].includes(orderStatus);
-    const canSuggestQualityIssue = orderStatus === 'delivered';
+    const afterSalesOptions = order?.afterSales?.options || [];
+    const returnOption = afterSalesOptions.find((option) => option.requestType === 'return');
+    const inrOption = afterSalesOptions.find((option) => option.requestType === 'inr');
 
     const handleReturnSubmit = async (event) => {
         event.preventDefault();
@@ -294,12 +302,22 @@ export default function GuestOrderDetailPage() {
         setReturnFeedback(null);
 
         try {
+            const selectedReason = RETURN_REASON_OPTIONS.find((option) => option.value === returnForm.reasonCode);
             const createdCase = await guestCaseService.createGuestReturnRequest(recoveryGuestAccess, {
                 ...(returnForm.orderItemId ? { orderItemId: Number(returnForm.orderItemId) } : {}),
                 reasonCode: returnForm.reasonCode.trim() || null,
                 resolutionType: returnForm.resolutionType,
-                reason: returnForm.reason.trim()
+                reason: selectedReason?.label || 'Other return reason',
+                description: returnForm.description.trim()
             });
+
+            if (createdCase?.id && returnForm.evidenceFile) {
+                await caseEvidenceService.uploadEvidence('return', createdCase.id, {
+                    file: returnForm.evidenceFile,
+                    label: 'Guest buyer evidence',
+                    evidenceType: 'image'
+                });
+            }
 
             setReturnFeedback({
                 type: 'success',
@@ -335,8 +353,17 @@ export default function GuestOrderDetailPage() {
         try {
             const createdCase = await guestCaseService.createGuestInrClaim(recoveryGuestAccess, {
                 ...(inrForm.orderItemId ? { orderItemId: Number(inrForm.orderItemId) } : {}),
+                ...(inrForm.reasonCode ? { reasonCode: inrForm.reasonCode } : {}),
                 description: inrForm.description.trim()
             });
+
+            if (createdCase?.id && inrForm.evidenceFile) {
+                await caseEvidenceService.uploadEvidence('dispute', createdCase.id, {
+                    file: inrForm.evidenceFile,
+                    label: 'Guest buyer evidence',
+                    evidenceType: 'image'
+                });
+            }
 
             setInrFeedback({
                 type: 'success',
@@ -360,43 +387,13 @@ export default function GuestOrderDetailPage() {
         }
     };
 
-    const handleQualityIssueSubmit = async (event) => {
-        event.preventDefault();
-        if (!recoveryGuestAccess) {
+    const handleCaseFileChange = (caseType, file) => {
+        if (caseType === 'return') {
+            setReturnForm((current) => ({ ...current, evidenceFile: file || null }));
             return;
         }
 
-        setSubmittingQualityIssue(true);
-        setQualityIssueFeedback(null);
-
-        try {
-            const createdCase = await guestCaseService.createGuestQualityIssueClaim(recoveryGuestAccess, {
-                ...(qualityIssueForm.orderItemId ? { orderItemId: Number(qualityIssueForm.orderItemId) } : {}),
-                caseType: qualityIssueForm.caseType,
-                description: qualityIssueForm.description.trim()
-            });
-
-            const claimLabel = qualityIssueForm.caseType === 'damaged' ? 'Damaged item claim' : 'SNAD claim';
-            setQualityIssueFeedback({
-                type: 'success',
-                title: `${claimLabel} submitted`,
-                message: createdCase?.id
-                    ? `${claimLabel} #${createdCase.id} was created successfully.`
-                    : `Your ${claimLabel.toLowerCase()} was created successfully.`,
-                caseId: createdCase?.id || null
-            });
-            setQualityIssueForm({ ...DEFAULT_QUALITY_ISSUE_FORM, orderItemId: defaultOrderItemId });
-            setShowQualityIssueForm(false);
-        } catch (submitError) {
-            setQualityIssueFeedback({
-                type: 'error',
-                title: 'Could not submit quality issue claim',
-                message: submitError.response?.data?.message || 'Please review the guest order context and try again.',
-                caseId: null
-            });
-        } finally {
-            setSubmittingQualityIssue(false);
-        }
+        setInrForm((current) => ({ ...current, evidenceFile: file || null }));
     };
 
     if (loading) {
@@ -555,22 +552,23 @@ export default function GuestOrderDetailPage() {
                         <div>
                             <p className="font-medium text-gray-900 mb-1">Guest buyer protection</p>
                             <p className="text-sm text-gray-600">
-                                {canSuggestReturn || canSuggestInr || canSuggestQualityIssue
-                                    ? 'This guest recovery surface can open return, INR, or quality-issue cases when the current order context looks compatible. Final eligibility is still confirmed by the backend.'
-                                    : 'Guest after-sales entry points appear here when the current order status looks compatible. If the backend needs stronger proof later, guest lookup remains the recovery path.'}
+                                {returnOption?.eligible
+                                    ? returnOption.message
+                                    : inrOption?.eligible
+                                        ? inrOption.message
+                                        : returnOption?.message || inrOption?.message || 'Guest after-sales entry points appear here when the current order status looks compatible. If the backend needs stronger proof later, guest lookup remains the recovery path.'}
                             </p>
                         </div>
 
-                        {(canSuggestReturn || canSuggestInr || canSuggestQualityIssue) && (
+                        {(returnOption?.eligible || inrOption?.eligible) && (
                             <div className="flex flex-wrap gap-3">
-                                {canSuggestReturn && (
+                                {returnOption?.eligible && (
                                     <Button
                                         variant={showReturnForm ? 'primary' : 'outline'}
                                         onClick={() => {
                                             setReturnFeedback(null);
                                             setInrFeedback(null);
                                             setShowInrForm(false);
-                                            setShowQualityIssueForm(false);
                                             if (!showReturnForm) {
                                                 setReturnForm((current) => ({
                                                     ...current,
@@ -581,18 +579,17 @@ export default function GuestOrderDetailPage() {
                                         }}
                                         disabled={submittingReturn}
                                     >
-                                        Open return request
+                                        Open return / refund
                                     </Button>
                                 )}
 
-                                {canSuggestInr && (
+                                {inrOption?.eligible && (
                                     <Button
                                         variant={showInrForm ? 'primary' : 'outline'}
                                         onClick={() => {
                                             setInrFeedback(null);
                                             setReturnFeedback(null);
                                             setShowReturnForm(false);
-                                            setShowQualityIssueForm(false);
                                             if (!showInrForm) {
                                                 setInrForm((current) => ({
                                                     ...current,
@@ -604,28 +601,6 @@ export default function GuestOrderDetailPage() {
                                         disabled={submittingInr}
                                     >
                                         Report item not received
-                                    </Button>
-                                )}
-
-                                {canSuggestQualityIssue && (
-                                    <Button
-                                        variant={showQualityIssueForm ? 'primary' : 'outline'}
-                                        onClick={() => {
-                                            setQualityIssueFeedback(null);
-                                            setInrFeedback(null);
-                                            setShowReturnForm(false);
-                                            setShowInrForm(false);
-                                            if (!showQualityIssueForm) {
-                                                setQualityIssueForm((current) => ({
-                                                    ...current,
-                                                    orderItemId: current.orderItemId || defaultOrderItemId
-                                                }));
-                                            }
-                                            setShowQualityIssueForm((current) => !current);
-                                        }}
-                                        disabled={submittingQualityIssue}
-                                    >
-                                        Report not as described / damaged
                                     </Button>
                                 )}
                             </div>
@@ -676,29 +651,7 @@ export default function GuestOrderDetailPage() {
                         </div>
                     )}
 
-                    {qualityIssueFeedback && (
-                        <div
-                            className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
-                                qualityIssueFeedback.type === 'success'
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : 'border-red-200 bg-red-50 text-red-700'
-                            }`}
-                        >
-                            <p className="font-semibold">{qualityIssueFeedback.title}</p>
-                            <p className="mt-1">{qualityIssueFeedback.message}</p>
-                            {qualityIssueFeedback.caseId && (
-                                <Link
-                                    to={`/guest/cases/dispute/${qualityIssueFeedback.caseId}?orderNumber=${encodeURIComponent(order.orderNumber)}`}
-                                    state={{ guestAccess: recoveryGuestAccess }}
-                                    className="inline-block mt-2 font-semibold underline"
-                                >
-                                    View guest case detail
-                                </Link>
-                            )}
-                        </div>
-                    )}
-
-                    {showReturnForm && canSuggestReturn && (
+                    {showReturnForm && returnOption?.eligible && (
                         <form onSubmit={handleReturnSubmit} className="mt-5 border border-gray-200 rounded-lg p-4 space-y-4 bg-white">
                             <CaseItemTargetPicker
                                 name="guest-return-item-target"
@@ -710,15 +663,19 @@ export default function GuestOrderDetailPage() {
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                    Return reason code
+                                    Return reason
                                 </label>
-                                <input
-                                    type="text"
+                                <select
                                     value={returnForm.reasonCode}
                                     onChange={(event) => setReturnForm((current) => ({ ...current, reasonCode: event.target.value }))}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                    placeholder="Optional short reason code, for example changed_mind"
-                                />
+                                    required
+                                >
+                                    <option value="">Select a return reason</option>
+                                    {RETURN_REASON_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
@@ -730,28 +687,35 @@ export default function GuestOrderDetailPage() {
                                     onChange={(event) => setReturnForm((current) => ({ ...current, resolutionType: event.target.value }))}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 >
-                                    <option value="refund">Refund</option>
-                                    <option value="replacement">Replacement</option>
-                                    <option value="exchange">Exchange</option>
+                                    <option value="return_for_refund">Return for refund</option>
+                                    <option value="refund_only">Refund only</option>
                                 </select>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                    Describe why you want to return this order
+                                    Tell us what happened
                                 </label>
                                 <textarea
-                                    value={returnForm.reason}
-                                    onChange={(event) => setReturnForm((current) => ({ ...current, reason: event.target.value }))}
+                                    value={returnForm.description}
+                                    onChange={(event) => setReturnForm((current) => ({ ...current, description: event.target.value }))}
                                     className="w-full min-h-[120px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                    placeholder="Explain the return reason for this guest order."
+                                    placeholder="Describe the issue, what you received, and why you want a return or refund."
                                     required
                                 />
                             </div>
 
-                            <p className="text-xs text-gray-500">
-                                The backend remains the final source of truth for eligibility and whether the request stays item-level or becomes order-level.
-                            </p>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                    Upload evidence
+                                </label>
+                                <input
+                                    type="file"
+                                    accept="image/*,video/*"
+                                    onChange={(event) => handleCaseFileChange('return', event.target.files?.[0])}
+                                    className="w-full text-sm text-gray-700"
+                                />
+                            </div>
 
                             <div className="flex flex-wrap gap-3">
                                 <Button type="submit" isLoading={submittingReturn}>
@@ -769,7 +733,7 @@ export default function GuestOrderDetailPage() {
                         </form>
                     )}
 
-                    {showInrForm && canSuggestInr && (
+                    {showInrForm && inrOption?.eligible && (
                         <form onSubmit={handleInrSubmit} className="mt-5 border border-gray-200 rounded-lg p-4 space-y-4 bg-white">
                             <CaseItemTargetPicker
                                 name="guest-inr-item-target"
@@ -778,6 +742,23 @@ export default function GuestOrderDetailPage() {
                                 onChange={(value) => setInrForm((current) => ({ ...current, orderItemId: value }))}
                                 helperText="If one item is the clearest missing item, select it. Otherwise keep the INR claim at order level."
                             />
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                    INR reason
+                                </label>
+                                <select
+                                    value={inrForm.reasonCode}
+                                    onChange={(event) => setInrForm((current) => ({ ...current, reasonCode: event.target.value }))}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    required
+                                >
+                                    <option value="">Select an INR reason</option>
+                                    {INR_REASON_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -792,9 +773,17 @@ export default function GuestOrderDetailPage() {
                                 />
                             </div>
 
-                            <p className="text-xs text-gray-500">
-                                Final INR eligibility and scope are still confirmed by the backend when you submit.
-                            </p>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                    Upload evidence
+                                </label>
+                                <input
+                                    type="file"
+                                    accept="image/*,video/*"
+                                    onChange={(event) => handleCaseFileChange('inr', event.target.files?.[0])}
+                                    className="w-full text-sm text-gray-700"
+                                />
+                            </div>
 
                             <div className="flex flex-wrap gap-3">
                                 <Button type="submit" isLoading={submittingInr}>
@@ -805,63 +794,6 @@ export default function GuestOrderDetailPage() {
                                     variant="ghost"
                                     onClick={() => setShowInrForm(false)}
                                     disabled={submittingInr}
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                        </form>
-                    )}
-
-                    {showQualityIssueForm && canSuggestQualityIssue && (
-                        <form onSubmit={handleQualityIssueSubmit} className="mt-5 border border-gray-200 rounded-lg p-4 space-y-4 bg-white">
-                            <CaseItemTargetPicker
-                                name="guest-quality-item-target"
-                                items={orderItems}
-                                selectedItemId={qualityIssueForm.orderItemId}
-                                onChange={(value) => setQualityIssueForm((current) => ({ ...current, orderItemId: value }))}
-                                helperText="Use item targeting for not-as-described or damaged claims when one order item is clearly affected."
-                            />
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                    Quality issue type
-                                </label>
-                                <select
-                                    value={qualityIssueForm.caseType}
-                                    onChange={(event) => setQualityIssueForm((current) => ({ ...current, caseType: event.target.value }))}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                >
-                                    <option value="snad">Item not as described</option>
-                                    <option value="damaged">Item arrived damaged</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                    Describe the quality issue
-                                </label>
-                                <textarea
-                                    value={qualityIssueForm.description}
-                                    onChange={(event) => setQualityIssueForm((current) => ({ ...current, description: event.target.value }))}
-                                    className="w-full min-h-[120px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                    placeholder="Describe what was wrong with the item or how it differed from the listing."
-                                    required
-                                />
-                            </div>
-
-                            <p className="text-xs text-gray-500">
-                                The backend still decides final eligibility and whether the claim can be handled as item-level case truth.
-                            </p>
-
-                            <div className="flex flex-wrap gap-3">
-                                <Button type="submit" isLoading={submittingQualityIssue}>
-                                    Submit quality issue claim
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() => setShowQualityIssueForm(false)}
-                                    disabled={submittingQualityIssue}
                                 >
                                     Cancel
                                 </Button>

@@ -1,6 +1,7 @@
 using ebay.DTOs.Responses;
 using ebay.Models;
 using ebay.Services.Interfaces;
+using System.Text.Json;
 
 namespace ebay.Services.Implementations
 {
@@ -22,6 +23,8 @@ namespace ebay.Services.Implementations
                 CaseId = detail.Id,
                 Type = detail.RequestType,
                 Status = detail.Status,
+                DisplayStatus = detail.DisplayStatus,
+                NextAction = detail.NextAction,
                 CreatedAt = detail.CreatedAt,
                 ClosedAt = detail.ClosedAt,
                 Order = detail.Order,
@@ -42,6 +45,8 @@ namespace ebay.Services.Implementations
                 CaseId = detail.Id,
                 Type = detail.CaseType,
                 Status = detail.Status,
+                DisplayStatus = detail.DisplayStatus,
+                NextAction = detail.NextAction,
                 CreatedAt = detail.CreatedAt,
                 ClosedAt = detail.ClosedAt,
                 Order = detail.Order,
@@ -57,6 +62,14 @@ namespace ebay.Services.Implementations
         {
             Order? order = returnRequest.Order;
             var orderItem = ResolveOrderItem(returnRequest.OrderItem, returnRequest.OrderItemId, order);
+            var timelineItems = timeline?.ToList() ?? new List<CaseEvent>();
+            var requestedResolution = FindCreatedMetadataValue(timelineItems, "requestedResolution")
+                ?? InferRequestedResolution(returnRequest.ResolutionType);
+            var returnTracking = BuildReturnTracking(timelineItems);
+            var refundSummary = BuildReturnRefundSummary(returnRequest, order, timelineItems);
+            var isCancelled = HasMetadataFlag(timelineItems, "cancel_return", "buyerDisplayStatus", "cancelled");
+            var displayStatus = ResolveReturnDisplayStatus(returnRequest, requestedResolution, refundSummary, returnTracking, isCancelled);
+            var nextAction = ResolveReturnNextAction(returnRequest, requestedResolution, refundSummary, returnTracking, isCancelled);
 
             return new ReturnRequestResponseDto
             {
@@ -66,8 +79,18 @@ namespace ebay.Services.Implementations
                 RequestType = returnRequest.RequestType,
                 ReasonCode = returnRequest.ReasonCode,
                 Reason = returnRequest.Reason,
+                Description = FindCreatedMetadataValue(timelineItems, "description"),
                 ResolutionType = returnRequest.ResolutionType,
+                RequestedResolution = requestedResolution,
                 Status = returnRequest.Status,
+                DisplayStatus = displayStatus,
+                NextAction = nextAction,
+                CanCancel = string.Equals(returnRequest.Status, "pending", StringComparison.OrdinalIgnoreCase) && !isCancelled,
+                CanSubmitTracking =
+                    string.Equals(returnRequest.Status, "approved", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(requestedResolution, "refund_only", StringComparison.OrdinalIgnoreCase)
+                    && returnTracking?.ShippedAt == null
+                    && !isCancelled,
                 RefundAmount = returnRequest.RefundAmount,
                 ApprovedAt = returnRequest.ApprovedAt,
                 RejectedAt = returnRequest.RejectedAt,
@@ -76,6 +99,8 @@ namespace ebay.Services.Implementations
                 Order = order == null ? null : MapOrderSummary(order),
                 OrderItem = orderItem == null ? null : MapOrderItemSummary(orderItem),
                 Sla = MapSla(_caseSlaService.EvaluateReturn(returnRequest)),
+                ReturnTracking = returnTracking,
+                RefundSummary = refundSummary,
                 Evidence = MapEvidence(returnRequest.CaseAttachments),
                 Timeline = MapTimeline(timeline)
             };
@@ -85,6 +110,19 @@ namespace ebay.Services.Implementations
         {
             Order? order = dispute.Order;
             var orderItem = ResolveOrderItem(dispute.OrderItem, dispute.OrderItemId, order);
+            var timelineItems = timeline?.ToList() ?? new List<CaseEvent>();
+            var reasonCode = FindCreatedMetadataValue(timelineItems, "reasonCode");
+            var refundSummary = BuildDisputeRefundSummary(dispute, order, timelineItems);
+            var isCancelled = HasMetadataFlag(timelineItems, "cancel_inr", "buyerDisplayStatus", "cancelled");
+            var isEscalated = HasMetadataFlag(timelineItems, "escalate_inr", "buyerDisplayStatus", "escalated_to_platform");
+            var canEscalate =
+                string.Equals(dispute.CaseType, "inr", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase)
+                && !isCancelled
+                && !isEscalated
+                && (dispute.CreatedAt ?? DateTime.UtcNow).AddDays(3) <= DateTime.UtcNow;
+            var displayStatus = ResolveDisputeDisplayStatus(dispute, refundSummary, isCancelled, isEscalated);
+            var nextAction = ResolveDisputeNextAction(dispute, isCancelled, isEscalated, canEscalate);
 
             return new DisputeResponseDto
             {
@@ -92,8 +130,16 @@ namespace ebay.Services.Implementations
                 OrderId = dispute.OrderId,
                 OrderItemId = dispute.OrderItemId,
                 CaseType = dispute.CaseType,
+                ReasonCode = reasonCode,
                 Description = dispute.Description,
                 Status = dispute.Status,
+                DisplayStatus = displayStatus,
+                NextAction = nextAction,
+                CanCancel =
+                    string.Equals(dispute.CaseType, "inr", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase)
+                    && !isCancelled,
+                CanEscalate = canEscalate,
                 Resolution = dispute.Resolution,
                 EscalatedFromReturnRequestId = dispute.EscalatedFromReturnRequestId,
                 ClosedReason = dispute.ClosedReason,
@@ -103,6 +149,7 @@ namespace ebay.Services.Implementations
                 Order = order == null ? null : MapOrderSummary(order),
                 OrderItem = orderItem == null ? null : MapOrderItemSummary(orderItem),
                 Sla = MapSla(_caseSlaService.EvaluateDispute(dispute)),
+                RefundSummary = refundSummary,
                 Evidence = MapEvidence(dispute.CaseAttachments),
                 Timeline = MapTimeline(timeline)
             };
@@ -299,6 +346,351 @@ namespace ebay.Services.Implementations
             }
 
             return null;
+        }
+
+        private static string? FindCreatedMetadataValue(IEnumerable<CaseEvent> timeline, string propertyName)
+        {
+            var createdEvent = timeline
+                .OrderBy(evt => evt.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault(evt => string.Equals(evt.EventType, "created", StringComparison.OrdinalIgnoreCase));
+
+            return createdEvent == null ? null : GetMetadataString(createdEvent.MetadataJson, propertyName);
+        }
+
+        private static bool HasMetadataFlag(
+            IEnumerable<CaseEvent> timeline,
+            string requestAction,
+            string propertyName,
+            string expectedValue)
+        {
+            return timeline.Any(evt =>
+                string.Equals(GetMetadataString(evt.MetadataJson, "requestAction"), requestAction, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(GetMetadataString(evt.MetadataJson, propertyName), expectedValue, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static BuyerCaseTrackingResponseDto? BuildReturnTracking(IEnumerable<CaseEvent> timeline)
+        {
+            var trackingEvent = timeline
+                .OrderByDescending(evt => evt.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault(evt => string.Equals(GetMetadataString(evt.MetadataJson, "requestAction"), "submit_return_tracking", StringComparison.OrdinalIgnoreCase));
+
+            if (trackingEvent == null)
+            {
+                return null;
+            }
+
+            return new BuyerCaseTrackingResponseDto
+            {
+                Carrier = GetMetadataString(trackingEvent.MetadataJson, "carrier") ?? string.Empty,
+                TrackingNumber = GetMetadataString(trackingEvent.MetadataJson, "trackingNumber") ?? string.Empty,
+                ShippedAt = GetMetadataDateTime(trackingEvent.MetadataJson, "shippedAt"),
+                ReceivedAt = GetMetadataDateTime(trackingEvent.MetadataJson, "receivedAt")
+            };
+        }
+
+        private static BuyerCaseRefundSummaryResponseDto? BuildReturnRefundSummary(
+            ReturnRequest returnRequest,
+            Order? order,
+            IEnumerable<CaseEvent> timeline)
+        {
+            var financialEvent = timeline
+                .OrderByDescending(evt => evt.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault(evt => GetMetadataDecimal(evt.MetadataJson, "financialAmount").HasValue);
+
+            var amount = GetMetadataDecimal(financialEvent?.MetadataJson, "financialAmount") ?? returnRequest.RefundAmount;
+            if (!amount.HasValue)
+            {
+                return null;
+            }
+
+            var paymentMethod = order?.Payments
+                .OrderByDescending(payment => payment.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault()?.Method ?? "Not available";
+
+            return new BuyerCaseRefundSummaryResponseDto
+            {
+                Amount = amount.Value,
+                Method = paymentMethod,
+                Status = string.Equals(returnRequest.Status, "completed", StringComparison.OrdinalIgnoreCase)
+                    ? "Refunded"
+                    : "Refund processing",
+                ProcessedAt = financialEvent?.CreatedAt ?? returnRequest.ClosedAt ?? returnRequest.ApprovedAt
+            };
+        }
+
+        private static BuyerCaseRefundSummaryResponseDto? BuildDisputeRefundSummary(
+            Dispute dispute,
+            Order? order,
+            IEnumerable<CaseEvent> timeline)
+        {
+            var financialEvent = timeline
+                .OrderByDescending(evt => evt.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault(evt => GetMetadataDecimal(evt.MetadataJson, "financialAmount").HasValue);
+
+            var amount = GetMetadataDecimal(financialEvent?.MetadataJson, "financialAmount");
+            if (!amount.HasValue)
+            {
+                return null;
+            }
+
+            var paymentMethod = order?.Payments
+                .OrderByDescending(payment => payment.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault()?.Method ?? "Not available";
+
+            return new BuyerCaseRefundSummaryResponseDto
+            {
+                Amount = amount.Value,
+                Method = paymentMethod,
+                Status = string.Equals(dispute.Status, "resolved", StringComparison.OrdinalIgnoreCase)
+                    ? "Refunded"
+                    : "Refund processing",
+                ProcessedAt = financialEvent?.CreatedAt ?? dispute.ResolvedAt ?? dispute.ClosedAt
+            };
+        }
+
+        private static string ResolveReturnDisplayStatus(
+            ReturnRequest returnRequest,
+            string? requestedResolution,
+            BuyerCaseRefundSummaryResponseDto? refundSummary,
+            BuyerCaseTrackingResponseDto? returnTracking,
+            bool isCancelled)
+        {
+            if (isCancelled)
+            {
+                return "Cancelled";
+            }
+
+            if (string.Equals(returnRequest.Status, "rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Rejected";
+            }
+
+            if (refundSummary != null && string.Equals(refundSummary.Status, "Refunded", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Refunded";
+            }
+
+            if (returnTracking?.ReceivedAt != null)
+            {
+                return "Seller received return";
+            }
+
+            if (returnTracking?.ShippedAt != null)
+            {
+                return "Buyer shipped return";
+            }
+
+            if (string.Equals(returnRequest.Status, "approved", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Equals(requestedResolution, "refund_only", StringComparison.OrdinalIgnoreCase)
+                    ? "Approved refund only"
+                    : "Return shipping required";
+            }
+
+            if (string.Equals(returnRequest.Status, "pending", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Waiting seller response";
+            }
+
+            if (string.Equals(returnRequest.Status, "completed", StringComparison.OrdinalIgnoreCase))
+            {
+                return refundSummary != null ? "Refunded" : "Closed";
+            }
+
+            return HumanizeFallbackStatus(returnRequest.Status);
+        }
+
+        private static string? ResolveReturnNextAction(
+            ReturnRequest returnRequest,
+            string? requestedResolution,
+            BuyerCaseRefundSummaryResponseDto? refundSummary,
+            BuyerCaseTrackingResponseDto? returnTracking,
+            bool isCancelled)
+        {
+            if (isCancelled
+                || string.Equals(returnRequest.Status, "rejected", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(returnRequest.Status, "completed", StringComparison.OrdinalIgnoreCase)
+                || (refundSummary != null && string.Equals(refundSummary.Status, "Refunded", StringComparison.OrdinalIgnoreCase)))
+            {
+                return null;
+            }
+
+            if (string.Equals(returnRequest.Status, "pending", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Wait for the seller response or cancel this request.";
+            }
+
+            if (string.Equals(returnRequest.Status, "approved", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(requestedResolution, "refund_only", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Wait for refund processing updates.";
+            }
+
+            if (string.Equals(returnRequest.Status, "approved", StringComparison.OrdinalIgnoreCase)
+                && returnTracking?.ShippedAt == null)
+            {
+                return "Ship the item back and submit the return tracking.";
+            }
+
+            if (returnTracking?.ShippedAt != null && returnTracking?.ReceivedAt == null)
+            {
+                return "Wait for the seller to receive the return.";
+            }
+
+            if (returnTracking?.ReceivedAt != null)
+            {
+                return "Wait for refund processing updates.";
+            }
+
+            return null;
+        }
+
+        private static string ResolveDisputeDisplayStatus(
+            Dispute dispute,
+            BuyerCaseRefundSummaryResponseDto? refundSummary,
+            bool isCancelled,
+            bool isEscalated)
+        {
+            if (isCancelled)
+            {
+                return "Cancelled";
+            }
+
+            if (string.Equals(dispute.Status, "resolved", StringComparison.OrdinalIgnoreCase))
+            {
+                if (refundSummary != null)
+                {
+                    return "Resolved refunded";
+                }
+
+                if ((dispute.Resolution ?? string.Empty).Contains("deliver", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "Resolved delivered";
+                }
+
+                return "Resolved";
+            }
+
+            if (isEscalated)
+            {
+                return "Escalated to platform";
+            }
+
+            if (string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Waiting seller response";
+            }
+
+            if (string.Equals(dispute.Status, "in_progress", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Seller responded";
+            }
+
+            if (string.Equals(dispute.Status, "closed", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Closed";
+            }
+
+            return HumanizeFallbackStatus(dispute.Status);
+        }
+
+        private static string? ResolveDisputeNextAction(
+            Dispute dispute,
+            bool isCancelled,
+            bool isEscalated,
+            bool canEscalate)
+        {
+            if (isCancelled
+                || string.Equals(dispute.Status, "closed", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(dispute.Status, "resolved", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            if (isEscalated)
+            {
+                return "Wait for platform review and the next case update.";
+            }
+
+            if (canEscalate)
+            {
+                return "You can escalate this INR request if the seller does not resolve it.";
+            }
+
+            if (string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Wait for the seller response or cancel this request.";
+            }
+
+            if (string.Equals(dispute.Status, "in_progress", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Wait for the latest case update.";
+            }
+
+            return null;
+        }
+
+        private static string? InferRequestedResolution(string? storedResolutionType)
+        {
+            return string.Equals(storedResolutionType, "refund", StringComparison.OrdinalIgnoreCase)
+                ? "return_for_refund"
+                : storedResolutionType;
+        }
+
+        private static string HumanizeFallbackStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return "Unknown";
+            }
+
+            return string.Join(" ",
+                status
+                    .Split('_', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(segment => char.ToUpperInvariant(segment[0]) + segment[1..].ToLowerInvariant()));
+        }
+
+        private static string? GetMetadataString(string? metadataJson, string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(metadataJson))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(metadataJson);
+                if (document.RootElement.ValueKind != JsonValueKind.Object
+                    || !document.RootElement.TryGetProperty(propertyName, out var property))
+                {
+                    return null;
+                }
+
+                return property.ValueKind switch
+                {
+                    JsonValueKind.String => property.GetString(),
+                    JsonValueKind.Number => property.ToString(),
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    _ => null
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static decimal? GetMetadataDecimal(string? metadataJson, string propertyName)
+        {
+            var rawValue = GetMetadataString(metadataJson, propertyName);
+            return decimal.TryParse(rawValue, out var parsed) ? parsed : null;
+        }
+
+        private static DateTime? GetMetadataDateTime(string? metadataJson, string propertyName)
+        {
+            var rawValue = GetMetadataString(metadataJson, propertyName);
+            return DateTime.TryParse(rawValue, out var parsed) ? parsed : null;
         }
     }
 }

@@ -25,6 +25,23 @@ export default function OrdersPage() {
         fetchOrders(statusMap[activeTab]);
     }, [activeTab, fetchOrders]);
 
+    useEffect(() => {
+        const statusMap = {
+            'All': null,
+            'Pending': 'pending',
+            'Processing': 'processing',
+            'Shipped': 'shipped',
+            'Delivered': 'delivered',
+            'Cancelled': 'cancelled'
+        };
+
+        const timer = window.setInterval(() => {
+            fetchOrders(statusMap[activeTab]);
+        }, 30000);
+
+        return () => window.clearInterval(timer);
+    }, [activeTab, fetchOrders]);
+
     const formatVND = (amount) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
@@ -76,6 +93,10 @@ export default function OrdersPage() {
         }
 
         return parts.length > 0 ? parts.join(' • ') : 'Tracking details are not available yet.';
+    };
+
+    const formatDateTime = (value) => {
+        return value ? new Date(value).toLocaleString('en-US') : 'Not available';
     };
 
     const handleRequestCancellation = async (orderId) => {
@@ -248,6 +269,29 @@ export default function OrdersPage() {
                                     </div>
 
                                     <div className="p-6">
+                                        {canPayAuctionOrder(order) && (
+                                            <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4">
+                                                <p className="text-sm font-black uppercase tracking-wide text-blue-700">You won this auction</p>
+                                                <p className="mt-1 text-sm text-blue-900">
+                                                    Complete payment before {formatDateTime(order.paymentDueAt)} to keep this order.
+                                                </p>
+                                                <div className="mt-4 flex flex-wrap gap-3">
+                                                    <Button
+                                                        variant="primary"
+                                                        size="sm"
+                                                        className="font-bold"
+                                                        isLoading={payingOrderId === order.id}
+                                                        onClick={() => handlePayNow(order.id)}
+                                                    >
+                                                        Pay now
+                                                    </Button>
+                                                    <Link to={`/orders/${order.id}`}>
+                                                        <Button variant="outline" size="sm" className="font-bold">View order</Button>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
                                             <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
                                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Payment</p>
@@ -255,7 +299,7 @@ export default function OrdersPage() {
                                                 <p className={`mt-1 font-medium capitalize ${getStatusStyles(order.paymentStatus)}`}>{order.paymentStatus}</p>
                                                 {order.isAuctionOrder && order.paymentDueAt && (
                                                     <p className={`mt-1 text-xs ${order.isPaymentOverdue ? 'text-red-600 font-semibold' : 'text-amber-700'}`}>
-                                                        Payment deadline: {new Date(order.paymentDueAt).toLocaleString('vi-VN')}
+                                                        Payment deadline: {formatDateTime(order.paymentDueAt)}
                                                     </p>
                                                 )}
                                             </div>

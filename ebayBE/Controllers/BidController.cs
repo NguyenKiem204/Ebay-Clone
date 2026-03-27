@@ -26,11 +26,14 @@ namespace ebay.Controllers
         public async Task<ActionResult<ApiResponse<BidPlacementResponseDto>>> PlaceBid(int productId, [FromBody] PlaceBidRequestDto request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null) return Unauthorized();
+            if (userIdClaim == null)
+            {
+                return Unauthorized();
+            }
 
-            int bidderId = int.Parse(userIdClaim.Value);
+            var bidderId = int.Parse(userIdClaim.Value);
             var result = await _bidService.PlaceBidAsync(productId, bidderId, request.Amount);
-            return Ok(ApiResponse<BidPlacementResponseDto>.SuccessResponse(result, "Đặt bid thành công"));
+            return Ok(ApiResponse<BidPlacementResponseDto>.SuccessResponse(result, "Bid placed successfully."));
         }
 
         [HttpGet("{productId}")]
@@ -44,7 +47,11 @@ namespace ebay.Controllers
         public async Task<ActionResult<ApiResponse<BidResponseDto?>>> GetWinningBid(int productId)
         {
             var bid = await _bidService.GetWinningBidAsync(productId);
-            if (bid == null) return Ok(ApiResponse<BidResponseDto?>.SuccessResponse(null, "Chưa có bid thắng"));
+            if (bid == null)
+            {
+                return Ok(ApiResponse<BidResponseDto?>.SuccessResponse(null, "No winning bid yet."));
+            }
+
             return Ok(ApiResponse<BidResponseDto?>.SuccessResponse(bid));
         }
 

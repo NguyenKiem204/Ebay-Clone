@@ -65,6 +65,10 @@ export const useCheckout = () => {
     const [guestQuote, setGuestQuote] = useState(null);
     const [memberReviewQuote, setMemberReviewQuote] = useState(null);
     const [isReviewLoading, setIsReviewLoading] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponError, setCouponError] = useState('');
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const guestOrderAttemptRef = useRef(null);
     const isAuthenticated = useAuthStore(s => s.isAuthenticated);
 
@@ -80,6 +84,15 @@ export const useCheckout = () => {
             setPaymentMethod('COD');
         }
     }, [isAuthenticated, paymentMethod]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setCouponCode('');
+            setAppliedCoupon(null);
+            setCouponError('');
+            setIsApplyingCoupon(false);
+        }
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -98,14 +111,15 @@ export const useCheckout = () => {
                         setBuyItNowItem({
                             id: product.id,
                             title: product.name || product.title,
-                            price: product.price,
+                            price: product.isAuction && product.buyItNowPrice ? product.buyItNowPrice : product.price,
                             shippingPrice: product.shippingFee ?? 0,
                             image: product.thumbnail || product.imageUrl || (product.images?.[0]),
                             sellerId: product.sellerId,
                             sellerName: product.sellerName,
                             seller: product.sellerName || 'ebay_seller',
                             soldCount: product.soldCount ?? 0,
-                            quantity: initialQuantity
+                            quantity: product.isAuction ? 1 : initialQuantity,
+                            isAuction: Boolean(product.isAuction)
                         });
                     }
                 } catch (err) {
@@ -189,6 +203,10 @@ export const useCheckout = () => {
             paymentMethod
         };
 
+        if (appliedCoupon?.code) {
+            orderData.couponCode = appliedCoupon.code;
+        }
+
         if (includeNote) {
             orderData.note = note;
         }
@@ -221,6 +239,14 @@ export const useCheckout = () => {
 
                 if (response.success && response.data) {
                     setMemberReviewQuote(response.data);
+                    if (appliedCoupon?.code) {
+                        if (response.data.discountAmount > 0) {
+                            setCouponError('');
+                        } else {
+                            setAppliedCoupon(null);
+                            setCouponError('This coupon is no longer eligible for the current checkout.');
+                        }
+                    }
                 } else {
                     setMemberReviewQuote(null);
                     setError(response.message || 'Unable to review checkout.');
@@ -243,7 +269,7 @@ export const useCheckout = () => {
         };
     // Represent cart/buy-it-now lines by signature to avoid effect loops from array reference churn.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated, selectedAddressId, paymentMethod, isBuyItNow, checkoutItemsSignature]);
+    }, [isAuthenticated, selectedAddressId, paymentMethod, appliedCoupon?.code, isBuyItNow, checkoutItemsSignature]);
 
     const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
@@ -454,6 +480,55 @@ export const useCheckout = () => {
         }
     };
 
+    const applyCoupon = async () => {
+        const trimmedCode = couponCode.trim();
+
+        if (!isAuthenticated) {
+            setCouponError('Coupons are available for signed-in checkout only.');
+            return false;
+        }
+
+        if (!trimmedCode) {
+            setCouponError('Enter a coupon code.');
+            return false;
+        }
+
+        setIsApplyingCoupon(true);
+        setCouponError('');
+
+        try {
+            const response = await checkoutService.validateCoupon(trimmedCode, subtotal);
+
+            if (!response?.success || !response?.data?.valid) {
+                setAppliedCoupon(null);
+                setCouponError(response?.data?.message || response?.message || 'This coupon could not be applied.');
+                return false;
+            }
+
+            setAppliedCoupon({
+                id: response.data.couponId,
+                code: response.data.code,
+                discountAmount: response.data.discountAmount,
+                description: response.data.description
+            });
+            setCouponCode(response.data.code || trimmedCode.toUpperCase());
+            setCouponError('');
+            return true;
+        } catch (err) {
+            setAppliedCoupon(null);
+            setCouponError(err.response?.data?.message || err.message || 'This coupon could not be applied.');
+            return false;
+        } finally {
+            setIsApplyingCoupon(false);
+        }
+    };
+
+    const removeCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponCode('');
+        setCouponError('');
+    };
+
     return {
         step,
         setStep,
@@ -462,6 +537,13 @@ export const useCheckout = () => {
         guestQuote,
         memberReviewQuote,
         isReviewLoading,
+        couponCode,
+        setCouponCode,
+        appliedCoupon,
+        couponError,
+        isApplyingCoupon,
+        applyCoupon,
+        removeCoupon,
         isLoading,
         error,
         addresses,

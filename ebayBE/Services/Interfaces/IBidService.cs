@@ -10,5 +10,6 @@ namespace ebay.Services.Interfaces
         Task<List<BidResponseDto>> GetBidsByProductIdAsync(int productId);
         Task<BidResponseDto?> GetWinningBidAsync(int productId);
         Task<AuctionStateResponseDto> GetAuctionStateAsync(int productId, int? currentUserId = null);
+        Task<PagedResponseDto<MyAuctionItemResponseDto>> GetMyAuctionsAsync(int bidderId, string? status, int page, int pageSize);
     }
 }

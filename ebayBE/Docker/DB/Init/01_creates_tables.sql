@@ -210,9 +210,9 @@ CREATE TABLE coupons (
     code VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
     discount_type VARCHAR(20) NOT NULL,
-    discount_value DECIMAL(10,2) NOT NULL,
-    min_order_amount DECIMAL(10,2) DEFAULT 0,
-    max_discount DECIMAL(10,2),
+    discount_value DECIMAL(18,2) NOT NULL,
+    min_order_amount DECIMAL(18,2) DEFAULT 0,
+    max_discount DECIMAL(18,2),
     start_date TIMESTAMP NOT NULL,
     end_date TIMESTAMP NOT NULL,
     max_usage INT,
@@ -530,6 +530,26 @@ CREATE INDEX idx_case_attachments_dispute ON case_attachments(dispute_id);
 CREATE INDEX idx_case_attachments_uploaded_by ON case_attachments(uploaded_by_user_id);
 CREATE INDEX idx_case_attachments_created ON case_attachments(created_at);
 
+CREATE TABLE order_cancellation_requests (
+    id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    requested_by_user_id INT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    resolved_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    reason TEXT,
+    seller_response TEXT,
+    responded_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_order_cancellation_request_status CHECK (status IN ('pending', 'approved', 'rejected'))
+);
+
+CREATE INDEX idx_order_cancellation_requests_order ON order_cancellation_requests(order_id);
+CREATE INDEX idx_order_cancellation_requests_requested_by ON order_cancellation_requests(requested_by_user_id);
+CREATE INDEX idx_order_cancellation_requests_resolved_by ON order_cancellation_requests(resolved_by_user_id);
+CREATE INDEX idx_order_cancellation_requests_status ON order_cancellation_requests(status);
+
 -- ============================================
 -- MESSAGING
 -- ============================================
@@ -763,3 +783,42 @@ VALUES ('20260320004716_AddWatchlistTable', '9.0.2') ON CONFLICT DO NOTHING;
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
 VALUES ('20260320033846_AddProductViewHistoryTable', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260320004759_SyncModelSnapshot', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260320154259_SyncUserColumnNames', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325043057_AddGuestCheckoutPhase1Schema', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325065911_AddGuestCheckoutIdempotencyPersistence', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325083039_ExtendReturnRequestFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325095426_ExtendDisputeFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325095924_AddCaseEventTimelineFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325123555_AddCaseAttachmentEvidenceFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325143000_AllowGuestReturnRequests', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260325152000_AllowGuestDisputes', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260326071654_AddOrderCancellationRequestFlow', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260326090000_AddAuctionProxyBiddingFoundation', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260326123000_AddAuctionOrderPaymentDeadlineFields', '9.0.2') ON CONFLICT DO NOTHING;

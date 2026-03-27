@@ -6,6 +6,13 @@ namespace ebay.Services.Implementations
 {
     public class OrderProjectionMapper : IOrderProjectionMapper
     {
+        private readonly IAfterSalesExperienceService _afterSalesExperienceService;
+
+        public OrderProjectionMapper(IAfterSalesExperienceService afterSalesExperienceService)
+        {
+            _afterSalesExperienceService = afterSalesExperienceService;
+        }
+
         public OrderResponseDto MapMemberOrder(Order order)
         {
             var payment = GetLatestPayment(order);
@@ -33,6 +40,7 @@ namespace ebay.Services.Implementations
                 CreatedAt = order.CreatedAt ?? order.OrderDate ?? DateTime.UtcNow,
                 ShippingAddress = MapMemberShippingAddress(order),
                 ShippingTracking = MapShippingTracking(order),
+                AfterSales = _afterSalesExperienceService.BuildOrderAfterSalesSummary(order, isGuest: false),
                 Items = order.OrderItems.Select(MapMemberItem).ToList()
             };
         }
@@ -58,6 +66,7 @@ namespace ebay.Services.Implementations
                     TotalAmount = order.TotalPrice
                 },
                 ShippingAddress = MapGuestShippingAddress(order),
+                AfterSales = _afterSalesExperienceService.BuildOrderAfterSalesSummary(order, isGuest: true),
                 Items = order.OrderItems.Select(MapGuestLookupItem).ToList()
             };
         }

@@ -1,6 +1,5 @@
 using ebay.Models;
 using ebay.Services.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace ebay.Services.Implementations
 {
@@ -31,8 +30,8 @@ namespace ebay.Services.Implementations
                 {
                     UserId = userId,
                     Type = OrderNotificationType,
-                    Title = "Dat hang thanh cong",
-                    Body = $"Don hang {orderNumber} cua ban da duoc tiep nhan.",
+                    Title = "Order received",
+                    Body = $"Your order {orderNumber} has been created successfully.",
                     IsRead = false,
                     Link = $"/orders/{orderId}",
                     CreatedAt = DateTime.UtcNow
@@ -62,8 +61,8 @@ namespace ebay.Services.Implementations
                 {
                     UserId = sellerUserId,
                     Type = "order_cancellation_request",
-                    Title = "Yeu cau huy don hang",
-                    Body = $"Buyer da gui yeu cau huy don hang {orderNumber}.",
+                    Title = "Cancellation request received",
+                    Body = $"A buyer asked to cancel order {orderNumber}.",
                     IsRead = false,
                     Link = "/seller/orders",
                     CreatedAt = DateTime.UtcNow
@@ -90,14 +89,14 @@ namespace ebay.Services.Implementations
         {
             try
             {
-                var resolutionText = approved ? "duoc chap nhan" : "bi tu choi";
+                var resolutionText = approved ? "approved" : "declined";
 
                 await _context.Notifications.AddAsync(new Notification
                 {
                     UserId = buyerUserId,
                     Type = "order_cancellation_resolution",
-                    Title = approved ? "Yeu cau huy da duoc chap nhan" : "Yeu cau huy da bi tu choi",
-                    Body = $"Yeu cau huy don hang {orderNumber} cua ban da {resolutionText}.",
+                    Title = approved ? "Cancellation approved" : "Cancellation declined",
+                    Body = $"Your cancellation request for order {orderNumber} was {resolutionText}.",
                     IsRead = false,
                     Link = $"/orders/{orderId}",
                     CreatedAt = DateTime.UtcNow
@@ -127,8 +126,8 @@ namespace ebay.Services.Implementations
                 {
                     UserId = buyerUserId,
                     Type = "order_shipped",
-                    Title = "Don hang da duoc gui",
-                    Body = $"Don hang {orderNumber} cua ban da duoc ship va co thong tin tracking moi.",
+                    Title = "Order shipped",
+                    Body = $"Your order {orderNumber} is on the way and has updated tracking information.",
                     IsRead = false,
                     Link = $"/orders/{orderId}",
                     CreatedAt = DateTime.UtcNow
@@ -158,8 +157,8 @@ namespace ebay.Services.Implementations
                 {
                     UserId = buyerUserId,
                     Type = "order_delivered",
-                    Title = "Don hang da giao thanh cong",
-                    Body = $"Don hang {orderNumber} cua ban da duoc danh dau la giao thanh cong.",
+                    Title = "Order delivered",
+                    Body = $"Your order {orderNumber} has been marked as delivered.",
                     IsRead = false,
                     Link = $"/orders/{orderId}",
                     CreatedAt = DateTime.UtcNow

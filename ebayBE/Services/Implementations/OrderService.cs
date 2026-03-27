@@ -57,7 +57,8 @@ namespace ebay.Services.Implementations
                     cartItems.Select(item => new CheckoutCoreItemRequest
                     {
                         ProductId = item.ProductId,
-                        Quantity = item.Quantity
+                        Quantity = item.Quantity,
+                        AllowAuctionBuyItNow = request.BuyItNowProductId.HasValue && item.Product?.IsAuction == true
                     }));
 
                 if (!checkoutCoreResult.IsValid)
@@ -95,6 +96,17 @@ namespace ebay.Services.Implementations
 
                 var totalPrice = checkoutCoreResult.Subtotal + checkoutCoreResult.ShippingFee - discountAmount + checkoutCoreResult.Tax;
                 var now = DateTime.UtcNow;
+
+                foreach (var item in cartItems.Where(item => request.BuyItNowProductId.HasValue && item.Product?.IsAuction == true))
+                {
+                    item.Product.CurrentBidPrice = item.Product.BuyItNowPrice ?? item.Product.CurrentBidPrice ?? item.Product.Price;
+                    item.Product.WinningBidderId = userId;
+                    item.Product.AuctionStatus = "sold";
+                    item.Product.EndedAt = now;
+                    item.Product.AuctionEndTime = now;
+                    item.Product.IsActive = false;
+                    item.Product.Status = "ended";
+                }
 
                 // 6. Create Order record
                 var order = new Order
@@ -200,7 +212,8 @@ namespace ebay.Services.Implementations
                 cartItems.Select(item => new CheckoutCoreItemRequest
                 {
                     ProductId = item.ProductId,
-                    Quantity = item.Quantity
+                    Quantity = item.Quantity,
+                    AllowAuctionBuyItNow = request.BuyItNowProductId.HasValue && item.Product?.IsAuction == true
                 }));
 
             if (!checkoutCoreResult.IsValid)
@@ -258,6 +271,8 @@ namespace ebay.Services.Implementations
                 .Include(o => o.OrderCancellationRequests)
                 .Include(o => o.Payments)
                 .Include(o => o.ShippingInfo)
+                .Include(o => o.ReturnRequests)
+                .Include(o => o.Disputes)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .Where(o => o.BuyerId == userId);
@@ -279,6 +294,8 @@ namespace ebay.Services.Implementations
                 .Include(o => o.OrderCancellationRequests)
                 .Include(o => o.Payments)
                 .Include(o => o.ShippingInfo)
+                .Include(o => o.ReturnRequests)
+                .Include(o => o.Disputes)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .FirstOrDefaultAsync(o => o.Id == orderId && o.BuyerId == userId);

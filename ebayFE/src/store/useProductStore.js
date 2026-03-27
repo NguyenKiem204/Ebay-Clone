@@ -5,6 +5,7 @@ const useProductStore = create((set, get) => ({
     latestProducts: [],
     bestDeals: [],
     trendingProducts: [],
+    activeAuctions: [],
     banners: [],
     searchResults: [],
     totalItems: 0,
@@ -45,6 +46,17 @@ const useProductStore = create((set, get) => ({
             });
         } catch (error) {
             set({ error: 'Failed to fetch landing page products', loading: false });
+        }
+    },
+
+    fetchActiveAuctions: async (limit = 4) => {
+        try {
+            const response = await api.get('/api/auctions/active', { params: { limit } });
+            const { data } = response.data;
+            set({ activeAuctions: data || [] });
+        } catch (error) {
+            console.error('Failed to fetch active auctions', error);
+            set({ activeAuctions: [] });
         }
     },
 

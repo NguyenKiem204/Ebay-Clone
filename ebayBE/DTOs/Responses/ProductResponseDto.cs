@@ -30,6 +30,7 @@ namespace ebay.DTOs.Responses
         public int SavedCount { get; set; }
         public int InCartCount { get; set; }
         public bool IsAuction { get; set; }
+        public DateTime? AuctionStartTime { get; set; }
         public DateTime? AuctionEndTime { get; set; }
         public decimal? CurrentBid { get; set; }
         public int BidCount { get; set; }

@@ -238,6 +238,42 @@ const guestCaseService = {
             caseData: payload.case || null,
             guestAccess
         };
+    },
+
+    async cancelGuestReturnRequest(context, returnRequestId, note = '') {
+        const response = await api.post(`/api/guest/cases/returns/${returnRequestId}/cancel`, {
+            ...this.buildAccessProof(context),
+            note
+        });
+
+        return response.data?.data;
+    },
+
+    async submitGuestReturnTracking(context, returnRequestId, payload) {
+        const response = await api.post(`/api/guest/cases/returns/${returnRequestId}/tracking`, {
+            ...this.buildAccessProof(context),
+            ...payload
+        });
+
+        return response.data?.data;
+    },
+
+    async cancelGuestInrClaim(context, disputeId, note = '') {
+        const response = await api.post(`/api/guest/cases/disputes/${disputeId}/cancel`, {
+            ...this.buildAccessProof(context),
+            note
+        });
+
+        return response.data?.data;
+    },
+
+    async escalateGuestInrClaim(context, disputeId, description) {
+        const response = await api.post(`/api/guest/cases/disputes/${disputeId}/escalate`, {
+            ...this.buildAccessProof(context),
+            description
+        });
+
+        return response.data?.data;
     }
 };
 

@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button';
 import { useCheckout } from '../features/checkout/hooks/useCheckout';
 import ShippingAddress from '../features/checkout/components/ShippingAddress';
 import PaymentMethod from '../features/checkout/components/PaymentMethod';
+import CouponSection from '../features/checkout/components/CouponSection';
 
 import { useState, useEffect } from 'react';
 import api from '../lib/axios';
@@ -52,6 +53,11 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                             {item.soldCount} SOLD
                         </span>
                     )}
+                    {item.isAuction && (
+                        <span className="inline-block self-start border border-violet-200 bg-violet-50 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 uppercase">
+                            Auction Buy It Now
+                        </span>
+                    )}
                     <h3 className="text-[15px] text-black leading-tight mb-2 hover:underline cursor-pointer">
                         {item.title}
                     </h3>
@@ -71,9 +77,10 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                             className="w-full appearance-none bg-white border border-gray-400 hover:border-gray-500 rounded py-2 pl-3 pr-8 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                             value={item.quantity}
                             onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                            disabled={item.isAuction}
                         >
-                            {[...Array(10).keys()].map(n => (
-                                <option key={n + 1} value={n + 1}>Quantity: {n + 1}</option>
+                            {(item.isAuction ? [1] : [...Array(10).keys()].map(n => n + 1)).map(value => (
+                                <option key={value} value={value}>Quantity: {value}</option>
                             ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -104,6 +111,13 @@ export default function CheckoutPage() {
         guestQuote,
         memberReviewQuote,
         isReviewLoading,
+        couponCode,
+        setCouponCode,
+        appliedCoupon,
+        couponError,
+        isApplyingCoupon,
+        applyCoupon,
+        removeCoupon,
         isLoading,
         error,
         addresses,
@@ -133,6 +147,7 @@ export default function CheckoutPage() {
     const activeQuote = hasMemberCanonicalQuote ? memberReviewQuote : (hasGuestCanonicalQuote ? guestQuote : null);
     const displaySubtotal = activeQuote ? activeQuote.subtotal : subtotal;
     const shippingCost = activeQuote ? activeQuote.shippingFee : fallbackShippingCost;
+    const discountAmount = activeQuote?.discountAmount ?? 0;
     const total = activeQuote ? activeQuote.totalAmount : displaySubtotal + shippingCost;
     const shouldShowGuestNeutralSubtotal = !isAuthenticated && !guestQuote;
     const shouldShowGuestNeutralTotals = !isAuthenticated && !guestQuote;
@@ -205,6 +220,17 @@ export default function CheckoutPage() {
                         onContinue={() => {}}
                     />
 
+                    <CouponSection
+                        isAuthenticated={isAuthenticated}
+                        couponCode={couponCode}
+                        onCouponCodeChange={setCouponCode}
+                        appliedCoupon={appliedCoupon}
+                        couponError={couponError}
+                        isApplyingCoupon={isApplyingCoupon}
+                        onApplyCoupon={applyCoupon}
+                        onRemoveCoupon={removeCoupon}
+                    />
+
                 </div>
 
                 {/* Right Column (Span 4) */}
@@ -229,6 +255,18 @@ export default function CheckoutPage() {
                                         : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingCost)}
                                 </span>
                             </div>
+                            {(discountAmount > 0 || appliedCoupon) && (
+                                <div className="flex justify-between text-[14px] text-green-700">
+                                    <span>
+                                        Coupon{appliedCoupon?.code ? ` (${appliedCoupon.code})` : ''}
+                                    </span>
+                                    <span>
+                                        {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
+                                            ? 'Calculating...'
+                                            : `-${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}`}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="border-t border-gray-300 pt-4 flex justify-between items-center mb-6">

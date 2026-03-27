@@ -59,6 +59,7 @@ namespace ebay.DTOs.Responses
         public DateTime CreatedAt { get; set; }
         public AddressResponseDto ShippingAddress { get; set; } = null!;
         public ShippingTrackingSummaryResponseDto? ShippingTracking { get; set; }
+        public OrderAfterSalesSummaryResponseDto? AfterSales { get; set; }
         public List<OrderItemResponseDto> Items { get; set; } = new();
     }
 

@@ -1,27 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import useOrderStore from '../store/useOrderStore';
 import { Button } from '../components/ui/Button';
 import api from '../lib/axios';
 import { checkoutService } from '../features/checkout/services/checkoutService';
+import caseEvidenceService from '../features/cases/services/caseEvidenceService';
 
 const DEFAULT_RETURN_FORM = {
     orderItemId: '',
     reasonCode: '',
-    reason: '',
-    resolutionType: 'refund'
+    description: '',
+    resolutionType: 'return_for_refund',
+    evidenceFile: null
 };
 
 const DEFAULT_INR_FORM = {
     orderItemId: '',
-    description: ''
+    reasonCode: '',
+    description: '',
+    evidenceFile: null
 };
 
-const DEFAULT_QUALITY_ISSUE_FORM = {
-    orderItemId: '',
-    caseType: 'snad',
-    description: ''
-};
+const RETURN_REASON_OPTIONS = [
+    { value: 'doesnt_match', label: "Doesn't match the listing" },
+    { value: 'damaged', label: 'Arrived damaged' },
+    { value: 'missing_parts', label: 'Missing parts or accessories' },
+    { value: 'changed_mind', label: 'Changed my mind' },
+    { value: 'other', label: 'Other' }
+];
+
+const INR_REASON_OPTIONS = [
+    { value: 'not_received', label: 'Item not received' },
+    { value: 'tracking_not_updated', label: 'Tracking is not updating' },
+    { value: 'wrong_address', label: 'Delivered to the wrong address' },
+    { value: 'other', label: 'Other' }
+];
 
 const formatVND = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 
@@ -140,7 +153,6 @@ export default function OrderDetailPage() {
     const [activeCaseAction, setActiveCaseAction] = useState(null);
     const [returnForm, setReturnForm] = useState(DEFAULT_RETURN_FORM);
     const [inrForm, setInrForm] = useState(DEFAULT_INR_FORM);
-    const [qualityIssueForm, setQualityIssueForm] = useState(DEFAULT_QUALITY_ISSUE_FORM);
     const [submittingAction, setSubmittingAction] = useState(null);
     const [caseFeedback, setCaseFeedback] = useState(null);
     const [paymentActionLoading, setPaymentActionLoading] = useState(false);
@@ -159,10 +171,21 @@ export default function OrderDetailPage() {
     }, [clearSelectedOrder, fetchOrderById, id]);
 
     useEffect(() => {
+        if (!id) {
+            return undefined;
+        }
+
+        const timer = window.setInterval(() => {
+            fetchOrderById(id);
+        }, 30000);
+
+        return () => window.clearInterval(timer);
+    }, [fetchOrderById, id]);
+
+    useEffect(() => {
         setActiveCaseAction(null);
         setReturnForm(DEFAULT_RETURN_FORM);
         setInrForm(DEFAULT_INR_FORM);
-        setQualityIssueForm(DEFAULT_QUALITY_ISSUE_FORM);
         setCaseFeedback(null);
         setSubmittingAction(null);
     }, [id]);
@@ -214,19 +237,11 @@ export default function OrderDetailPage() {
     const order = selectedOrder;
     const orderItems = order.items || [];
     const defaultOrderItemId = resolveDefaultOrderItemId(orderItems);
-    const shippingStatus = order.shippingTracking?.status?.toLowerCase() || '';
     const orderStatus = order.status?.toLowerCase() || '';
-    const isDelivered = shippingStatus === 'delivered' || Boolean(order.shippingTracking?.deliveredAt);
-    const isCancelled = orderStatus === 'cancelled' || orderStatus === 'canceled';
-    const estimatedArrivalDate = order.shippingTracking?.estimatedArrival ? new Date(order.shippingTracking.estimatedArrival) : null;
-    const hasPastEstimatedArrival = Boolean(estimatedArrivalDate && estimatedArrivalDate < new Date());
-    const canOpenReturn = !isCancelled && isDelivered;
-    const canOpenQualityIssue = !isCancelled && isDelivered;
-    const canOpenInr = !isCancelled && !isDelivered && (
-        ['shipped', 'in_transit', 'out_for_delivery', 'delivery_exception', 'failed_delivery'].includes(shippingStatus) ||
-        hasPastEstimatedArrival
-    );
-    const hasSupportedCaseAction = canOpenReturn || canOpenQualityIssue || canOpenInr;
+    const afterSalesOptions = order.afterSales?.options || [];
+    const returnOption = afterSalesOptions.find((option) => option.requestType === 'return');
+    const inrOption = afterSalesOptions.find((option) => option.requestType === 'inr');
+    const hasSupportedCaseAction = Boolean(returnOption?.eligible || inrOption?.eligible);
     const hasMultipleOrderItems = orderItems.length > 1;
     const canPayAuctionOrder = Boolean(
         order.isAuctionOrder
@@ -237,21 +252,21 @@ export default function OrderDetailPage() {
     );
     const hasPendingCancellationRequest = order.cancellationRequest?.status?.toLowerCase() === 'pending';
 
-    const caseContextMessage = useMemo(() => {
-        if (hasMultipleOrderItems && (canOpenReturn || canOpenQualityIssue || canOpenInr)) {
+    const caseContextMessage = (() => {
+        if (hasMultipleOrderItems && hasSupportedCaseAction) {
             return 'Choose the specific order item where practical. That helps keep case scope clearer for seller-first handling, while the backend remains the final source of truth.';
         }
 
-        if (canOpenReturn || canOpenQualityIssue) {
-            return 'This delivered order looks eligible for a return request or a quality issue claim. Final eligibility is confirmed by the server when you submit.';
+        if (returnOption?.eligible) {
+            return returnOption.message;
         }
 
-        if (canOpenInr) {
-            return 'This order looks eligible for an item-not-received claim. Final eligibility is confirmed by the server when you submit.';
+        if (inrOption?.eligible) {
+            return inrOption.message;
         }
 
-        return 'Supported buyer case actions will appear here when the current order context makes them relevant.';
-    }, [canOpenInr, canOpenQualityIssue, canOpenReturn, hasMultipleOrderItems]);
+        return returnOption?.message || inrOption?.message || 'Supported buyer case actions will appear here when the current order context makes them relevant.';
+    })();
 
     const handleReturnSubmit = async (event) => {
         event.preventDefault();
@@ -259,9 +274,11 @@ export default function OrderDetailPage() {
         setCaseFeedback(null);
 
         try {
+            const selectedReason = RETURN_REASON_OPTIONS.find((option) => option.value === returnForm.reasonCode);
             const payload = {
                 orderId: order.id,
-                reason: returnForm.reason.trim(),
+                reason: selectedReason?.label || 'Other return reason',
+                description: returnForm.description.trim(),
                 resolutionType: returnForm.resolutionType
             };
 
@@ -275,6 +292,14 @@ export default function OrderDetailPage() {
 
             const response = await api.post('/api/returns', payload);
             const createdCase = response.data?.data;
+
+            if (createdCase?.id && returnForm.evidenceFile) {
+                await caseEvidenceService.uploadEvidence('return', createdCase.id, {
+                    file: returnForm.evidenceFile,
+                    label: 'Buyer evidence',
+                    evidenceType: 'image'
+                });
+            }
 
             setCaseFeedback({
                 type: 'success',
@@ -305,10 +330,19 @@ export default function OrderDetailPage() {
             const response = await api.post('/api/disputes/inr', {
                 orderId: order.id,
                 ...(inrForm.orderItemId ? { orderItemId: Number(inrForm.orderItemId) } : {}),
+                ...(inrForm.reasonCode ? { reasonCode: inrForm.reasonCode } : {}),
                 description: inrForm.description.trim()
             });
 
             const createdCase = response.data?.data;
+            if (createdCase?.id && inrForm.evidenceFile) {
+                await caseEvidenceService.uploadEvidence('dispute', createdCase.id, {
+                    file: inrForm.evidenceFile,
+                    label: 'Buyer evidence',
+                    evidenceType: 'image'
+                });
+            }
+
             setCaseFeedback({
                 type: 'success',
                 title: 'INR claim submitted',
@@ -329,40 +363,13 @@ export default function OrderDetailPage() {
         }
     };
 
-    const handleQualityIssueSubmit = async (event) => {
-        event.preventDefault();
-        setSubmittingAction('quality');
-        setCaseFeedback(null);
-
-        try {
-            const response = await api.post('/api/disputes/quality-issue', {
-                orderId: order.id,
-                ...(qualityIssueForm.orderItemId ? { orderItemId: Number(qualityIssueForm.orderItemId) } : {}),
-                caseType: qualityIssueForm.caseType,
-                description: qualityIssueForm.description.trim()
-            });
-
-            const createdCase = response.data?.data;
-            const claimLabel = qualityIssueForm.caseType === 'damaged' ? 'Damaged item claim' : 'SNAD claim';
-
-            setCaseFeedback({
-                type: 'success',
-                title: `${claimLabel} submitted`,
-                message: createdCase?.id
-                    ? `${claimLabel} #${createdCase.id} was created successfully.`
-                    : `Your ${claimLabel.toLowerCase()} was created successfully.`
-            });
-            setQualityIssueForm({ ...DEFAULT_QUALITY_ISSUE_FORM, orderItemId: defaultOrderItemId });
-            setActiveCaseAction(null);
-        } catch (submitError) {
-            setCaseFeedback({
-                type: 'error',
-                title: 'Could not submit quality issue claim',
-                message: submitError.response?.data?.message || 'Please review the order context and try again.'
-            });
-        } finally {
-            setSubmittingAction(null);
+    const handleCaseFileChange = (caseType, file) => {
+        if (caseType === 'return') {
+            setReturnForm((current) => ({ ...current, evidenceFile: file || null }));
+            return;
         }
+
+        setInrForm((current) => ({ ...current, evidenceFile: file || null }));
     };
 
     const handlePayNow = async () => {
@@ -434,6 +441,46 @@ export default function OrderDetailPage() {
                     Back to orders
                 </Link>
             </div>
+
+            {order.isAuctionOrder && (
+                <div className={`mb-6 rounded-2xl border px-5 py-4 ${
+                    canPayAuctionOrder
+                        ? 'border-blue-200 bg-blue-50'
+                        : order.isPaymentOverdue
+                            ? 'border-red-200 bg-red-50'
+                            : 'border-gray-200 bg-gray-50'
+                }`}>
+                    <p className={`text-sm font-black uppercase tracking-wide ${
+                        canPayAuctionOrder
+                            ? 'text-blue-700'
+                            : order.isPaymentOverdue
+                                ? 'text-red-700'
+                                : 'text-gray-700'
+                    }`}>
+                        {canPayAuctionOrder ? 'You won this auction' : 'Auction order'}
+                    </p>
+                    <p className={`mt-1 text-sm ${
+                        canPayAuctionOrder
+                            ? 'text-blue-900'
+                            : order.isPaymentOverdue
+                                ? 'text-red-900'
+                                : 'text-gray-700'
+                    }`}>
+                        {canPayAuctionOrder
+                            ? `Complete payment before ${formatDateTime(order.paymentDueAt)} to keep this order.`
+                            : order.isPaymentOverdue
+                                ? 'The payment window for this auction order has expired.'
+                                : 'This order was created from an auction result.'}
+                    </p>
+                    {canPayAuctionOrder && (
+                        <div className="mt-4 flex flex-wrap gap-3">
+                            <Button onClick={handlePayNow} isLoading={paymentActionLoading}>
+                                Pay now
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-200 bg-gray-50">
@@ -576,7 +623,7 @@ export default function OrderDetailPage() {
                     {hasSupportedCaseAction ? (
                         <>
                             <div className="flex flex-wrap gap-3">
-                                {canOpenReturn && (
+                                {returnOption?.eligible && (
                                     <Button
                                         variant={activeCaseAction === 'return' ? 'primary' : 'outline'}
                                         onClick={() => {
@@ -590,29 +637,11 @@ export default function OrderDetailPage() {
                                             setActiveCaseAction(activeCaseAction === 'return' ? null : 'return');
                                         }}
                                     >
-                                        Open return request
+                                        Open return / refund
                                     </Button>
                                 )}
 
-                                {canOpenQualityIssue && (
-                                    <Button
-                                        variant={activeCaseAction === 'quality' ? 'primary' : 'outline'}
-                                        onClick={() => {
-                                            setCaseFeedback(null);
-                                            if (activeCaseAction !== 'quality') {
-                                                setQualityIssueForm((current) => ({
-                                                    ...current,
-                                                    orderItemId: current.orderItemId || defaultOrderItemId
-                                                }));
-                                            }
-                                            setActiveCaseAction(activeCaseAction === 'quality' ? null : 'quality');
-                                        }}
-                                    >
-                                        Report not as described / damaged
-                                    </Button>
-                                )}
-
-                                {canOpenInr && (
+                                {inrOption?.eligible && (
                                     <Button
                                         variant={activeCaseAction === 'inr' ? 'primary' : 'outline'}
                                         onClick={() => {
@@ -643,19 +672,18 @@ export default function OrderDetailPage() {
 
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                            Return reason type
+                                            Return reason
                                         </label>
                                         <select
                                             value={returnForm.reasonCode}
                                             onChange={(event) => setReturnForm((current) => ({ ...current, reasonCode: event.target.value }))}
                                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                            required
                                         >
-                                            <option value="">Select a reason type (optional)</option>
-                                            <option value="changed_mind">Changed mind</option>
-                                            <option value="wrong_item">Wrong item</option>
-                                            <option value="arrived_late">Arrived late</option>
-                                            <option value="missing_parts">Missing parts</option>
-                                            <option value="other">Other</option>
+                                            <option value="">Select a return reason</option>
+                                            {RETURN_REASON_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
                                         </select>
                                     </div>
 
@@ -668,28 +696,38 @@ export default function OrderDetailPage() {
                                             onChange={(event) => setReturnForm((current) => ({ ...current, resolutionType: event.target.value }))}
                                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                         >
-                                            <option value="refund">Refund</option>
-                                            <option value="replacement">Replacement</option>
-                                            <option value="exchange">Exchange</option>
+                                            <option value="return_for_refund">Return for refund</option>
+                                            <option value="refund_only">Refund only</option>
                                         </select>
                                     </div>
 
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                            What happened?
+                                            Tell us what happened
                                         </label>
                                         <textarea
-                                            value={returnForm.reason}
-                                            onChange={(event) => setReturnForm((current) => ({ ...current, reason: event.target.value }))}
+                                            value={returnForm.description}
+                                            onChange={(event) => setReturnForm((current) => ({ ...current, description: event.target.value }))}
                                             className="w-full min-h-[120px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                            placeholder="Describe why you want to return this order."
+                                            placeholder="Describe the issue, what you received, and why you want a return or refund."
                                             required
                                         />
                                     </div>
 
-                                    <p className="text-xs text-gray-500">
-                                        The backend still decides final eligibility and whether the request stays item-level or effectively order-level.
-                                    </p>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                            Upload evidence
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept="image/*,video/*"
+                                            onChange={(event) => handleCaseFileChange('return', event.target.files?.[0])}
+                                            className="block w-full text-sm text-gray-700"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Optional. If provided, the file will be uploaded right after the request is created.
+                                        </p>
+                                    </div>
 
                                     <div className="flex flex-wrap gap-3">
                                         <Button type="submit" isLoading={submittingAction === 'return'}>
@@ -700,63 +738,6 @@ export default function OrderDetailPage() {
                                             variant="ghost"
                                             onClick={() => setActiveCaseAction(null)}
                                             disabled={submittingAction === 'return'}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                </form>
-                            )}
-
-                            {activeCaseAction === 'quality' && (
-                                <form onSubmit={handleQualityIssueSubmit} className="mt-5 border border-gray-200 rounded-lg p-4 space-y-4 bg-gray-50">
-                                    <CaseItemTargetPicker
-                                        name="quality-item-target"
-                                        items={orderItems}
-                                        selectedItemId={qualityIssueForm.orderItemId}
-                                        onChange={(value) => setQualityIssueForm((current) => ({ ...current, orderItemId: value }))}
-                                        helperText="Use item targeting for SNAD or damaged claims when one order item is clearly affected."
-                                    />
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                            Quality issue type
-                                        </label>
-                                        <select
-                                            value={qualityIssueForm.caseType}
-                                            onChange={(event) => setQualityIssueForm((current) => ({ ...current, caseType: event.target.value }))}
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                        >
-                                            <option value="snad">Item not as described</option>
-                                            <option value="damaged">Item arrived damaged</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                            Describe the quality issue
-                                        </label>
-                                        <textarea
-                                            value={qualityIssueForm.description}
-                                            onChange={(event) => setQualityIssueForm((current) => ({ ...current, description: event.target.value }))}
-                                            className="w-full min-h-[120px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                            placeholder="Describe what was wrong with the item or how it differed from the listing."
-                                            required
-                                        />
-                                    </div>
-
-                                    <p className="text-xs text-gray-500">
-                                        The backend still decides final eligibility and whether the claim can be handled as item-level case truth.
-                                    </p>
-
-                                    <div className="flex flex-wrap gap-3">
-                                        <Button type="submit" isLoading={submittingAction === 'quality'}>
-                                            Submit quality issue claim
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            onClick={() => setActiveCaseAction(null)}
-                                            disabled={submittingAction === 'quality'}
                                         >
                                             Cancel
                                         </Button>
@@ -776,7 +757,24 @@ export default function OrderDetailPage() {
 
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                            What makes you think the item was not received?
+                                            INR reason
+                                        </label>
+                                        <select
+                                            value={inrForm.reasonCode}
+                                            onChange={(event) => setInrForm((current) => ({ ...current, reasonCode: event.target.value }))}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                            required
+                                        >
+                                            <option value="">Select an INR reason</option>
+                                            {INR_REASON_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                            What happened?
                                         </label>
                                         <textarea
                                             value={inrForm.description}
@@ -787,9 +785,20 @@ export default function OrderDetailPage() {
                                         />
                                     </div>
 
-                                    <p className="text-xs text-gray-500">
-                                        Final INR eligibility is confirmed by the backend when you submit.
-                                    </p>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                            Upload evidence
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept="image/*,video/*"
+                                            onChange={(event) => handleCaseFileChange('inr', event.target.files?.[0])}
+                                            className="block w-full text-sm text-gray-700"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Optional. If provided, the file will be uploaded right after the INR request is created.
+                                        </p>
+                                    </div>
 
                                     <div className="flex flex-wrap gap-3">
                                         <Button type="submit" isLoading={submittingAction === 'inr'}>

@@ -54,7 +54,7 @@ namespace ebay.Services.Implementations
                 request.OrderItemId,
                 cancellationToken);
 
-            var decision = _buyerCasePolicyService.CanOpenGuestInr(guestContext.Order);
+            var decision = _buyerCasePolicyService.CanOpenGuestInr(CloneOrderWithoutCases(guestContext.Order));
             if (!decision.Allowed)
             {
                 throw new BadRequestException(
@@ -62,11 +62,14 @@ namespace ebay.Services.Implementations
                     new List<string> { decision.Code });
             }
 
+            EnsureNoBlockingCasesForInr(guestContext.Order, guestContext.SelectedOrderItem?.Id);
+
             return await CreateGuestDisputeAsync(
                 guestContext,
                 normalizedDescription,
                 DisputeCaseTypeInr,
                 BuildCreatedMessage(DisputeCaseTypeInr, guestContext.SelectedOrderItem?.Id),
+                request.ReasonCode,
                 cancellationToken);
         }
 
@@ -88,7 +91,7 @@ namespace ebay.Services.Implementations
                 request.OrderItemId,
                 cancellationToken);
 
-            var decision = _buyerCasePolicyService.CanOpenGuestSnad(guestContext.Order);
+            var decision = _buyerCasePolicyService.CanOpenGuestSnad(CloneOrderWithoutCases(guestContext.Order));
             if (!decision.Allowed)
             {
                 throw new BadRequestException(
@@ -101,6 +104,7 @@ namespace ebay.Services.Implementations
                 normalizedDescription,
                 normalizedCaseType,
                 BuildCreatedMessage(normalizedCaseType, guestContext.SelectedOrderItem?.Id),
+                reasonCode: null,
                 cancellationToken);
         }
 
@@ -169,6 +173,7 @@ namespace ebay.Services.Implementations
             string normalizedDescription,
             string caseType,
             string createdMessage,
+            string? reasonCode,
             CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
@@ -206,6 +211,7 @@ namespace ebay.Services.Implementations
                         orderItemId = dispute.OrderItemId,
                         caseType = dispute.CaseType,
                         status = dispute.Status,
+                        reasonCode = NormalizeNullable(reasonCode),
                         guestAccess = true,
                         proofMethod = guestContext.AccessDecision.Grant?.ProofMethod
                             ?? (guestContext.AccessDecision.UsedAccessToken ? "access_token" : "email_lookup")
@@ -263,6 +269,66 @@ namespace ebay.Services.Implementations
             }
 
             return $"Guest opened a {claimLabel}.";
+        }
+
+        private static string? NormalizeNullable(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
+        }
+
+        private static Order CloneOrderWithoutCases(Order order)
+        {
+            return new Order
+            {
+                Id = order.Id,
+                CustomerType = order.CustomerType,
+                GuestEmail = order.GuestEmail,
+                Status = order.Status,
+                CreatedAt = order.CreatedAt,
+                UpdatedAt = order.UpdatedAt,
+                OrderDate = order.OrderDate,
+                Payments = order.Payments.ToList(),
+                ShippingInfo = order.ShippingInfo,
+                OrderItems = order.OrderItems.ToList(),
+                ReturnRequests = new List<ReturnRequest>(),
+                Disputes = new List<Dispute>()
+            };
+        }
+
+        private static void EnsureNoBlockingCasesForInr(Order order, int? selectedOrderItemId)
+        {
+            if (order.ReturnRequests.Any(request =>
+                string.Equals(request.RequestType, "return", StringComparison.OrdinalIgnoreCase)
+                && IsOpenReturn(request)))
+            {
+                throw new BadRequestException(
+                    "A return / refund request is already open for this order.",
+                    new List<string> { "open_return_exists" });
+            }
+
+            if (order.Disputes.Any(dispute =>
+                string.Equals(dispute.CaseType, DisputeCaseTypeInr, StringComparison.OrdinalIgnoreCase)
+                && IsOpenDispute(dispute)
+                && (!selectedOrderItemId.HasValue
+                    || !dispute.OrderItemId.HasValue
+                    || dispute.OrderItemId == selectedOrderItemId)))
+            {
+                throw new BadRequestException(
+                    "An item-not-received request is already open for this order or item.",
+                    new List<string> { "open_inr_exists" });
+            }
+        }
+
+        private static bool IsOpenReturn(ReturnRequest request)
+        {
+            return string.Equals(request.Status, "pending", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(request.Status, "approved", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsOpenDispute(Dispute dispute)
+        {
+            return string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(dispute.Status, "in_progress", StringComparison.OrdinalIgnoreCase);
         }
 
         private sealed class GuestDisputeContext

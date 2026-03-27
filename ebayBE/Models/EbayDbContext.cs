@@ -502,7 +502,7 @@ public partial class EbayDbContext : DbContext
                 .HasMaxLength(20)
                 .HasColumnName("discount_type");
             entity.Property(e => e.DiscountValue)
-                .HasPrecision(10, 2)
+                .HasPrecision(18, 2)
                 .HasColumnName("discount_value");
             entity.Property(e => e.EndDate)
                 .HasColumnType("timestamp without time zone")
@@ -511,14 +511,14 @@ public partial class EbayDbContext : DbContext
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
             entity.Property(e => e.MaxDiscount)
-                .HasPrecision(10, 2)
+                .HasPrecision(18, 2)
                 .HasColumnName("max_discount");
             entity.Property(e => e.MaxUsage).HasColumnName("max_usage");
             entity.Property(e => e.MaxUsagePerUser)
                 .HasDefaultValue(1)
                 .HasColumnName("max_usage_per_user");
             entity.Property(e => e.MinOrderAmount)
-                .HasPrecision(10, 2)
+                .HasPrecision(18, 2)
                 .HasColumnName("min_order_amount");
             entity.Property(e => e.StartDate)
                 .HasColumnType("timestamp without time zone")

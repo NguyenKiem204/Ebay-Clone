@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import caseService from '../features/cases/services/caseService';
 
@@ -153,6 +153,7 @@ export default function CasesPage() {
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [activeFilter, setActiveFilter] = useState('all');
 
     useEffect(() => {
         let active = true;
@@ -184,18 +185,67 @@ export default function CasesPage() {
         };
     }, []);
 
+    const filteredCases = useMemo(() => {
+        if (activeFilter === 'all') {
+            return cases;
+        }
+
+        return cases.filter((item) => {
+            const displayStatus = (item.displayStatus || item.status || '').toLowerCase();
+
+            switch (activeFilter) {
+            case 'open':
+                return ['waiting seller response', 'seller responded', 'escalated to platform', 'return shipping required', 'buyer shipped return'].includes(displayStatus);
+            case 'waiting':
+                return ['waiting seller response', 'return shipping required'].includes(displayStatus);
+            case 'approved':
+                return ['approved refund only', 'seller responded', 'escalated to platform', 'seller received return'].includes(displayStatus);
+            case 'refunded':
+                return ['refunded', 'resolved refunded'].includes(displayStatus);
+            case 'closed':
+                return ['closed', 'cancelled', 'rejected', 'resolved delivered'].includes(displayStatus);
+            default:
+                return true;
+            }
+        });
+    }, [activeFilter, cases]);
+
     return (
         <div className="container mx-auto px-4 py-12 max-w-6xl">
             <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">My cases</h1>
                     <p className="text-gray-600">
-                        Track your return requests and buyer protection claims in one place.
+                        Track your return / refund and item-not-received requests in one place.
                     </p>
                 </div>
                 <Link to="/orders" className="text-blue-600 hover:underline font-medium">
                     Back to orders
                 </Link>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+                {[
+                    ['all', 'All'],
+                    ['open', 'Open'],
+                    ['waiting', 'Waiting'],
+                    ['approved', 'Approved'],
+                    ['refunded', 'Refunded'],
+                    ['closed', 'Closed']
+                ].map(([value, label]) => (
+                    <button
+                        key={value}
+                        type="button"
+                        onClick={() => setActiveFilter(value)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                            activeFilter === value
+                                ? 'border-blue-600 bg-blue-600 text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
             </div>
 
             {loading ? (
@@ -209,16 +259,16 @@ export default function CasesPage() {
                         Back to orders
                     </Link>
                 </div>
-            ) : cases.length === 0 ? (
+            ) : filteredCases.length === 0 ? (
                 <div className="bg-white border border-dashed border-gray-300 rounded-lg p-10 text-center">
                     <h2 className="text-xl font-bold text-gray-900 mb-2">No cases yet</h2>
                     <p className="text-gray-600">
-                        When you open a return request or INR claim, it will appear here.
+                        No cases match the current filter.
                     </p>
                 </div>
             ) : (
                 <div className="space-y-6">
-                    {cases.map((item) => (
+                    {filteredCases.map((item) => (
                         <div key={`${item.caseKind}-${item.caseId}`} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
                                 <div>
@@ -228,7 +278,7 @@ export default function CasesPage() {
                                     </p>
                                 </div>
                                 <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${getStatusStyles(item.status)}`}>
-                                    {item.status}
+                                    {item.displayStatus || item.status}
                                 </div>
                             </div>
 
@@ -237,10 +287,10 @@ export default function CasesPage() {
                                     <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
                                         <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-2">Lifecycle</p>
                                         <p className="font-semibold text-gray-900">
-                                            {getLifecycleCopy(item.caseKind, item.status).title}
+                                            {item.displayStatus || getLifecycleCopy(item.caseKind, item.status).title}
                                         </p>
                                         <p className="text-gray-600 mt-1">
-                                            {getLifecycleCopy(item.caseKind, item.status).description}
+                                            {item.nextAction || getLifecycleCopy(item.caseKind, item.status).description}
                                         </p>
                                         {item.closedAt && (
                                             <p className="text-xs text-gray-500 mt-2">

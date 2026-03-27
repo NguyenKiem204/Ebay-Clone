@@ -29,6 +29,26 @@ const caseService = {
         });
 
         return response.data?.data;
+    },
+
+    async cancelReturnRequest(returnRequestId, note = '') {
+        const response = await api.post(`/api/cases/returns/${returnRequestId}/cancel`, { note });
+        return response.data?.data;
+    },
+
+    async submitReturnTracking(returnRequestId, payload) {
+        const response = await api.post(`/api/cases/returns/${returnRequestId}/tracking`, payload);
+        return response.data?.data;
+    },
+
+    async cancelInrClaim(disputeId, note = '') {
+        const response = await api.post(`/api/cases/disputes/${disputeId}/cancel`, { note });
+        return response.data?.data;
+    },
+
+    async escalateInrClaim(disputeId, description) {
+        const response = await api.post(`/api/cases/disputes/${disputeId}/escalate`, { description });
+        return response.data?.data;
     }
 };
 

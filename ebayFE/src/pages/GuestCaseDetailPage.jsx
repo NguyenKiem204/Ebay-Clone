@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import guestCaseService from '../features/checkout/services/guestCaseService';
 import { BASE_URL } from '../lib/axios';
+import { Button } from '../components/ui/Button';
 
-const formatDateTime = (value) => (value ? new Date(value).toLocaleString('vi-VN') : 'Not available');
+const formatDateTime = (value) => (value ? new Date(value).toLocaleString('en-US') : 'Not available');
 const formatVND = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 const formatAge = (hours) => (hours == null ? 'Not available' : hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d ${hours % 24}h`);
 const formatFileSize = (bytes) => {
@@ -68,6 +69,16 @@ export default function GuestCaseDetailPage() {
     const [caseData, setCaseData] = useState(null);
     const [loading, setLoading] = useState(Boolean(caseKind && id && recoveryOrderNumber && guestAccess?.email));
     const [error, setError] = useState('');
+    const [actionNote, setActionNote] = useState('');
+    const [showTrackingForm, setShowTrackingForm] = useState(false);
+    const [trackingForm, setTrackingForm] = useState({
+        carrier: '',
+        trackingNumber: '',
+        shippedAt: ''
+    });
+    const [submittingAction, setSubmittingAction] = useState(false);
+    const [actionError, setActionError] = useState('');
+    const [actionSuccess, setActionSuccess] = useState('');
 
     useEffect(() => {
         setActiveGuestAccess(guestAccessFromState || storedGuestAccess);
@@ -140,6 +151,86 @@ export default function GuestCaseDetailPage() {
     }, [caseKind, id, recoveryOrderNumber, guestAccess?.orderNumber, guestAccess?.email, guestAccess?.accessToken, guestAccess?.expiresAt]);
 
     const lookupState = guestAccess?.email ? { email: guestAccess.email } : undefined;
+    const isReturnCase = caseKind === 'return';
+    const canCancelCase = Boolean(caseData?.canCancel);
+    const canSubmitTracking = Boolean(isReturnCase && caseData?.canSubmitTracking);
+    const canEscalateInr = Boolean(!isReturnCase && caseData?.canEscalate);
+
+    const reloadCaseDetail = async () => {
+        if (!caseKind || !id || !guestAccess?.email) {
+            return;
+        }
+
+        const result = await guestCaseService.getGuestCaseDetail(caseKind, id, guestAccess);
+        setCaseData(result.caseData);
+        if (result.guestAccess) {
+            setActiveGuestAccess(result.guestAccess);
+        }
+    };
+
+    const handleCancelCase = async () => {
+        setSubmittingAction(true);
+        setActionError('');
+        setActionSuccess('');
+
+        try {
+            if (isReturnCase) {
+                await guestCaseService.cancelGuestReturnRequest(guestAccess, caseData.id, actionNote.trim());
+            } else {
+                await guestCaseService.cancelGuestInrClaim(guestAccess, caseData.id, actionNote.trim());
+            }
+
+            await reloadCaseDetail();
+            setActionSuccess(isReturnCase
+                ? 'The guest return / refund request was cancelled.'
+                : 'The guest INR request was cancelled.');
+            setActionNote('');
+        } catch (submitError) {
+            setActionError(submitError.response?.data?.message || submitError.message || 'Could not update this guest case right now.');
+        } finally {
+            setSubmittingAction(false);
+        }
+    };
+
+    const handleSubmitTracking = async (event) => {
+        event.preventDefault();
+        setSubmittingAction(true);
+        setActionError('');
+        setActionSuccess('');
+
+        try {
+            await guestCaseService.submitGuestReturnTracking(guestAccess, caseData.id, trackingForm);
+            await reloadCaseDetail();
+            setActionSuccess('Guest return tracking submitted successfully.');
+            setTrackingForm({
+                carrier: '',
+                trackingNumber: '',
+                shippedAt: ''
+            });
+            setShowTrackingForm(false);
+        } catch (submitError) {
+            setActionError(submitError.response?.data?.message || submitError.message || 'Could not submit guest return tracking right now.');
+        } finally {
+            setSubmittingAction(false);
+        }
+    };
+
+    const handleEscalateInr = async () => {
+        setSubmittingAction(true);
+        setActionError('');
+        setActionSuccess('');
+
+        try {
+            await guestCaseService.escalateGuestInrClaim(guestAccess, caseData.id, actionNote.trim());
+            await reloadCaseDetail();
+            setActionSuccess('The guest INR request was escalated successfully.');
+            setActionNote('');
+        } catch (submitError) {
+            setActionError(submitError.response?.data?.message || submitError.message || 'Could not escalate this guest INR request right now.');
+        } finally {
+            setSubmittingAction(false);
+        }
+    };
 
     if (!recoveryOrderNumber || !guestAccess?.email) {
         return <Navigate to={buildLookupPath('case-detail', recoveryOrderNumber)} replace state={lookupState} />;
@@ -197,8 +288,11 @@ export default function GuestCaseDetailPage() {
                             <div>
                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Status</p>
                                 <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${getStatusStyles(caseData.status)}`}>
-                                    {caseData.status}
+                                    {caseData.displayStatus || caseData.status}
                                 </div>
+                                {caseData.nextAction && (
+                                    <p className="text-xs text-gray-500 mt-2">{caseData.nextAction}</p>
+                                )}
                             </div>
                             <div>
                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Opened</p>
@@ -217,7 +311,7 @@ export default function GuestCaseDetailPage() {
                             {'requestType' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Request type</p><p className="font-semibold text-gray-900 capitalize">{caseData.requestType || 'Not available'}</p></div>}
                             {'caseType' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Case type</p><p className="font-semibold text-gray-900 capitalize">{caseData.caseType || 'Not available'}</p></div>}
                             {'reasonCode' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Reason code</p><p className="font-semibold text-gray-900">{caseData.reasonCode || 'Not provided'}</p></div>}
-                            {'resolutionType' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Requested resolution</p><p className="font-semibold text-gray-900 capitalize">{caseData.resolutionType || 'Not available'}</p></div>}
+                            {'resolutionType' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Requested resolution</p><p className="font-semibold text-gray-900 capitalize">{caseData.requestedResolution || caseData.resolutionType || 'Not available'}</p></div>}
                             {'refundAmount' in caseData && caseData.refundAmount != null && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Refund amount</p><p className="font-semibold text-gray-900">{formatVND(caseData.refundAmount)}</p></div>}
                             {'resolvedAt' in caseData && caseData.resolvedAt && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Resolved at</p><p className="font-semibold text-gray-900">{formatDateTime(caseData.resolvedAt)}</p></div>}
                             {'reason' in caseData && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Reason</p><p className="text-gray-700">{caseData.reason || 'Not provided'}</p></div>}
@@ -226,7 +320,78 @@ export default function GuestCaseDetailPage() {
                             {'closedReason' in caseData && caseData.closedReason && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Closed reason</p><p className="text-gray-700">{caseData.closedReason}</p></div>}
                             <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Case scope</p><p className="font-semibold text-gray-900">{caseData.orderItemId ? 'Item-level case' : 'Order-level case'}</p></div>
                             {caseData.orderItemId && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Linked order item ID</p><p className="font-mono font-semibold text-gray-900">{caseData.orderItemId}</p></div>}
+                            {caseData.returnTracking && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Return tracking</p><p className="font-semibold text-gray-900">{caseData.returnTracking.carrier || 'Carrier not provided'} • {caseData.returnTracking.trackingNumber || 'Tracking number not provided'}</p><p className="text-sm text-gray-600 mt-1">Shipped at {formatDateTime(caseData.returnTracking.shippedAt)}</p></div>}
                         </div>
+
+                        {(canCancelCase || canSubmitTracking || canEscalateInr) && (
+                            <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 space-y-4">
+                                <p className="text-sm text-blue-900">{caseData.nextAction || 'Continue handling this guest case here.'}</p>
+
+                                {(canCancelCase || canEscalateInr) && (
+                                    <textarea
+                                        value={actionNote}
+                                        onChange={(event) => setActionNote(event.target.value)}
+                                        className="w-full min-h-[96px] rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+                                        placeholder={canEscalateInr ? 'Explain why you are escalating this guest INR request.' : 'Optional note for this guest case.'}
+                                    />
+                                )}
+
+                                {canSubmitTracking && (
+                                    <>
+                                        <Button type="button" variant={showTrackingForm ? 'primary' : 'outline'} onClick={() => setShowTrackingForm((current) => !current)}>
+                                            Submit return tracking
+                                        </Button>
+                                        {showTrackingForm && (
+                                            <form onSubmit={handleSubmitTracking} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <input
+                                                    type="text"
+                                                    value={trackingForm.carrier}
+                                                    onChange={(event) => setTrackingForm((current) => ({ ...current, carrier: event.target.value }))}
+                                                    className="h-11 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                                                    placeholder="Carrier"
+                                                    required
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={trackingForm.trackingNumber}
+                                                    onChange={(event) => setTrackingForm((current) => ({ ...current, trackingNumber: event.target.value }))}
+                                                    className="h-11 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                                                    placeholder="Tracking number"
+                                                    required
+                                                />
+                                                <input
+                                                    type="datetime-local"
+                                                    value={trackingForm.shippedAt}
+                                                    onChange={(event) => setTrackingForm((current) => ({ ...current, shippedAt: event.target.value }))}
+                                                    className="h-11 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                                                    required
+                                                />
+                                                <div className="md:col-span-3 flex flex-wrap gap-3">
+                                                    <Button type="submit" isLoading={submittingAction}>Save tracking</Button>
+                                                    <Button type="button" variant="ghost" onClick={() => setShowTrackingForm(false)}>Cancel</Button>
+                                                </div>
+                                            </form>
+                                        )}
+                                    </>
+                                )}
+
+                                <div className="flex flex-wrap gap-3">
+                                    {canCancelCase && (
+                                        <Button type="button" variant="outline" onClick={handleCancelCase} isLoading={submittingAction}>
+                                            Cancel request
+                                        </Button>
+                                    )}
+                                    {canEscalateInr && (
+                                        <Button type="button" onClick={handleEscalateInr} isLoading={submittingAction}>
+                                            Escalate INR
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {actionError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</div>}
+                                {actionSuccess && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{actionSuccess}</div>}
+                            </div>
+                        )}
                     </div>
 
                     {caseData.sla && (

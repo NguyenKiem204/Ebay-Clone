@@ -57,13 +57,17 @@ builder.Services.AddScoped<IGuestReturnRequestService, GuestReturnRequestService
 builder.Services.AddScoped<IGuestDisputeService, GuestDisputeService>();
 builder.Services.AddScoped<IGuestCaseQueryService, GuestCaseQueryService>();
 builder.Services.AddScoped<IBuyerCasePolicyService, BuyerCasePolicyService>();
+builder.Services.AddScoped<IAfterSalesExperienceService, AfterSalesExperienceService>();
 builder.Services.AddScoped<ICaseActionService, CaseActionService>();
 builder.Services.AddScoped<ICaseSlaService, CaseSlaService>();
 builder.Services.AddScoped<IBuyerCaseProjectionMapper, BuyerCaseProjectionMapper>();
 builder.Services.AddScoped<IBuyerCaseQueryService, BuyerCaseQueryService>();
+builder.Services.AddScoped<IBuyerCaseCommandService, BuyerCaseCommandService>();
+builder.Services.AddScoped<IGuestCaseCommandService, GuestCaseCommandService>();
 builder.Services.AddScoped<IInternalCaseQueryService, InternalCaseQueryService>();
 builder.Services.AddScoped<ICaseEvidenceService, CaseEvidenceService>();
 builder.Services.AddScoped<ICaseNotificationService, CaseNotificationService>();
+builder.Services.AddScoped<IAuctionNotificationService, AuctionNotificationService>();
 builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 builder.Services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
 builder.Services.AddScoped<IOrderProjectionMapper, OrderProjectionMapper>();
@@ -86,6 +90,7 @@ builder.Services.AddScoped<IPaypalService, PaypalService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.HistoryCleanupService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.AuctionSettlementBackgroundService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.AuctionPaymentFollowUpBackgroundService>();
+builder.Services.AddHostedService<ebay.Services.Implementations.AuctionNotificationBackgroundService>();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();

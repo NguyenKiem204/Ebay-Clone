@@ -11,15 +11,15 @@
 
 INSERT INTO users (username, first_name, last_name, email, password_hash, role, avatar_url, is_email_verified, is_active, phone) VALUES
 ('admin_user', 'System', 'Admin', 'admin@ebay.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'admin', 'https://i.pravatar.cc/150?img=1', true, true, '0123456789'),
-('john_seller', 'John', 'Seller', 'john.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=2', true, true, '0123456788'),
+('john_seller', 'John', 'Seller', 'john.seller@gmail.com', '$2a$12$P/CWuyPU4XChK/zQXfXzb.EXTAAZbqbhm5kCJDl1IU1E5jqtx3tGS', 'seller', 'https://i.pravatar.cc/150?img=2', true, true, '0123456788'),
 ('jane_shop', 'Jane', 'Shop', 'jane.shop@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=3', true, true, '0123456787'),
-('mike_store', 'Mike', 'Store', 'mike.store@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=4', true, true, '0123456786'),
+('mike_store', 'Mike', 'Store', 'mike.store@gmail.com', '$2a$12$P/CWuyPU4XChK/zQXfXzb.EXTAAZbqbhm5kCJDl1IU1E5jqtx3tGS', 'seller', 'https://i.pravatar.cc/150?img=4', true, true, '0123456786'),
 ('sarah_buyer', 'Sarah', 'Johnson', 'sarah.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=5', true, true, '0901234567'),
 ('david_buyer', 'David', 'Smith', 'david.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=6', true, true, '0912345678'),
 ('emma_buyer', 'Emma', 'Wilson', 'emma.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=7', true, true, '0923456789'),
 ('robert_seller', 'Robert', 'Seller', 'robert.seller@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'seller', 'https://i.pravatar.cc/150?img=8', true, true, '0123456785'),
-('lisa_buyer', 'Lisa', 'Brown', 'lisa.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=9', true, true, '0934567890'),
-('tom_buyer', 'Tom', 'Davis', 'tom.buyer@gmail.com', '$2a$11$vPMxwZZgbxLfXmKxHqQOvOYdKVPPXqXqXqXqXqXqXqXqXqXqXqXqX', 'buyer', 'https://i.pravatar.cc/150?img=10', true, true, '0945678901');
+('lisa_buyer', 'Lisa', 'Brown', 'lisa.buyer@gmail.com', '$2a$12$P/CWuyPU4XChK/zQXfXzb.EXTAAZbqbhm5kCJDl1IU1E5jqtx3tGS', 'buyer', 'https://i.pravatar.cc/150?img=9', true, true, '0934567890'),
+('tom_buyer', 'Tom', 'Davis', 'tom.buyer@gmail.com', '$2a$12$P/CWuyPU4XChK/zQXfXzb.EXTAAZbqbhm5kCJDl1IU1E5jqtx3tGS', 'buyer', 'https://i.pravatar.cc/150?img=10', true, true, '0945678901');
 
 -- ============================================
 -- ADDRESSES

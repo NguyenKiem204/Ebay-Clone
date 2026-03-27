@@ -155,6 +155,11 @@ namespace ebay.Services.Implementations
                 query = query.Where(p => (p.IsAuction ?? false) == request.IsAuction.Value);
             }
 
+            if (request.EndingSoon == true)
+            {
+                query = query.Where(p => p.IsAuction == true && p.AuctionEndTime.HasValue && p.AuctionEndTime > DateTime.UtcNow);
+            }
+
             if (request.MinPrice.HasValue)
             {
                 query = query.Where(p => p.Price >= request.MinPrice.Value);
@@ -166,10 +171,21 @@ namespace ebay.Services.Implementations
             }
 
             // Sorting
-            query = request.SortBy switch
+            var normalizedSortBy = string.IsNullOrWhiteSpace(request.SortBy)
+                ? "relevance"
+                : request.SortBy.Trim().ToLowerInvariant();
+
+            query = normalizedSortBy switch
             {
+                "relevance" => ApplyRelevanceSort(query, request.Keyword),
                 "price_asc" => query.OrderBy(p => p.Price),
                 "price_desc" => query.OrderByDescending(p => p.Price),
+                "ending_soonest" => query
+                    .OrderBy(p => p.AuctionEndTime ?? DateTime.MaxValue)
+                    .ThenByDescending(p => p.CreatedAt),
+                "most_bids" => query
+                    .OrderByDescending(p => p.Bids.Count(b => b.IsRetracted != true))
+                    .ThenBy(p => p.AuctionEndTime ?? DateTime.MaxValue),
                 "popular" => query.OrderByDescending(p => p.ViewCount),
                 _ => query.OrderByDescending(p => p.CreatedAt) // newest
             };
@@ -188,6 +204,30 @@ namespace ebay.Services.Implementations
                 Page = request.Page,
                 PageSize = request.PageSize
             };
+        }
+
+        public async Task<List<ProductResponseDto>> GetActiveAuctionsAsync(int limit = 4)
+        {
+            var now = DateTime.UtcNow;
+            var auctions = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .Include(p => p.Reviews)
+                .Include(p => p.Bids)
+                .Include(p => p.OrderItems)
+                .Where(p =>
+                    p.IsAuction == true &&
+                    p.IsActive == true &&
+                    p.Status == "active" &&
+                    p.AuctionEndTime.HasValue &&
+                    p.AuctionEndTime > now &&
+                    (p.AuctionStatus == null || p.AuctionStatus == "live"))
+                .OrderBy(p => p.AuctionEndTime)
+                .ThenByDescending(p => p.Bids.Count(b => b.IsRetracted != true))
+                .Take(limit)
+                .ToListAsync();
+
+            return auctions.Select(MapToDto).ToList();
         }
 
         public async Task<ProductResponseDto> GetProductByIdAsync(int id)
@@ -480,10 +520,8 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                 WinningBidderId = null,
                 AuctionStatus = request.IsAuction ? "live" : null,
                 AuctionStartTime = request.IsAuction ? DateTime.UtcNow : null,
-                AuctionEndTime = request.IsAuction && request.AuctionDurationDays.HasValue
-                    ? DateTime.UtcNow.AddDays(request.AuctionDurationDays.Value)
-                    : request.IsAuction
-                        ? DateTime.UtcNow.AddDays(7)
+                AuctionEndTime = request.IsAuction
+                    ? DateTime.UtcNow.AddMinutes(ResolveAuctionDurationMinutes(request.AuctionDurationMinutes, request.AuctionDurationDays))
                     : null,
                 EndedAt = null,
                 Images = imageUrls,
@@ -547,7 +585,7 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                     throw new BadRequestException("Không thể chuyển listing đấu giá đang chạy sang fixed-price");
                 }
 
-                if (request.AuctionDurationDays.HasValue)
+                if (request.AuctionDurationDays.HasValue || request.AuctionDurationMinutes.HasValue)
                 {
                     throw new BadRequestException("Không thể thay đổi thời lượng khi phiên đấu giá đang chạy");
                 }
@@ -601,7 +639,7 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                     product.ReservePrice = request.ReservePrice;
                     product.BuyItNowPrice = request.BuyItNowPrice;
                     product.AuctionStartTime = now;
-                    product.AuctionEndTime = now.AddDays(request.AuctionDurationDays ?? 7);
+                    product.AuctionEndTime = now.AddMinutes(ResolveAuctionDurationMinutes(request.AuctionDurationMinutes, request.AuctionDurationDays));
                     product.AuctionStatus = "live";
                     product.EndedAt = null;
                     product.WinningBidderId = null;
@@ -665,13 +703,13 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
                 product.BuyItNowPrice = request.BuyItNowPrice.Value;
             }
 
-            if (request.AuctionDurationDays.HasValue && product.IsAuction == true)
+            if ((request.AuctionDurationDays.HasValue || request.AuctionDurationMinutes.HasValue) && product.IsAuction == true)
             {
                 if (isAuctionLive)
                     throw new BadRequestException("Không thể thay đổi thời lượng khi phiên đấu giá đang chạy");
 
                 var auctionStart = product.AuctionStartTime ?? now;
-                product.AuctionEndTime = auctionStart.AddDays(request.AuctionDurationDays.Value);
+                product.AuctionEndTime = auctionStart.AddMinutes(ResolveAuctionDurationMinutes(request.AuctionDurationMinutes, request.AuctionDurationDays));
             }
 
             // Handle images: keep existing ones specified, delete the rest, add new ones
@@ -718,6 +756,21 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
             _logger.LogInformation("Successfully updated product {ProductId}", productId);
 
             return MapToDto(product);
+        }
+
+        private static int ResolveAuctionDurationMinutes(int? durationMinutes, int? durationDays)
+        {
+            if (durationMinutes.HasValue && durationMinutes.Value > 0)
+            {
+                return durationMinutes.Value;
+            }
+
+            if (durationDays.HasValue && durationDays.Value > 0)
+            {
+                return durationDays.Value * 24 * 60;
+            }
+
+            return 7 * 24 * 60;
         }
 
         public async Task<ProductResponseDto> ToggleProductVisibilityAsync(int sellerId, int productId)
@@ -886,6 +939,67 @@ public async Task<List<ProductResponseDto>> GetRecommendationsAsync(int productI
             return normalizedStatus is "sold" or "ended" or "reserve_not_met" or "cancelled";
         }
 
+        private static DateTime? EnsureUtc(DateTime? value)
+        {
+            if (!value.HasValue)
+            {
+                return null;
+            }
+
+            return DateTime.SpecifyKind(value.Value, DateTimeKind.Utc);
+        }
+
+        private static string ResolveAuctionDisplayStatus(Product product, DateTime now)
+        {
+            if (product.IsAuction != true)
+            {
+                return string.Empty;
+            }
+
+            var normalizedStatus = NormalizeAuctionStatus(product.AuctionStatus);
+            if (normalizedStatus == "cancelled")
+            {
+                return "cancelled";
+            }
+
+            if (product.AuctionStartTime.HasValue && product.AuctionStartTime.Value > now)
+            {
+                return "scheduled";
+            }
+
+            var hasEndedByTime = product.AuctionEndTime.HasValue && product.AuctionEndTime.Value <= now;
+            var isClosed = IsAuctionClosedStatus(normalizedStatus) || hasEndedByTime;
+            if (!isClosed)
+            {
+                return "live";
+            }
+
+            if (normalizedStatus == "sold" || product.WinningBidderId.HasValue)
+            {
+                return "sold";
+            }
+
+            return "ended";
+        }
+
+        private static IQueryable<Product> ApplyRelevanceSort(IQueryable<Product> query, string? keyword)
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return query.OrderByDescending(p => p.CreatedAt);
+            }
+
+            var normalizedKeyword = keyword.Trim().ToLowerInvariant();
+
+            return query
+                .OrderByDescending(p => p.Title.ToLower() == normalizedKeyword)
+                .ThenByDescending(p => p.Title.ToLower().StartsWith(normalizedKeyword))
+                .ThenByDescending(p => p.Title.ToLower().Contains(normalizedKeyword))
+                .ThenByDescending(p => (p.Description ?? string.Empty).ToLower().Contains(normalizedKeyword))
+                .ThenByDescending(p => p.ViewCount)
+                .ThenByDescending(p => p.CreatedAt);
+        }
+
         
 public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
 {
@@ -910,7 +1024,8 @@ public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
     SellerId = p.SellerId,
     SellerName = p.Seller?.Username ?? "Unknown",
     IsAuction = p.IsAuction ?? false,
-    AuctionEndTime = p.AuctionEndTime,
+    AuctionStartTime = EnsureUtc(p.AuctionStartTime),
+    AuctionEndTime = EnsureUtc(p.AuctionEndTime),
     CurrentBid = p.CurrentBidPrice ?? (p.Bids != null && p.Bids.Any(b => b.IsRetracted != true)
         ? p.Bids.Where(b => b.IsRetracted != true).Max(b => b.Amount)
         : p.StartingBid),
@@ -923,10 +1038,10 @@ public static ProductResponseDto MapToDto(Product p) => new ProductResponseDto
             ? CalculateMinimumNextBid(p.CurrentBidPrice ?? p.StartingBid ?? p.Price)
             : Math.Round((p.StartingBid ?? p.CurrentBidPrice ?? p.Price), 2, MidpointRounding.AwayFromZero))
         : null,
-    AuctionStatus = p.AuctionStatus,
+    AuctionStatus = ResolveAuctionDisplayStatus(p, DateTime.UtcNow),
     WinningBidderId = p.WinningBidderId,
     SoldCount = p.OrderItems?.Sum(oi => oi.Quantity) ?? 0,
-    CreatedAt = p.CreatedAt ?? DateTime.UtcNow,
+    CreatedAt = EnsureUtc(p.CreatedAt) ?? DateTime.UtcNow,
     Rating = p.Reviews != null && p.Reviews.Any() ? (decimal)p.Reviews.Average(r => r.Rating) : 5.0m,
     ReviewCount = p.Reviews?.Count ?? 0,
     SavedCount = (p.Wishlists?.Count ?? 0) + (p.WatchlistItems?.Count ?? 0),

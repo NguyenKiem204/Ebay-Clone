@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { User, Package, MapPin, Shield, ChevronRight, Pencil, Mail, Phone, Calendar, Info } from 'lucide-react';
 import AddressTab from '../features/auth/components/AddressTab';
 import SecurityTab from '../features/auth/components/SecurityTab';
+import MyAuctionsPanel from '../features/auction/components/MyAuctionsPanel';
 
 export default function ProfilePage() {
     const { user, updateProfile } = useAuthStore();
@@ -56,6 +57,7 @@ export default function ProfilePage() {
         { id: 'personal', label: 'Personal Info', icon: User },
         { id: 'address', label: 'Shipping Addresses', icon: MapPin },
         { id: 'security', label: 'Account Security', icon: Shield },
+        { id: 'auctions', label: 'My Auctions', icon: Package },
     ];
 
     return (
@@ -125,6 +127,16 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-3.5">
                                     <Package size={20} />
                                     Purchases
+                                </div>
+                                <ChevronRight size={16} className="text-gray-300" />
+                            </Link>
+                            <Link
+                                to="/watchlist"
+                                className="w-full flex items-center justify-between px-6 py-4 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all"
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <MapPin size={20} />
+                                    Watchlist
                                 </div>
                                 <ChevronRight size={16} className="text-gray-300" />
                             </Link>
@@ -280,6 +292,7 @@ export default function ProfilePage() {
 
                         {activeTab === 'address' && <AddressTab />}
                         {activeTab === 'security' && <SecurityTab />}
+                        {activeTab === 'auctions' && <MyAuctionsPanel />}
                     </div>
                 </div>
             </div>

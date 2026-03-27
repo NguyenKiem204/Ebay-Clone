@@ -4,14 +4,15 @@ import useCartStore from '../features/cart/hooks/useCartStore';
 
 const useAuthStore = create((set) => ({
     user: null,
-    refreshToken: null, // In-memory only
+    refreshToken: null,
     isAuthenticated: false,
     loading: true,
 
     login: async (email, password) => {
         try {
             const response = await api.post('/api/Auth/login', { email, password });
-            const { data } = response.data; // ApiResponse<AuthResponseDto>
+            const { data } = response.data;
+
             set({
                 user: {
                     id: data.userId,
@@ -25,6 +26,7 @@ const useAuthStore = create((set) => ({
                 refreshToken: data.refreshToken,
                 isAuthenticated: true
             });
+
             return { success: true };
         } catch (error) {
             return { success: false, error: error.response?.data?.message || 'Login failed' };
@@ -35,6 +37,7 @@ const useAuthStore = create((set) => ({
         try {
             const response = await api.post('/api/Auth/social-login', socialData);
             const { data } = response.data;
+
             set({
                 user: {
                     id: data.userId,
@@ -48,6 +51,7 @@ const useAuthStore = create((set) => ({
                 refreshToken: data.refreshToken,
                 isAuthenticated: true
             });
+
             return { success: true };
         } catch (error) {
             return { success: false, error: error.response?.data?.message || 'Social login failed' };
@@ -112,12 +116,13 @@ const useAuthStore = create((set) => ({
         try {
             await api.post('/api/Auth/logout');
         } finally {
-            // Clear cart to prevent leaking data to next user on same browser
             useCartStore.getState().clearCart();
 
-            // Clear history store so next user doesn't see this user's viewed items
             const { default: useHistoryStore } = await import('../features/history/useHistoryStore');
             useHistoryStore.getState().clear();
+
+            const { default: useNotificationStore } = await import('./useNotificationStore');
+            useNotificationStore.getState().clear();
 
             set({
                 user: null,
@@ -132,6 +137,7 @@ const useAuthStore = create((set) => ({
         try {
             const response = await api.get('/api/Auth/me');
             const { data } = response.data;
+
             set({
                 user: {
                     id: data.id,
@@ -146,8 +152,11 @@ const useAuthStore = create((set) => ({
                 isAuthenticated: true
             });
         } catch (error) {
-            // Not authenticated — clear any stale cart data
             useCartStore.getState().clearCart();
+
+            const { default: useNotificationStore } = await import('./useNotificationStore');
+            useNotificationStore.getState().clear();
+
             set({ user: null, isAuthenticated: false });
         } finally {
             set({ loading: false });
@@ -157,9 +166,9 @@ const useAuthStore = create((set) => ({
     updateProfile: async (profileData) => {
         try {
             await api.put('/api/Auth/profile', profileData);
-            // Refresh user data after update
             const response = await api.get('/api/Auth/me');
             const { data } = response.data;
+
             set({
                 user: {
                     id: data.id,
@@ -172,13 +181,14 @@ const useAuthStore = create((set) => ({
                     address: data.address
                 }
             });
+
             return { success: true };
         } catch (error) {
             return { success: false, error: error.response?.data?.message || 'Update failed' };
         }
     },
 
-    setRefreshToken: (token) => set({ refreshToken: token }),
+    setRefreshToken: (token) => set({ refreshToken: token })
 }));
 
 export default useAuthStore;

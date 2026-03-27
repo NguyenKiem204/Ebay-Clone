@@ -10,6 +10,8 @@ public sealed record CheckoutCoreItemRequest
     public int ProductId { get; init; }
 
     public int Quantity { get; init; }
+
+    public bool AllowAuctionBuyItNow { get; init; }
 }
 
 public sealed record CheckoutCoreIssue

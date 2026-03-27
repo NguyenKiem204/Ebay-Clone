@@ -25,14 +25,35 @@ namespace ebay.DTOs.Responses
         public decimal? BuyItNowPrice { get; set; }
         public int BidCount { get; set; }
         public int? WinningBidderId { get; set; }
+        public DateTime? AuctionStartTime { get; set; }
         public DateTime? AuctionEndTime { get; set; }
         public string AuctionStatus { get; set; } = "live";
         public bool IsCurrentUserWinning { get; set; }
+        public string UserBidStatus { get; set; } = "NONE";
     }
 
     public class BidPlacementResponseDto
     {
+        public string Status { get; set; } = "NONE";
+        public decimal CurrentPrice { get; set; }
+        public decimal YourBid { get; set; }
         public AuctionStateResponseDto AuctionState { get; set; } = new();
         public BidResponseDto Bid { get; set; } = new();
+    }
+
+    public class MyAuctionItemResponseDto
+    {
+        public int ProductId { get; set; }
+        public string ProductTitle { get; set; } = string.Empty;
+        public string ProductSlug { get; set; } = string.Empty;
+        public string? Thumbnail { get; set; }
+        public decimal CurrentPrice { get; set; }
+        public decimal? YourMaxBid { get; set; }
+        public int BidCount { get; set; }
+        public DateTime? AuctionEndTime { get; set; }
+        public string AuctionStatus { get; set; } = "live";
+        public string UserBidStatus { get; set; } = "NONE";
+        public bool IsWinning { get; set; }
+        public string SellerName { get; set; } = string.Empty;
     }
 }

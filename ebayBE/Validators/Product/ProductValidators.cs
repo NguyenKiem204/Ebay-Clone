@@ -54,9 +54,14 @@ namespace ebay.Validators.Product
                 .Must(x => !x.IsAuction || !x.BuyItNowPrice.HasValue || !x.StartingBid.HasValue || x.BuyItNowPrice.Value >= x.StartingBid.Value * 1.3m)
                 .WithMessage("Buy It Now phải >= 130% starting bid theo rule auction + BIN");
 
+            RuleFor(x => x.AuctionDurationMinutes)
+                .InclusiveBetween(15, 14_400)
+                .When(x => x.IsAuction && x.AuctionDurationMinutes.HasValue)
+                .WithMessage("Thời lượng đấu giá phải từ 15 phút đến 10 ngày");
+
             RuleFor(x => x.AuctionDurationDays)
                 .Must(d => !d.HasValue || new[] { 1, 3, 5, 7, 10 }.Contains(d.Value))
-                .When(x => x.IsAuction)
+                .When(x => x.IsAuction && !x.AuctionDurationMinutes.HasValue)
                 .WithMessage("Thời lượng đấu giá chỉ hỗ trợ: 1, 3, 5, 7 hoặc 10 ngày");
         }
     }
@@ -103,9 +108,14 @@ namespace ebay.Validators.Product
                 .Must(x => x.IsAuction != true || !x.BuyItNowPrice.HasValue || !x.StartingBid.HasValue || x.BuyItNowPrice.Value >= x.StartingBid.Value * 1.3m)
                 .WithMessage("Buy It Now phải >= 130% starting bid theo rule auction + BIN");
 
+            RuleFor(x => x.AuctionDurationMinutes)
+                .InclusiveBetween(15, 14_400)
+                .When(x => x.IsAuction == true && x.AuctionDurationMinutes.HasValue)
+                .WithMessage("Thời lượng đấu giá phải từ 15 phút đến 10 ngày");
+
             RuleFor(x => x.AuctionDurationDays)
                 .Must(d => !d.HasValue || new[] { 1, 3, 5, 7, 10 }.Contains(d.Value))
-                .When(x => x.IsAuction == true)
+                .When(x => x.IsAuction == true && !x.AuctionDurationMinutes.HasValue)
                 .WithMessage("Thời lượng đấu giá chỉ hỗ trợ: 1, 3, 5, 7 hoặc 10 ngày");
         }
     }

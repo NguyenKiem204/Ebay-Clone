@@ -14,9 +14,21 @@ namespace ebay.DTOs.Responses
 
         public string Reason { get; set; } = string.Empty;
 
+        public string? Description { get; set; }
+
         public string ResolutionType { get; set; } = string.Empty;
 
+        public string? RequestedResolution { get; set; }
+
         public string Status { get; set; } = string.Empty;
+
+        public string DisplayStatus { get; set; } = string.Empty;
+
+        public string? NextAction { get; set; }
+
+        public bool CanCancel { get; set; }
+
+        public bool CanSubmitTracking { get; set; }
 
         public decimal? RefundAmount { get; set; }
 
@@ -33,6 +45,10 @@ namespace ebay.DTOs.Responses
         public BuyerCaseOrderItemSummaryResponseDto? OrderItem { get; set; }
 
         public BuyerCaseSlaResponseDto? Sla { get; set; }
+
+        public BuyerCaseTrackingResponseDto? ReturnTracking { get; set; }
+
+        public BuyerCaseRefundSummaryResponseDto? RefundSummary { get; set; }
 
         public List<BuyerCaseEvidenceResponseDto> Evidence { get; set; } = new();
 

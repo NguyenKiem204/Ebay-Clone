@@ -19,7 +19,9 @@ namespace ebay.Services.Implementations
         {
             "refund",
             "replacement",
-            "exchange"
+            "exchange",
+            "refund_only",
+            "return_for_refund"
         };
 
         private readonly EbayDbContext _context;
@@ -68,6 +70,12 @@ namespace ebay.Services.Implementations
                 throw new BadRequestException("Return reason is required.");
             }
 
+            var normalizedDescription = request.Description?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedDescription))
+            {
+                throw new BadRequestException("Return description is required.");
+            }
+
             var normalizedResolutionType = NormalizeResolutionType(request.ResolutionType);
             if (!AllowedResolutionTypes.Contains(normalizedResolutionType))
             {
@@ -105,7 +113,7 @@ namespace ebay.Services.Implementations
                 }
             }
 
-            var decision = _buyerCasePolicyService.CanOpenGuestReturn(order);
+            var decision = _buyerCasePolicyService.CanOpenGuestReturn(CloneOrderWithoutCases(order));
             if (!decision.Allowed)
             {
                 throw new BadRequestException(
@@ -113,7 +121,10 @@ namespace ebay.Services.Implementations
                     new List<string> { decision.Code });
             }
 
+            EnsureNoBlockingCases(order, selectedOrderItem?.Id);
+
             var now = DateTime.UtcNow;
+            var storedResolutionType = MapStoredResolutionType(normalizedResolutionType);
 
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
@@ -126,7 +137,7 @@ namespace ebay.Services.Implementations
                     RequestType = RequestTypeReturn,
                     ReasonCode = NormalizeNullable(request.ReasonCode),
                     Reason = normalizedReason,
-                    ResolutionType = normalizedResolutionType,
+                    ResolutionType = storedResolutionType,
                     Status = ReturnStatusPending,
                     CreatedAt = now,
                     UpdatedAt = now
@@ -151,6 +162,8 @@ namespace ebay.Services.Implementations
                         requestType = returnRequest.RequestType,
                         reasonCode = returnRequest.ReasonCode,
                         resolutionType = returnRequest.ResolutionType,
+                        requestedResolution = normalizedResolutionType,
+                        description = normalizedDescription,
                         guestAccess = true,
                         proofMethod = accessDecision.Grant?.ProofMethod ?? (accessDecision.UsedAccessToken ? "access_token" : "email_lookup")
                     }),
@@ -181,13 +194,78 @@ namespace ebay.Services.Implementations
         private static string NormalizeResolutionType(string? resolutionType)
         {
             return string.IsNullOrWhiteSpace(resolutionType)
-                ? "refund"
+                ? "return_for_refund"
                 : resolutionType.Trim().ToLowerInvariant();
+        }
+
+        private static string MapStoredResolutionType(string normalizedResolutionType)
+        {
+            return normalizedResolutionType switch
+            {
+                "refund_only" => "refund",
+                "return_for_refund" => "refund",
+                _ => normalizedResolutionType
+            };
         }
 
         private static string? NormalizeNullable(string? value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
+        }
+
+        private static Order CloneOrderWithoutCases(Order order)
+        {
+            return new Order
+            {
+                Id = order.Id,
+                CustomerType = order.CustomerType,
+                GuestEmail = order.GuestEmail,
+                Status = order.Status,
+                CreatedAt = order.CreatedAt,
+                UpdatedAt = order.UpdatedAt,
+                OrderDate = order.OrderDate,
+                Payments = order.Payments.ToList(),
+                ShippingInfo = order.ShippingInfo,
+                OrderItems = order.OrderItems.ToList(),
+                ReturnRequests = new List<ReturnRequest>(),
+                Disputes = new List<Dispute>()
+            };
+        }
+
+        private static void EnsureNoBlockingCases(Order order, int? selectedOrderItemId)
+        {
+            if (order.Disputes.Any(dispute =>
+                string.Equals(dispute.CaseType, "inr", StringComparison.OrdinalIgnoreCase)
+                && IsOpenDispute(dispute)))
+            {
+                throw new BadRequestException(
+                    "An item-not-received request is already open for this order.",
+                    new List<string> { "open_inr_exists" });
+            }
+
+            if (order.ReturnRequests.Any(request =>
+                string.Equals(request.RequestType, RequestTypeReturn, StringComparison.OrdinalIgnoreCase)
+                && IsOpenReturn(request)
+                && (!selectedOrderItemId.HasValue
+                    || !request.OrderItemId.HasValue
+                    || request.OrderItemId == selectedOrderItemId)))
+            {
+                throw new BadRequestException(
+                    "A return / refund request is already open for this order or item.",
+                    new List<string> { "open_return_exists" });
+            }
+        }
+
+        private static bool IsOpenReturn(ReturnRequest request)
+        {
+            return string.Equals(request.Status, "pending", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(request.Status, "approved", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsOpenDispute(Dispute dispute)
+        {
+            return string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(dispute.Status, "in_progress", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string BuildCreatedMessage(ReturnRequest returnRequest)

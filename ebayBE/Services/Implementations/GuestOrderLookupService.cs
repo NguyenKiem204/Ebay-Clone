@@ -112,6 +112,8 @@ namespace ebay.Services.Implementations
                 .Include(o => o.Address)
                 .Include(o => o.Payments)
                 .Include(o => o.ShippingInfo)
+                .Include(o => o.ReturnRequests)
+                .Include(o => o.Disputes)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
                 .Include(o => o.OrderItems)

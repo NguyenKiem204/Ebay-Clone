@@ -9,7 +9,8 @@ namespace ebay.DTOs.Requests
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
         public bool? IsAuction { get; set; }
-        public string? SortBy { get; set; } // newest, price_asc, price_desc, popular
+        public bool? EndingSoon { get; set; }
+        public string? SortBy { get; set; } // relevance, newest, price_asc, price_desc, popular, ending_soonest, most_bids
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }

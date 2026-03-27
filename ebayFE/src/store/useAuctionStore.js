@@ -6,6 +6,7 @@ const useAuctionStore = create((set, get) => ({
     winningBid: null,
     auctionState: null,
     auctionStatesByProduct: {},
+    lastBidResult: null,
     isLoading: false,
     error: null,
 
@@ -66,17 +67,20 @@ const useAuctionStore = create((set, get) => ({
                 auctionStatesByProduct: {
                     ...state.auctionStatesByProduct,
                     [productId]: nextAuctionState
-                }
+                },
+                lastBidResult: payload || null
             }));
 
             set({ isLoading: false });
-            return { success: true, bid: payload?.bid, auctionState: payload?.auctionState };
+            return { success: true, ...payload, bid: payload?.bid, auctionState: payload?.auctionState };
         } catch (err) {
             const message = err.response?.data?.message || err.message || 'Failed to place bid';
             set({ error: message, isLoading: false });
             return { success: false, message };
         }
-    }
+    },
+
+    clearBidResult: () => set({ lastBidResult: null })
 }));
 
 export default useAuctionStore;

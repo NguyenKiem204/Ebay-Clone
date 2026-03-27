@@ -6,6 +6,8 @@ namespace ebay.DTOs.Requests
 
         public int? OrderItemId { get; set; }
 
+        public string? ReasonCode { get; set; }
+
         public string Description { get; set; } = string.Empty;
     }
 
@@ -21,6 +23,11 @@ namespace ebay.DTOs.Requests
     }
 
     public class EscalateReturnRequestDto
+    {
+        public string Description { get; set; } = string.Empty;
+    }
+
+    public class EscalateInrClaimDto
     {
         public string Description { get; set; } = string.Empty;
     }

@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button';
 import { BASE_URL } from '../lib/axios';
 
 const formatDateTime = (value) => (
-    value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
+    value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
 const formatVND = (amount) => (
@@ -251,6 +251,16 @@ export default function CaseDetailPage() {
     const [evidenceSuccess, setEvidenceSuccess] = useState('');
     const [uploadingEvidence, setUploadingEvidence] = useState(false);
     const [fileInputKey, setFileInputKey] = useState(0);
+    const [showTrackingForm, setShowTrackingForm] = useState(false);
+    const [trackingForm, setTrackingForm] = useState({
+        carrier: '',
+        trackingNumber: '',
+        shippedAt: ''
+    });
+    const [actionNote, setActionNote] = useState('');
+    const [actionError, setActionError] = useState('');
+    const [actionSuccess, setActionSuccess] = useState('');
+    const [submittingCaseAction, setSubmittingCaseAction] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -300,6 +310,16 @@ export default function CaseDetailPage() {
         setEvidenceSuccess('');
         setUploadingEvidence(false);
         setFileInputKey((current) => current + 1);
+        setShowTrackingForm(false);
+        setTrackingForm({
+            carrier: '',
+            trackingNumber: '',
+            shippedAt: ''
+        });
+        setActionNote('');
+        setActionError('');
+        setActionSuccess('');
+        setSubmittingCaseAction(false);
     }, [caseKind, id]);
 
     const caseTitle = useMemo(() => {
@@ -324,6 +344,9 @@ export default function CaseDetailPage() {
     const financialSnapshot = useMemo(() => (
         getLatestFinancialSnapshot(caseData)
     ), [caseData]);
+    const canCancelCase = Boolean(caseData?.canCancel);
+    const canSubmitTracking = Boolean(isReturnCase && caseData?.canSubmitTracking);
+    const canEscalateInr = Boolean(!isReturnCase && caseData?.canEscalate);
 
     const reloadCaseDetail = async () => {
         if (!caseKind || !id) {
@@ -389,6 +412,87 @@ export default function CaseDetailPage() {
         }
     };
 
+    const handleCancelCase = async () => {
+        if (!caseData?.id) {
+            return;
+        }
+
+        setSubmittingCaseAction(true);
+        setActionError('');
+        setActionSuccess('');
+
+        try {
+            if (isReturnCase) {
+                await caseService.cancelReturnRequest(caseData.id, actionNote.trim());
+            } else {
+                await caseService.cancelInrClaim(caseData.id, actionNote.trim());
+            }
+
+            await reloadCaseDetail();
+            setActionSuccess(isReturnCase
+                ? 'The return / refund request was cancelled.'
+                : 'The INR request was cancelled.');
+            setActionNote('');
+        } catch (submitError) {
+            setActionError(submitError.response?.data?.message || submitError.message || 'Could not cancel this request right now.');
+        } finally {
+            setSubmittingCaseAction(false);
+        }
+    };
+
+    const handleSubmitTracking = async (event) => {
+        event.preventDefault();
+        if (!caseData?.id) {
+            return;
+        }
+
+        setSubmittingCaseAction(true);
+        setActionError('');
+        setActionSuccess('');
+
+        try {
+            await caseService.submitReturnTracking(caseData.id, {
+                carrier: trackingForm.carrier,
+                trackingNumber: trackingForm.trackingNumber,
+                shippedAt: trackingForm.shippedAt
+            });
+
+            await reloadCaseDetail();
+            setActionSuccess('Return tracking submitted successfully.');
+            setShowTrackingForm(false);
+            setTrackingForm({
+                carrier: '',
+                trackingNumber: '',
+                shippedAt: ''
+            });
+        } catch (submitError) {
+            setActionError(submitError.response?.data?.message || submitError.message || 'Could not submit return tracking right now.');
+        } finally {
+            setSubmittingCaseAction(false);
+        }
+    };
+
+    const handleEscalateInr = async () => {
+        if (!caseData?.id) {
+            return;
+        }
+
+        setSubmittingCaseAction(true);
+        setActionError('');
+        setActionSuccess('');
+
+        try {
+            await caseService.escalateInrClaim(caseData.id, actionNote.trim());
+            await reloadCaseDetail();
+            setActionSuccess('The INR request was escalated successfully.');
+            setActionNote('');
+        } catch (submitError) {
+            setActionError(submitError.response?.data?.message || submitError.message || 'Could not escalate this INR request right now.');
+        } finally {
+            setSubmittingCaseAction(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-12 max-w-5xl">
@@ -437,10 +541,10 @@ export default function CaseDetailPage() {
                         <div>
                             <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Status</p>
                             <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${getStatusStyles(caseData.status)}`}>
-                                {caseData.status}
+                                {caseData.displayStatus || caseData.status}
                             </div>
-                            {lifecycleCopy?.title && (
-                                <p className="text-xs text-gray-500 mt-2">{lifecycleCopy.title}</p>
+                            {(caseData.nextAction || lifecycleCopy?.title) && (
+                                <p className="text-xs text-gray-500 mt-2">{caseData.nextAction || lifecycleCopy.title}</p>
                             )}
                         </div>
                         <div>
@@ -481,7 +585,7 @@ export default function CaseDetailPage() {
                         {'resolutionType' in caseData && (
                             <div>
                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Requested resolution</p>
-                                <p className="font-semibold text-gray-900 capitalize">{caseData.resolutionType || 'Not available'}</p>
+                                <p className="font-semibold text-gray-900 capitalize">{caseData.requestedResolution || caseData.resolutionType || 'Not available'}</p>
                             </div>
                         )}
 
@@ -503,6 +607,18 @@ export default function CaseDetailPage() {
                             <div>
                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Refund amount</p>
                                 <p className="font-semibold text-gray-900">{formatVND(caseData.refundAmount)}</p>
+                            </div>
+                        )}
+
+                        {caseData.returnTracking && (
+                            <div className="md:col-span-2 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+                                <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-2">Return tracking</p>
+                                <p className="text-sm text-gray-800">
+                                    {caseData.returnTracking.carrier || 'Carrier not provided'} • {caseData.returnTracking.trackingNumber || 'Tracking number not provided'}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Shipped at {formatDateTime(caseData.returnTracking.shippedAt)}
+                                </p>
                             </div>
                         )}
 
@@ -703,6 +819,104 @@ export default function CaseDetailPage() {
                                         </Button>
                                     </div>
                                 </form>
+                            )}
+                        </div>
+                    )}
+
+                    {(canCancelCase || canSubmitTracking || canEscalateInr) && (
+                        <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 space-y-4">
+                            <div>
+                                <p className="font-semibold text-blue-900">Next action</p>
+                                <p className="text-sm text-blue-800 mt-1">
+                                    {caseData.nextAction || 'Use the available actions below to continue this request.'}
+                                </p>
+                            </div>
+
+                            {(canCancelCase || canEscalateInr) && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                                        Add a note
+                                    </label>
+                                    <textarea
+                                        value={actionNote}
+                                        onChange={(event) => setActionNote(event.target.value)}
+                                        className="w-full min-h-[96px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                                        placeholder={canEscalateInr ? 'Explain why you are escalating this INR request.' : 'Optional note for the case timeline.'}
+                                    />
+                                </div>
+                            )}
+
+                            {canSubmitTracking && (
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant={showTrackingForm ? 'primary' : 'outline'}
+                                        onClick={() => setShowTrackingForm((current) => !current)}
+                                    >
+                                        Submit return tracking
+                                    </Button>
+
+                                    {showTrackingForm && (
+                                        <form onSubmit={handleSubmitTracking} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <input
+                                                type="text"
+                                                value={trackingForm.carrier}
+                                                onChange={(event) => setTrackingForm((current) => ({ ...current, carrier: event.target.value }))}
+                                                className="h-11 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                                                placeholder="Carrier"
+                                                required
+                                            />
+                                            <input
+                                                type="text"
+                                                value={trackingForm.trackingNumber}
+                                                onChange={(event) => setTrackingForm((current) => ({ ...current, trackingNumber: event.target.value }))}
+                                                className="h-11 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                                                placeholder="Tracking number"
+                                                required
+                                            />
+                                            <input
+                                                type="datetime-local"
+                                                value={trackingForm.shippedAt}
+                                                onChange={(event) => setTrackingForm((current) => ({ ...current, shippedAt: event.target.value }))}
+                                                className="h-11 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                                                required
+                                            />
+                                            <div className="md:col-span-3 flex flex-wrap gap-3">
+                                                <Button type="submit" isLoading={submittingCaseAction}>
+                                                    Save tracking
+                                                </Button>
+                                                <Button type="button" variant="ghost" onClick={() => setShowTrackingForm(false)}>
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </>
+                            )}
+
+                            <div className="flex flex-wrap gap-3">
+                                {canCancelCase && (
+                                    <Button type="button" variant="outline" onClick={handleCancelCase} isLoading={submittingCaseAction}>
+                                        Cancel request
+                                    </Button>
+                                )}
+                                {canEscalateInr && (
+                                    <Button type="button" onClick={handleEscalateInr} isLoading={submittingCaseAction}>
+                                        Escalate INR
+                                    </Button>
+                                )}
+                            </div>
+
+                            {actionError && (
+                                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {actionError}
+                                </div>
+                            )}
+
+                            {actionSuccess && (
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                                    {actionSuccess}
+                                </div>
                             )}
                         </div>
                     )}

@@ -79,6 +79,7 @@ namespace ebay.DTOs.Responses
         public GuestCheckoutTotalsResponseDto Totals { get; set; } = new();
         public GuestOrderShippingSummaryResponseDto ShippingAddress { get; set; } = new();
         public List<GuestOrderLookupItemResponseDto> Items { get; set; } = new();
+        public OrderAfterSalesSummaryResponseDto? AfterSales { get; set; }
         public GuestAfterSalesAccessResponseDto? AfterSalesAccess { get; set; }
 
         public static GuestOrderLookupResponseDto NotFound()

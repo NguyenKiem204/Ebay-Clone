@@ -75,6 +75,7 @@ public class CheckoutCoreService : ICheckoutCoreService
         var productIds = normalizedInputs.Select(item => item.ProductId).ToList();
         var products = await _context.Products
             .AsNoTracking()
+            .Include(product => product.Bids)
             .Where(product => productIds.Contains(product.Id))
             .ToDictionaryAsync(product => product.Id, cancellationToken);
 
@@ -96,8 +97,10 @@ public class CheckoutCoreService : ICheckoutCoreService
             var availableStock = product.Stock ?? 0;
             var isSellable = product.IsActive == true && string.Equals(product.Status, "active", StringComparison.OrdinalIgnoreCase);
             var isAuction = product.IsAuction == true;
+            var allowAuctionBuyItNow = input.AllowAuctionBuyItNow && isAuction && input.Quantity == 1;
             var shippingFee = product.ShippingFee ?? 0m;
-            var lineSubtotal = product.Price * input.Quantity;
+            var unitPrice = product.Price;
+            var lineSubtotal = unitPrice * input.Quantity;
             var lineTotal = lineSubtotal + shippingFee;
 
             if (!isSellable)
@@ -122,12 +125,70 @@ public class CheckoutCoreService : ICheckoutCoreService
 
             if (isAuction)
             {
-                issues.Add(new CheckoutCoreIssue
+                if (!allowAuctionBuyItNow)
                 {
-                    ProductId = product.Id,
-                    Code = "auction_item",
-                    Message = $"Product {product.Id} is an auction item and is not eligible for this checkout flow."
-                });
+                    issues.Add(new CheckoutCoreIssue
+                    {
+                        ProductId = product.Id,
+                        Code = "auction_item",
+                        Message = $"Product {product.Id} is an auction item and is not eligible for this checkout flow."
+                    });
+                }
+                else
+                {
+                    var now = DateTime.UtcNow;
+                    var normalizedStatus = string.IsNullOrWhiteSpace(product.AuctionStatus)
+                        ? "live"
+                        : product.AuctionStatus.Trim().ToLowerInvariant();
+                    var activeBids = product.Bids
+                        .Where(bid => bid.IsRetracted != true)
+                        .ToList();
+                    var computed = AuctionPricingEngine.ComputeAuctionState(product, activeBids);
+
+                    if (product.AuctionStartTime.HasValue && product.AuctionStartTime.Value > now)
+                    {
+                        issues.Add(new CheckoutCoreIssue
+                        {
+                            ProductId = product.Id,
+                            Code = "auction_not_started",
+                            Message = $"Product {product.Id} auction has not started yet."
+                        });
+                    }
+
+                    if (product.AuctionEndTime.HasValue && product.AuctionEndTime.Value <= now)
+                    {
+                        issues.Add(new CheckoutCoreIssue
+                        {
+                            ProductId = product.Id,
+                            Code = "auction_ended",
+                            Message = $"Product {product.Id} auction has already ended."
+                        });
+                    }
+
+                    if (normalizedStatus is "sold" or "ended" or "reserve_not_met" or "cancelled")
+                    {
+                        issues.Add(new CheckoutCoreIssue
+                        {
+                            ProductId = product.Id,
+                            Code = "auction_closed",
+                            Message = $"Product {product.Id} auction is no longer available for Buy It Now."
+                        });
+                    }
+
+                    if (!product.BuyItNowPrice.HasValue || !computed.BuyItNowAvailable)
+                    {
+                        issues.Add(new CheckoutCoreIssue
+                        {
+                            ProductId = product.Id,
+                            Code = "buy_it_now_unavailable",
+                            Message = $"Product {product.Id} no longer supports Buy It Now."
+                        });
+                    }
+
+                    unitPrice = product.BuyItNowPrice ?? product.Price;
+                    lineSubtotal = unitPrice * input.Quantity;
+                    lineTotal = lineSubtotal + shippingFee;
+                }
             }
 
             normalizedItems.Add(new CheckoutCoreNormalizedItem
@@ -136,7 +197,7 @@ public class CheckoutCoreService : ICheckoutCoreService
                 Title = product.Title,
                 SellerId = product.SellerId,
                 Quantity = input.Quantity,
-                UnitPrice = product.Price,
+                UnitPrice = unitPrice,
                 LineSubtotal = lineSubtotal,
                 ShippingFee = shippingFee,
                 LineTotal = lineTotal,

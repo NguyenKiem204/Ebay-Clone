@@ -1,42 +1,48 @@
 import { useEffect, useState } from 'react';
+import useAuctionStore from '../../../store/useAuctionStore';
 
 /**
- * Placeholder hook for Auction Socket logic.
- * In a real implementation, this would connect to a WebSocket server
- * to receive real-time bid updates.
+ * Phase 3 realtime-lite hook.
+ * We keep the existing API surface but use interval polling until
+ * a dedicated socket transport is added later.
  */
-export default function useAuctionSocket(auctionId) {
-    const [currentBid, setCurrentBid] = useState(null);
-    const [bidsCount, setBidsCount] = useState(0);
+export default function useAuctionSocket(auctionId, options = {}) {
+    const {
+        enabled = true,
+        intervalMs = 15000
+    } = options;
+
+    const fetchAuctionState = useAuctionStore((state) => state.fetchAuctionState);
+    const auctionState = useAuctionStore((state) => state.auctionStatesByProduct?.[auctionId] || null);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
     useEffect(() => {
-        if (!auctionId) return;
+        if (!auctionId || !enabled) {
+            return undefined;
+        }
 
-        // Mock socket connection logic
-        const mockSocket = {
-            on: (event, callback) => {
-                if (event === 'bid_update') {
-                    // Simulate receiving updates
-                }
-            },
-            emit: (event, data) => {
-                console.log(`Socket emited ${event}:`, data);
-            },
-            disconnect: () => {
-                console.log('Socket disconnected');
+        let cancelled = false;
+
+        const refresh = async () => {
+            await fetchAuctionState(auctionId);
+            if (!cancelled) {
+                setLastUpdated(Date.now());
             }
         };
 
+        refresh();
+        const timer = window.setInterval(refresh, intervalMs);
+
         return () => {
-            mockSocket.disconnect();
+            cancelled = true;
+            window.clearInterval(timer);
         };
-    }, [auctionId]);
+    }, [auctionId, enabled, fetchAuctionState, intervalMs]);
 
     return {
-        currentBid,
-        bidsCount,
-        placeBid: (amount) => {
-            console.log(`Placing bid of ${amount} for auction ${auctionId}`);
-        }
+        auctionState,
+        currentBid: auctionState?.currentPrice ?? null,
+        bidsCount: auctionState?.bidCount ?? 0,
+        lastUpdated
     };
 }

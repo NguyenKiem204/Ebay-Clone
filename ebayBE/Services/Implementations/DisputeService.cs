@@ -47,7 +47,7 @@ namespace ebay.Services.Implementations
             var order = await LoadBuyerOrderAsync(userId, request.OrderId);
             var selectedOrderItem = ResolveOrderItem(order, request.OrderItemId);
 
-            var decision = _buyerCasePolicyService.CanOpenInr(order);
+            var decision = _buyerCasePolicyService.CanOpenInr(CloneOrderWithoutCases(order));
             if (!decision.Allowed)
             {
                 throw new BadRequestException(
@@ -55,13 +55,16 @@ namespace ebay.Services.Implementations
                     new List<string> { decision.Code });
             }
 
+            EnsureNoBlockingCasesForInr(order, selectedOrderItem?.Id);
+
             return await CreateBuyerDisputeAsync(
                 userId,
                 order,
                 selectedOrderItem,
                 normalizedDescription,
                 DisputeCaseTypeInr,
-                BuildCreatedMessage(DisputeCaseTypeInr, selectedOrderItem?.Id));
+                BuildCreatedMessage(DisputeCaseTypeInr, selectedOrderItem?.Id),
+                request.ReasonCode);
         }
 
         public async Task<DisputeResponseDto> CreateQualityIssueClaimAsync(int userId, CreateQualityIssueClaimDto request)
@@ -90,7 +93,8 @@ namespace ebay.Services.Implementations
                 selectedOrderItem,
                 normalizedDescription,
                 normalizedCaseType,
-                BuildCreatedMessage(normalizedCaseType, selectedOrderItem?.Id));
+                BuildCreatedMessage(normalizedCaseType, selectedOrderItem?.Id),
+                reasonCode: null);
         }
 
         public async Task<DisputeResponseDto> EscalateReturnRequestAsync(int userId, int returnRequestId, EscalateReturnRequestDto request)
@@ -264,7 +268,8 @@ namespace ebay.Services.Implementations
             OrderItem? selectedOrderItem,
             string normalizedDescription,
             string caseType,
-            string createdMessage)
+            string createdMessage,
+            string? reasonCode)
         {
             var now = DateTime.UtcNow;
 
@@ -299,7 +304,8 @@ namespace ebay.Services.Implementations
                         orderId = dispute.OrderId,
                         orderItemId = dispute.OrderItemId,
                         caseType = dispute.CaseType,
-                        status = dispute.Status
+                        status = dispute.Status,
+                        reasonCode = NormalizeNullable(reasonCode)
                     }),
                     CreatedAt = now
                 };
@@ -346,6 +352,7 @@ namespace ebay.Services.Implementations
                 DisputeCaseTypeDamaged => "damaged-item claim",
                 DisputeCaseTypeSnad => "SNAD claim",
                 DisputeCaseTypeReturnEscalation => "return escalation dispute",
+                DisputeCaseTypeInr => "INR claim",
                 _ => "buyer protection claim"
             };
 
@@ -370,6 +377,66 @@ namespace ebay.Services.Implementations
             }
 
             return $"Buyer escalated return request {returnRequestId} into a dispute.";
+        }
+
+        private static string? NormalizeNullable(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
+        }
+
+        private static Order CloneOrderWithoutCases(Order order)
+        {
+            return new Order
+            {
+                Id = order.Id,
+                CustomerType = order.CustomerType,
+                BuyerId = order.BuyerId,
+                Status = order.Status,
+                CreatedAt = order.CreatedAt,
+                UpdatedAt = order.UpdatedAt,
+                OrderDate = order.OrderDate,
+                Payments = order.Payments.ToList(),
+                ShippingInfo = order.ShippingInfo,
+                OrderItems = order.OrderItems.ToList(),
+                ReturnRequests = new List<ReturnRequest>(),
+                Disputes = new List<Dispute>()
+            };
+        }
+
+        private static void EnsureNoBlockingCasesForInr(Order order, int? selectedOrderItemId)
+        {
+            if (order.ReturnRequests.Any(request =>
+                string.Equals(request.RequestType, "return", StringComparison.OrdinalIgnoreCase)
+                && IsOpenReturn(request)))
+            {
+                throw new BadRequestException(
+                    "A return / refund request is already open for this order.",
+                    new List<string> { "open_return_exists" });
+            }
+
+            if (order.Disputes.Any(dispute =>
+                string.Equals(dispute.CaseType, DisputeCaseTypeInr, StringComparison.OrdinalIgnoreCase)
+                && IsOpenDispute(dispute)
+                && (!selectedOrderItemId.HasValue
+                    || !dispute.OrderItemId.HasValue
+                    || dispute.OrderItemId == selectedOrderItemId)))
+            {
+                throw new BadRequestException(
+                    "An item-not-received request is already open for this order or item.",
+                    new List<string> { "open_inr_exists" });
+            }
+        }
+
+        private static bool IsOpenReturn(ReturnRequest request)
+        {
+            return string.Equals(request.Status, "pending", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(request.Status, "approved", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsOpenDispute(Dispute dispute)
+        {
+            return string.Equals(dispute.Status, "open", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(dispute.Status, "in_progress", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

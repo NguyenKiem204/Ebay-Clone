@@ -10,6 +10,10 @@ namespace ebay.DTOs.Responses
 
         public string Status { get; set; } = string.Empty;
 
+        public string DisplayStatus { get; set; } = string.Empty;
+
+        public string? NextAction { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime? ClosedAt { get; set; }
