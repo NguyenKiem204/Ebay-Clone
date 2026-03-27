@@ -195,7 +195,7 @@ app.UseCors("AllowFrontend"); // Enable CORS before Auth
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles(); // Cho phép truy cập ảnh từ thư mục wwwroot
+app.UseStaticFiles();
 app.MapControllers();
 // Apply migrations automatically on startup
 using (var scope = app.Services.CreateScope())
