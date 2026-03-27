@@ -12,7 +12,6 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// Response interceptor for automatic refresh
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
