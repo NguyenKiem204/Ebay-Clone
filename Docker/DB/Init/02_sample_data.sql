@@ -627,7 +627,7 @@ INSERT INTO bids (product_id, bidder_id, amount, bid_time, is_winning) VALUES
 UPDATE products SET auction_end_time = CURRENT_TIMESTAMP + INTERVAL '2 days' WHERE id = 5;
 
 -- ============================================
--- RETURN REQUESTS
+-- RETURN REQUEST
 -- ============================================
 
 INSERT INTO return_requests (order_id, user_id, reason, status, refund_amount, created_at) VALUES
