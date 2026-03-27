@@ -645,7 +645,7 @@ CREATE INDEX idx_watchlist_user ON watchlist(user_id);
 CREATE TABLE product_view_history (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE,          -- NULL for guests
-    cookie_id VARCHAR(36),                                        -- UUID cookie for guests
+    cookie_id VARCHAR(36),
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
