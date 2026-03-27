@@ -41,6 +41,19 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy config files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "docker-compose.yml,nginx.conf"
+          target: "/ebay-project"
+
       - name: SSH into VPS and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -51,9 +64,15 @@ jobs:
           script: |
             # Use absolute path
             cd /ebay-project
+            # Ensure swarm is initialized (fails silently if already initialized)
+            docker swarm init || true
             # Pull the latest images
             docker compose pull
-            # Start/Restart the containers
-            docker compose up -d
+            # Shut down the old docker-compose containers (One-time transition required to free up ports)
+            docker compose down || true
+            # Export environment variables for Swarm
+            export $(grep -v '^#' .env | xargs)
+            # Deploy stack using Swarm for Zero Downtime
+            docker stack deploy -c docker-compose.yml ebay-cluster
             # Optional: Clean up old images to save space
             docker image prune -f

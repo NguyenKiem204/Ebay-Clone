@@ -131,6 +131,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -186,14 +187,15 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger"; // Truy cập tại /swagger
 });
 
+app.MapHealthChecks("/health");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseCors("AllowFrontend"); // Handle preflight before custom middlewares can short-circuit
 app.UseMiddleware<AntiSpamMiddleware>();
 app.UseMiddleware<RateLimitingMiddleware>();
+app.UseCors("AllowFrontend"); // Enable CORS before Auth
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles(); // Cho phép truy cập ảnh từ thư mục wwwroot
+app.UseStaticFiles();
 app.MapControllers();
 // Apply migrations automatically on startup
 using (var scope = app.Services.CreateScope())

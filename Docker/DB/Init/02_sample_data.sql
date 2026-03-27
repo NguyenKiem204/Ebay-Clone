@@ -132,7 +132,7 @@ INSERT INTO products (title, slug, description, price, images, category_id, sell
 ('Apple iPhone 14 Pro 256GB Unlocked - Very Good', 'apple-iphone-14-pro-256gb-unlocked-very-good', 'Apple iPhone 14 Pro with 256GB storage, unlocked and in very good condition.', 10118342, ARRAY['https://i.ebayimg.com/images/g/xgcAAeSwat1peN1g/s-l960.webp', 'https://picsum.photos/400/400?random=15'], 3, 2, 1, false, 'refurbished', 'Apple', 0.17, 28, 'active', 10, 0, 28809186),
 ('Apple iPhone 14 - 128GB/256GB, 5G, Unlocked - Very Good Condition, Free Ship', 'apple-iphone-14-128gb-256gb-5g-unlocked-very-good-condition-free-ship', 'Apple iPhone 14 with 128GB or 256GB storage, 5G, unlocked and in very good condition, free shipping.', 6107862, ARRAY['https://i.ebayimg.com/images/g/Gr8AAeSwm7Zpfe0q/s-l400.webp', 'https://picsum.photos/400/400?random=16', 'https://picsum.photos/400/400?random=17'], 3, 2, 1, false, 'refurbished', 'Apple', 0.17, 17, 'active', 10, 0, NULL),
 ('Blackberry Porsche Design P''9983 Carbon Fiber 64GB Factory Unlocked 4G', 'blackberry-porsche-design-p9983-carbon-fiber-64gb-factory-unlocked-4g', 'Blackberry Porsche Design P''9983 with carbon fiber design, 64GB storage, factory unlocked for 4G.', 9174638, ARRAY['https://i.ebayimg.com/images/g/OP4AAOSwexxnYfQM/s-l400.webp', 'https://picsum.photos/400/400?random=18'], 3, 2, 1, false, 'new', 'BlackBerry', 0.17, 155, 'active', 10, 0, 20970675),
-('Motorola Edge 2025 256GB (Metro by T-Mobile) - Deep Forest Green -FREE Shipping-', 'motorola-edge-2025-256gb-metro-by-t-mobile-deep-forest-green-free-shipping', 'Motorola Edge 2025 with 256GB storage, Metro by T-Mobile, Deep Forest Green color, free shipping.', 4692306, ARRAY['https://i.ebayimg.com/images/g/7IQAAeSwBDpprZJw/s-l400.webp', 'https://picsum.photos/400/400?random=19'], 3, 2, 1, false, 'refurbished', 'Motorola', 0.17, 0, 'active', 10, 0, NULL),
+('Motorola Edge 2025 256GB (Metro by T-Mobile) - Deep Forest Green -FREE Shipping-', 'motorola-edge-2026-256gb-metro-by-t-mobile-deep-forest-green-free-shipping', 'Motorola Edge 2025 with 256GB storage, Metro by T-Mobile, Deep Forest Green color, free shipping.', 4692306, ARRAY['https://i.ebayimg.com/images/g/7IQAAeSwBDpprZJw/s-l400.webp', 'https://picsum.photos/400/400?random=19'], 3, 2, 1, false, 'refurbished', 'Motorola', 0.17, 0, 'active', 10, 0, NULL),
 ('Apple iPhone 13 A2482 128GB Network Unlocked Very Good Condition', 'apple-iphone-13-a2482-128gb-network-unlocked-very-good-condition', 'Apple iPhone 13 A2482 with 128GB storage, network unlocked and in very good condition.', 6625326, ARRAY['https://i.ebayimg.com/images/g/gX4AAeSw3FRpJNmH/s-l960.webp', 'https://picsum.photos/400/400?random=20'], 3, 2, 1, false, 'refurbished', 'Apple', 0.17, 102, 'active', 10, 0, 15702186),
 ('Apple iPhone 14 128GB Unlocked - Good', 'apple-iphone-14-128gb-unlocked-good', 'Apple iPhone 14 with 128GB storage, unlocked and in good condition.', 6343526, ARRAY['https://i.ebayimg.com/images/g/PyMAAeSwNV1oNeed/s-l960.webp', 'https://picsum.photos/400/400?random=21'], 3, 2, 1, false, 'refurbished', 'Apple', 0.17, 43, 'active', 10, 0, 20944986),
 ('NEW UNLOCKED SAMSUNG GALAXY S23 5G SM-S911U ALL COLORS AND MEMORY GSM+CDMA', 'new-unlocked-samsung-galaxy-s23-5g-sm-s911u-all-colors-and-memory-gsm-cdma', 'New unlocked Samsung Galaxy S23 5G with various colors and memory options, GSM+CDMA.', 7992124, ARRAY['https://i.ebayimg.com/images/g/nCEAAOSwXJlmd7is/s-l400.webp', 'https://picsum.photos/400/400?random=22', 'https://picsum.photos/400/400?random=23'], 3, 2, 1, false, 'new', 'Samsung', 0.17, 94, 'active', 10, 0, 20970675),
@@ -166,7 +166,7 @@ INSERT INTO products (title, slug, description, price, images, category_id, sell
 ('Google Pixel 6a 128GB Unlocked - Good Condition', 'google-pixel-6a-128gb-unlocked-good-condition', 'Google Pixel 6a 128GB Unlocked - Good Condition', 3200000.00, ARRAY['https://i.ebayimg.com/images/g/SMoAAOSw9NZmmrFS/s-l960.webp', 'https://picsum.photos/400/400?random=39'], 3, 2, 1, false, 'refurbished', 'Google', 0.17, 120, 'active', 10, 0, 3200000.00),
 ('HP 15.6" FHD Laptop, 6-Core Intel i3 Up to 4.4GHz 32GB RAM & 1TB SSD, Win 11 Pro', 'hp-15-6-fhd-laptop-6-core-intel-i3-up-to-4-4ghz-32gb-ram-1tb-ssd-win-11-pro', 'HP 15.6" FHD Laptop with 6-Core Intel i3 processor up to 4.4GHz, 32GB RAM and 1TB SSD, Windows 11 Pro', 9410826, ARRAY['https://i.ebayimg.com/images/g/D-oAAOSwbJ5n7CxD/s-l960.webp', 'https://picsum.photos/400/400?random=1'], 1, 2, 1, false, 'new', 'HP', 2.1, 150, 'active', 10, 0, 11000000),
 ('Apple MacBook Pro 15 4.8Ghz i9 a1990 Touch Bar 512GB SSD 32GB Sequoia Warranty', 'apple-macbook-pro-15-4-8ghz-i9-a1990-touch-bar-512gb-ssd-32gb-sequoia-warranty', 'Apple MacBook Pro 15 with 4.8Ghz i9 processor, Touch Bar, 512GB SSD, 32GB RAM, Sequoia Warranty', 14129346, ARRAY['https://i.ebayimg.com/images/g/BVcAAOSwpNVoS3ve/s-l960.webp', 'https://picsum.photos/400/400?random=2'], 1, 2, 1, false, 'used', 'Apple', 2.0, 200, 'active', 5, 0, 20000000),
-('Apple MacBook Air 13" MW0Y3LL/A M4 chip 16GB RAM 256GB SSD Starlight 2025 Model', 'apple-macbook-air-13-mw0y3ll-a-m4-chip-16gb-ram-256gb-ssd-starlight-2025-model', 'Apple MacBook Air 13" with M4 chip, 16GB RAM, 256GB SSD, Starlight color, 2025 Model', 21495218, ARRAY['https://i.ebayimg.com/images/g/Da0AAeSwT6hpmZlt/s-l960.webp', 'https://picsum.photos/400/400?random=3'], 1, 2, 1, false, 'new', 'Apple', 1.4, 300, 'active', 8, 0, 25000000),
+('Apple MacBook Air 13" MW0Y3LL/A M4 chip 16GB RAM 256GB SSD Starlight 2025 Model', 'apple-macbook-air-13-mw0y3ll-a-m4-chip-16gb-ram-256gb-ssd-starlight-2026-model', 'Apple MacBook Air 13" with M4 chip, 16GB RAM, 256GB SSD, Starlight color, 2025 Model', 21495218, ARRAY['https://i.ebayimg.com/images/g/Da0AAeSwT6hpmZlt/s-l960.webp', 'https://picsum.photos/400/400?random=3'], 1, 2, 1, false, 'new', 'Apple', 1.4, 300, 'active', 8, 0, 25000000),
 ('2026 Dell Inspiron Laptop 15 Touch 10-Core Intel i5 Upto 64GB RAM 2TB SSD WinPRO', '2026-dell-inspiron-laptop-15-touch-10-core-intel-i5-upto-64gb-ram-2tb-ssd-winpro', '2026 Dell Inspiron Laptop 15 Touch with 10-Core Intel i5, up to 64GB RAM, 2TB SSD, Windows Pro', 11507946, ARRAY['https://i.ebayimg.com/images/g/KUEAAeSwwkZpaUd7/s-l960.webp', 'https://picsum.photos/400/400?random=4'], 1, 2, 1, false, 'new', 'Dell', 2.2, 120, 'active', 12, 0, 13000000),
 ('2026 Lenovo IdeaPad Laptop Notebook 15.6" Intel Processor Up to 20GB RAM 1TB SSD', '2026-lenovo-ideapad-laptop-notebook-15-6-intel-processor-up-to-20gb-ram-1tb-ssd', '2026 Lenovo IdeaPad Laptop Notebook 15.6" with Intel Processor, up to 20GB RAM, 1TB SSD', 7575846, ARRAY['https://i.ebayimg.com/images/g/iNsAAeSwi0ZpRGqo/s-l960.webp', 'https://picsum.photos/400/400?random=5'], 1, 2, 1, false, 'new', 'Lenovo', 2.0, 180, 'active', 15, 0, 9000000),
 ('2026 HP Pavilion Laptop 15.6" 8-Core AMD Ryzen 7 16GB RAM & 512GB SSD Office PRO', '2026-hp-pavilion-laptop-15-6-8-core-amd-ryzen-7-16gb-ram-512gb-ssd-office-pro', '2026 HP Pavilion Laptop 15.6" with 8-Core AMD Ryzen 7, 16GB RAM, 512GB SSD, Office Pro', 13867206, ARRAY['https://i.ebayimg.com/images/g/KN0AAeSwaaZpb77E/s-l960.webp', 'https://picsum.photos/400/400?random=6'], 1, 2, 1, false, 'new', 'HP', 1.9, 250, 'active', 10, 0, 16000000),
@@ -476,7 +476,17 @@ INSERT INTO products (title, slug, description, price, images, category_id, sell
 -- ============================================
 -- INVENTORY
 -- ============================================
-
+UPDATE products SET
+  price = ROUND((price / 25000.0)::numeric, 2),
+  original_price = CASE 
+    WHEN original_price IS NOT NULL THEN ROUND((original_price / 25000.0)::numeric, 2)
+    ELSE NULL
+  END,
+  shipping_fee = CASE
+    WHEN shipping_fee > 0 THEN ROUND((shipping_fee / 25000.0)::numeric, 2)
+    ELSE 0
+  END;
+  
 INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated) VALUES
 (1, 15, 2, CURRENT_TIMESTAMP),
 (2, 50, 5, CURRENT_TIMESTAMP),
@@ -518,12 +528,12 @@ INSERT INTO cart_items (cart_id, product_id, quantity) VALUES
 -- ORDERS
 -- ============================================
 
-INSERT INTO orders (buyer_id, address_id, order_date, subtotal, shipping_fee, tax, discount_amount, total_price, status) VALUES
-(5, 1, CURRENT_TIMESTAMP - INTERVAL '10 days', 33440000, 0, 3344000, 500000, 36284000, 'delivered'),
-(6, 3, CURRENT_TIMESTAMP - INTERVAL '7 days', 2990000, 50000, 299000, 0, 3339000, 'shipped'),
-(7, 4, CURRENT_TIMESTAMP - INTERVAL '5 days', 1340000, 30000, 134000, 0, 1504000, 'processing'),
-(9, 6, CURRENT_TIMESTAMP - INTERVAL '3 days', 890000, 25000, 89000, 0, 1004000, 'confirmed'),
-(10, 7, CURRENT_TIMESTAMP - INTERVAL '1 day', 450000, 20000, 45000, 0, 515000, 'pending');
+INSERT INTO orders (order_number, buyer_id, address_id, customer_type, order_date, subtotal, shipping_fee, tax, discount_amount, total_price, status) VALUES
+('ORD-20260317-000001', 5, 1, 'buyer', CURRENT_TIMESTAMP - INTERVAL '10 days', 33440000, 0, 3344000, 500000, 36284000, 'delivered'),
+('ORD-20260320-000002', 6, 3, 'buyer', CURRENT_TIMESTAMP - INTERVAL '7 days', 2990000, 50000, 299000, 0, 3339000, 'shipped'),
+('ORD-20260322-000003', 7, 4, 'buyer', CURRENT_TIMESTAMP - INTERVAL '5 days', 1340000, 30000, 134000, 0, 1504000, 'processing'),
+('ORD-20260324-000004', 9, 6, 'buyer', CURRENT_TIMESTAMP - INTERVAL '3 days', 890000, 25000, 89000, 0, 1004000, 'confirmed'),
+('ORD-20260326-000005', 10, 7, 'buyer', CURRENT_TIMESTAMP - INTERVAL '1 day', 450000, 20000, 45000, 0, 515000, 'pending');
 
 -- Update order numbers (trigger will set them, but let's ensure)
 UPDATE orders SET order_number = 'ORD-' || TO_CHAR(order_date, 'YYYYMMDD') || '-' || LPAD(id::TEXT, 6, '0');
@@ -627,7 +637,7 @@ INSERT INTO bids (product_id, bidder_id, amount, bid_time, is_winning) VALUES
 UPDATE products SET auction_end_time = CURRENT_TIMESTAMP + INTERVAL '2 days' WHERE id = 5;
 
 -- ============================================
--- RETURN REQUESTS
+-- RETURN REQUEST
 -- ============================================
 
 INSERT INTO return_requests (order_id, user_id, reason, status, refund_amount, created_at) VALUES
@@ -809,6 +819,16 @@ INSERT INTO banners (title, description, cta_text, image_url, link_url, bg_color
 ('Endless accessories. Epic prices.', 'Browse millions of upgrades for your ride.', 'Explore offers', 'https://i.ebayimg.com/images/g/J6UAAeSwzfpouXBe/s-l960.webp', '/category/automotive', '#0064D2', '#FFFFFF', 'single', NULL, 2, true),
 ('Build an elite collection', 'Choose your next adventure from thousands of finds.', 'Shop now', NULL, '/search?keyword=collectibles', '#0064D2', '#FFFFFF', 'multi', '[{"title": "Lego", "image": "https://i.ebayimg.com/images/g/HI8AAeSwpUxotaQQ/s-l500.webp", "link": "/search?keyword=Lego"}, {"title": "Coins", "image": "https://i.ebayimg.com/images/g/65UAAeSwuolotaQU/s-l500.webp", "link": "/search?keyword=Coins"}, {"title": "Comic books", "image": "https://i.ebayimg.com/images/g/tnAAAeSww7RotaQY/s-l500.webp", "link": "/search?keyword=Comic+books"}]', 3, true),
 ('It’s up to you', 'Customize your ride, your way, with a selection of parts on eBay.', 'Explore offers', 'https://i.ebayimg.com/images/g/fl4AAeSwV0hpndZs/s-l960.webp', '/category/automotive', '#0064D2', '#FFFFFF', 'single', NULL, 4, true);
+
+-- ============================================
+-- FIX AUCTION DATES
+-- ============================================
+
+UPDATE products SET 
+    auction_start_time = CURRENT_TIMESTAMP - INTERVAL '2 days',
+    auction_end_time = CURRENT_TIMESTAMP + INTERVAL '5 days',
+    auction_status = 'active'
+WHERE is_auction = true;
 
 -- ============================================
 -- END OF SAMPLE DATA SCRIPT

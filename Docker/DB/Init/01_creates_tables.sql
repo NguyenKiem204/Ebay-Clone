@@ -701,7 +701,7 @@ CREATE INDEX idx_watchlist_user ON watchlist(user_id);
 CREATE TABLE product_view_history (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE,          -- NULL for guests
-    cookie_id VARCHAR(36),                                        -- UUID cookie for guests
+    cookie_id VARCHAR(36),
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
@@ -832,52 +832,5 @@ CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
 );
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
-VALUES ('20260316024845_AddSocialLoginFields', '9.0.2') ON CONFLICT DO NOTHING;
+VALUES ('20260327160507_InitialCreate', '9.0.2') ON CONFLICT DO NOTHING;
 
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
-VALUES ('20260320004759_SyncModelSnapshot', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
-VALUES ('20260320004716_AddWatchlistTable', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
-VALUES ('20260320033846_AddProductViewHistoryTable', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260320004759_SyncModelSnapshot', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260320154259_SyncUserColumnNames', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325043057_AddGuestCheckoutPhase1Schema', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325065911_AddGuestCheckoutIdempotencyPersistence', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325083039_ExtendReturnRequestFoundation', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325095426_ExtendDisputeFoundation', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325095924_AddCaseEventTimelineFoundation', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325123555_AddCaseAttachmentEvidenceFoundation', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325143000_AllowGuestReturnRequests', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260325152000_AllowGuestDisputes', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260326071654_AddOrderCancellationRequestFlow', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260326090000_AddAuctionProxyBiddingFoundation', '9.0.2') ON CONFLICT DO NOTHING;
-
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260326123000_AddAuctionOrderPaymentDeadlineFields', '9.0.2') ON CONFLICT DO NOTHING;

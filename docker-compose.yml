@@ -1,7 +1,8 @@
+version: "3.8"
+
 services:
   db:
     image: postgres:16
-    container_name: ebay-db
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -9,17 +10,29 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - ebay_postgres_data:/var/lib/postgresql/data
+      - ./db_data:/var/lib/postgresql/data
       - ./Docker/DB/Init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
 
   api:
     build:
       context: ./ebayBE
     image: nguyenkiem/ebay-api:latest
-    container_name: ebay-api
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
@@ -33,28 +46,44 @@ services:
       - HCaptchaSecret__Secret=${HCaptchaSecret__Secret}
     depends_on:
       - db
-    ports:
-      - "5000:8080"
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
 
   web:
     build:
       context: ./ebayFE
     image: nguyenkiem/ebay-web:latest
-    container_name: ebay-web
-    ports:
-      - "80:80"
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
     networks:
-      - ebay-network
+      - ebay-swarm-network
+
+  nginx-lb:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
+    networks:
+      - ebay-swarm-network
 
 networks:
-  ebay-network:
-    driver: bridge
-
-volumes:
-  ebay_postgres_data:
+  ebay-swarm-network:
+    driver: overlay
 
 # End of file
