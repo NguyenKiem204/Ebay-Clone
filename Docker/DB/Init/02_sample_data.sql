@@ -518,12 +518,12 @@ INSERT INTO cart_items (cart_id, product_id, quantity) VALUES
 -- ORDERS
 -- ============================================
 
-INSERT INTO orders (buyer_id, address_id, order_date, subtotal, shipping_fee, tax, discount_amount, total_price, status) VALUES
-(5, 1, CURRENT_TIMESTAMP - INTERVAL '10 days', 33440000, 0, 3344000, 500000, 36284000, 'delivered'),
-(6, 3, CURRENT_TIMESTAMP - INTERVAL '7 days', 2990000, 50000, 299000, 0, 3339000, 'shipped'),
-(7, 4, CURRENT_TIMESTAMP - INTERVAL '5 days', 1340000, 30000, 134000, 0, 1504000, 'processing'),
-(9, 6, CURRENT_TIMESTAMP - INTERVAL '3 days', 890000, 25000, 89000, 0, 1004000, 'confirmed'),
-(10, 7, CURRENT_TIMESTAMP - INTERVAL '1 day', 450000, 20000, 45000, 0, 515000, 'pending');
+INSERT INTO orders (buyer_id, address_id, customer_type, order_date, subtotal, shipping_fee, tax, discount_amount, total_price, status) VALUES
+(5, 1, 'buyer', CURRENT_TIMESTAMP - INTERVAL '10 days', 33440000, 0, 3344000, 500000, 36284000, 'delivered'),
+(6, 3, 'buyer', CURRENT_TIMESTAMP - INTERVAL '7 days', 2990000, 50000, 299000, 0, 3339000, 'shipped'),
+(7, 4, 'buyer', CURRENT_TIMESTAMP - INTERVAL '5 days', 1340000, 30000, 134000, 0, 1504000, 'processing'),
+(9, 6, 'buyer', CURRENT_TIMESTAMP - INTERVAL '3 days', 890000, 25000, 89000, 0, 1004000, 'confirmed'),
+(10, 7, 'buyer', CURRENT_TIMESTAMP - INTERVAL '1 day', 450000, 20000, 45000, 0, 515000, 'pending');
 
 -- Update order numbers (trigger will set them, but let's ensure)
 UPDATE orders SET order_number = 'ORD-' || TO_CHAR(order_date, 'YYYYMMDD') || '-' || LPAD(id::TEXT, 6, '0');
