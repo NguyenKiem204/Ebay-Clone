@@ -779,6 +779,9 @@ INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20260316024845_AddSocialLoginFields', '9.0.2') ON CONFLICT DO NOTHING;
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
+VALUES ('20260320004759_SyncModelSnapshot', '9.0.2') ON CONFLICT DO NOTHING;
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 
 VALUES ('20260320004716_AddWatchlistTable', '9.0.2') ON CONFLICT DO NOTHING;
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") 

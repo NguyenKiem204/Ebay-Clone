@@ -1,9 +1,4 @@
-import axios from 'axios';
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-    withCredentials: true, // For HttpOnly Cookies
-});
+import api from '../../../lib/axios';
 
 // Request interceptor to add Access Token
 api.interceptors.request.use((config) => {

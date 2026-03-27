@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16
+    container_name: ebay-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+      - ./Docker/DB/Init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      - ebay-network
+
+  api:
+    build:
+      context: ./ebayBE
+    image: nguyenkiem/ebay-api:latest
+    container_name: ebay-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - MailSettings__Server=${MailSettings__Server}
+      - MailSettings__Port=${MailSettings__Port}
+      - MailSettings__SenderName=${MailSettings__SenderName}
+      - MailSettings__SenderEmail=${MailSettings__SenderEmail}
+      - MailSettings__Password=${MailSettings__Password}
+      - ExternalAuthSettings__GoogleClientId=${ExternalAuthSettings__GoogleClientId}
+      - JwtSettings__SecretKey=${JwtSettings__SecretKey}
+      - HCaptchaSecret__Secret=${HCaptchaSecret__Secret}
+    depends_on:
+      - db
+    ports:
+      - "5000:8080"
+    restart: unless-stopped
+    networks:
+      - ebay-network
+
+  web:
+    build:
+      context: ./ebayFE
+    image: nguyenkiem/ebay-web:latest
+    container_name: ebay-web
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - ebay-network
+
+networks:
+  ebay-network:
+    driver: bridge
+
+# End of file

@@ -1,0 +1,59 @@
+name: Build and Push to Docker Hub
+
+on:
+  push:
+    branches: [ "nguyenkiem/deploy" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build and Push Backend
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ebayBE
+          push: true
+          tags: nguyenkiem/ebay-api:latest
+
+      # Build and Push Frontend
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ebayFE
+          push: true
+          tags: nguyenkiem/ebay-web:latest
+          build-args: |
+            VITE_API_URL=
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+
+  # Automatic deploy to VPS
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into VPS and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            # Use absolute path
+            cd /ebay-project
+            # Pull the latest images
+            docker compose pull
+            # Start/Restart the containers
+            docker compose up -d
+            # Optional: Clean up old images to save space
+            docker image prune -f
