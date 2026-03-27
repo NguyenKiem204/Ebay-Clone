@@ -5,7 +5,7 @@ namespace ebay.Models;
 
 public partial class AuditLog
 {
-    public int Id { get; set; }
+    public int Id { get; set;  }
 
     public string TableName { get; set; } = null!;
 
