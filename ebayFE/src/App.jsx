@@ -2,8 +2,6 @@ import { Suspense, lazy, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import useAuthStore from './store/useAuthStore';
 
-// ... (layouts and pages imports remain the same)
-
 // Layouts
 import MainLayout from './components/layouts/MainLayout';
 import AuthLayout from './components/layouts/AuthLayout';
