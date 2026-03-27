@@ -63,7 +63,9 @@ export default function CouponProductsPage() {
                                     <Tag size={24} />
                                 </div>
                                 <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                                    Extra {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `${coupon.discountValue.toLocaleString()}đ`} OFF
+                                    Extra {coupon.discountType === 'percentage'
+                                        ? `${coupon.discountValue}%`
+                                        : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(coupon.discountValue)}`} OFF
                                 </h1>
                             </div>
                             <p className="text-gray-600 max-w-2xl font-medium">
@@ -77,7 +79,9 @@ export default function CouponProductsPage() {
                                 {coupon.minOrderAmount > 0 && (
                                     <div className="bg-white px-4 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
                                         <Info size={14} className="text-gray-400" />
-                                        <span className="text-xs font-bold text-gray-700">Min spend: {coupon.minOrderAmount.toLocaleString()}đ</span>
+                                        <span className="text-xs font-bold text-gray-700">
+                                            Min spend: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(coupon.minOrderAmount)}
+                                        </span>
                                     </div>
                                 )}
                                 <div className="bg-white px-4 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">

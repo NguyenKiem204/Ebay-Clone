@@ -38,7 +38,7 @@ export default function SavedPage() {
                     <div className="text-center py-20">
                         <Heart size={64} className="mx-auto mb-4 text-gray-200" />
                         <h2 className="text-xl font-bold text-gray-700 mb-2">No saved items yet</h2>
-                        <p className="text-gray-500 mb-6">Click the ❤️ icon on any product to save it here.</p>
+                        <p className="text-gray-500 mb-6">Click the â¤ï¸ icon on any product to save it here.</p>
                         <Link to="/" className="px-8 py-3 bg-[#3665f3] text-white font-bold rounded-full hover:bg-blue-700 transition">
                             Start shopping
                         </Link>
@@ -65,10 +65,10 @@ export default function SavedPage() {
                                         {item.productName}
                                     </Link>
                                     <div className="text-[18px] font-bold text-gray-900 mb-1">
-                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                                     </div>
                                     <div className="text-[12px] text-blue-600">
-                                        {item.shippingFee === 0 ? 'Free shipping' : `+${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.shippingFee)} shipping`}
+                                        {item.shippingFee === 0 ? 'Free shipping' : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.shippingFee)} shipping`}
                                     </div>
                                     <div className="mt-3 flex gap-2">
                                         <Link

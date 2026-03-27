@@ -72,7 +72,7 @@ export default function SellerOtherItems({ product }) {
                                         {item.title}
                                     </h4>
                                     <p className="text-[15px] font-bold text-gray-900">
-                                        {item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} VND
+                                        {item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                                     </p>
                                 </div>
                             </Link>

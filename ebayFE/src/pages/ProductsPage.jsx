@@ -199,12 +199,12 @@ export default function ProductsPage() {
                         }} className="space-y-3">
                             <div className="flex justify-between items-center gap-2">
                                 <div className="relative flex-1">
-                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">₫</span>
+                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
                                     <input name="min" className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Min" />
                                 </div>
                                 <span className="text-gray-400">-</span>
                                 <div className="relative flex-1">
-                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">₫</span>
+                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
                                     <input name="max" className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Max" />
                                 </div>
                             </div>
@@ -276,8 +276,8 @@ export default function ProductsPage() {
                                                 </Link>
                                                 <div className="flex items-center gap-1 mb-2">
                                                     <div className="flex text-yellow-400 text-xs shadow-sm">
-                                                        {'★'.repeat(Math.round(product.rating || 5))}
-                                                        {'☆'.repeat(5 - Math.round(product.rating || 5))}
+                                                        {'ÃƒÂ¢Ã‹Å“Ã¢â‚¬Â¦'.repeat(Math.round(product.rating || 5))}
+                                                        {'ÃƒÂ¢Ã‹Å“Ã¢â‚¬Â '.repeat(5 - Math.round(product.rating || 5))}
                                                     </div>
                                                     <span className="text-xs text-gray-500">({product.reviewCount || 0} reviews)</span>
                                                 </div>
@@ -289,10 +289,12 @@ export default function ProductsPage() {
                                                 <div className="mt-auto flex flex-col sm:flex-row justify-between sm:items-end gap-4">
                                                     <div>
                                                         <div className="text-2xl font-bold text-gray-900">
-                                                            ₫{product.price.toLocaleString('vi-VN')}
+                                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
                                                         </div>
                                                         <div className="text-xs font-semibold text-blue-700 mt-1">
-                                                            {product.shippingFee === 0 ? 'Free shipping' : `+₫${product.shippingFee.toLocaleString('vi-VN')} shipping`}
+                                                            {product.shippingFee === 0
+                                                                ? 'Free shipping'
+                                                                : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.shippingFee)} shipping`}
                                                         </div>
                                                         <div className="text-xs text-gray-500 mt-1">Seller: {product.sellerName || 'ebay_seller'}</div>
                                                     </div>

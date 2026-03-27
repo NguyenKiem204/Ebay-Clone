@@ -92,7 +92,9 @@ export default function ProductSelectorModal({ isOpen, onClose, onSelect, initia
                                 />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-gray-900 truncate">{product.title}</p>
-                                    <p className="text-xs text-secondary font-bold">{product.price.toLocaleString()}đ</p>
+                                    <p className="text-xs text-secondary font-bold">
+                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
+                                    </p>
                                 </div>
                             </div>
                         ))

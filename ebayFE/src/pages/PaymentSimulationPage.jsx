@@ -5,7 +5,7 @@ import api from '../lib/axios';
 import { checkoutService } from '../features/checkout/services/checkoutService';
 import useAuthStore from '../store/useAuthStore';
 
-const formatVND = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+const formatVND = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
 
 export default function PaymentSimulationPage() {
     const navigate = useNavigate();
@@ -200,7 +200,7 @@ export default function PaymentSimulationPage() {
                                     <p>
                                         Payment deadline:{' '}
                                         <span className="font-semibold text-gray-900">
-                                            {order.paymentDueAt ? new Date(order.paymentDueAt).toLocaleString('vi-VN') : 'Not available'}
+                                            {order.paymentDueAt ? new Date(order.paymentDueAt).toLocaleString('en-US') : 'Not available'}
                                         </span>
                                     </p>
                                 )}

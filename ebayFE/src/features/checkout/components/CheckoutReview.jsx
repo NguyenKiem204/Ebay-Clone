@@ -16,7 +16,7 @@ export default function CheckoutReview({ items, isActive }) {
                                 <p className="text-xs text-green-600 mt-1">Standard Shipping - Free</p>
                             </div>
                             <div className="text-right font-bold text-gray-900">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price * item.quantity)}
                             </div>
                         </div>
                     ))}

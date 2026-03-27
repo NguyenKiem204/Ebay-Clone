@@ -3,11 +3,11 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react
 import guestCaseService from '../features/checkout/services/guestCaseService';
 
 const formatDateTime = (value) => (
-    value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
+    value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
 const formatVND = (amount) => (
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
 const getCaseKindLabel = (caseKind, type) => {
@@ -280,7 +280,7 @@ export default function GuestCasesPage() {
                                                 <p className="font-semibold text-gray-900">Order {item.order.orderNumber}</p>
                                                 <p className="text-gray-600 mt-1 capitalize">Order status: {item.order.status}</p>
                                                 <p className="text-gray-600 capitalize">
-                                                    Payment: {item.order.paymentMethod || 'Not available'} • {item.order.paymentStatus || 'Not available'}
+                                                    Payment: {item.order.paymentMethod || 'Not available'} â€¢ {item.order.paymentStatus || 'Not available'}
                                                 </p>
                                                 {item.order.shippingStatus && (
                                                     <p className="text-gray-600 capitalize">Shipping: {item.order.shippingStatus}</p>
@@ -304,7 +304,7 @@ export default function GuestCasesPage() {
                                                     <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-2">Linked item</p>
                                                     <p className="font-semibold text-gray-900">{item.orderItem.title}</p>
                                                     <p className="text-sm text-gray-600 mt-1">
-                                                        Qty {item.orderItem.quantity} • {formatVND(item.orderItem.totalPrice)}
+                                                        Qty {item.orderItem.quantity} â€¢ {formatVND(item.orderItem.totalPrice)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -322,7 +322,7 @@ export default function GuestCasesPage() {
                                                 <>
                                                     <p className="font-semibold text-gray-900">{item.latestEvent.message}</p>
                                                     <p className="text-gray-600 mt-1 capitalize">
-                                                        {item.latestEvent.actorType} • {formatDateTime(item.latestEvent.createdAt)}
+                                                        {item.latestEvent.actorType} â€¢ {formatDateTime(item.latestEvent.createdAt)}
                                                     </p>
                                                 </>
                                             ) : (

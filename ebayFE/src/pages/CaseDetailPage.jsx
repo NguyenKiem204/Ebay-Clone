@@ -10,7 +10,7 @@ const formatDateTime = (value) => (
 );
 
 const formatVND = (amount) => (
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
 const formatAge = (hours) => {
@@ -614,7 +614,7 @@ export default function CaseDetailPage() {
                             <div className="md:col-span-2 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-2">Return tracking</p>
                                 <p className="text-sm text-gray-800">
-                                    {caseData.returnTracking.carrier || 'Carrier not provided'} • {caseData.returnTracking.trackingNumber || 'Tracking number not provided'}
+                                    {caseData.returnTracking.carrier || 'Carrier not provided'} â€¢ {caseData.returnTracking.trackingNumber || 'Tracking number not provided'}
                                 </p>
                                 <p className="text-sm text-gray-600 mt-1">
                                     Shipped at {formatDateTime(caseData.returnTracking.shippedAt)}
@@ -719,7 +719,7 @@ export default function CaseDetailPage() {
                                     {(financialSnapshot.orderStatus || financialSnapshot.paymentStatus) && (
                                         <p className="text-sm text-gray-600 mt-1 capitalize">
                                             {financialSnapshot.orderStatus ? `Order: ${financialSnapshot.orderStatus}` : 'Order: unchanged'}
-                                            {financialSnapshot.paymentStatus ? ` • Payment: ${financialSnapshot.paymentStatus}` : ''}
+                                            {financialSnapshot.paymentStatus ? ` â€¢ Payment: ${financialSnapshot.paymentStatus}` : ''}
                                         </p>
                                     )}
                                     {financialSnapshot.sourceEvent && (
@@ -942,7 +942,7 @@ export default function CaseDetailPage() {
                             <div>
                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Payment</p>
                                 <p className="font-semibold text-gray-900 capitalize">
-                                    {caseData.order.paymentMethod || 'Not available'} • {caseData.order.paymentStatus || 'Not available'}
+                                    {caseData.order.paymentMethod || 'Not available'} â€¢ {caseData.order.paymentStatus || 'Not available'}
                                 </p>
                             </div>
                             <div>
@@ -987,7 +987,7 @@ export default function CaseDetailPage() {
                                     Seller: {caseData.orderItem.sellerDisplayName || 'Not available'}
                                 </p>
                                 <p className="text-sm text-gray-600">
-                                    Qty {caseData.orderItem.quantity} • Unit price {formatVND(caseData.orderItem.unitPrice)}
+                                    Qty {caseData.orderItem.quantity} â€¢ Unit price {formatVND(caseData.orderItem.unitPrice)}
                                 </p>
                                 <p className="text-sm font-semibold text-gray-900 mt-2">
                                     Line total: {formatVND(caseData.orderItem.totalPrice)}
@@ -1030,7 +1030,7 @@ export default function CaseDetailPage() {
                                             {attachment.label || attachment.originalFileName}
                                         </p>
                                         <p className="text-sm text-gray-600 break-words mt-1">
-                                            {attachment.evidenceType || 'General evidence'} • {formatFileSize(attachment.fileSizeBytes)}
+                                            {attachment.evidenceType || 'General evidence'} â€¢ {formatFileSize(attachment.fileSizeBytes)}
                                         </p>
                                         <p className="text-sm text-gray-600 mt-1">
                                             Uploaded by {attachment.uploadedByDisplayName || 'case participant'} on {formatDateTime(attachment.uploadedAt)}

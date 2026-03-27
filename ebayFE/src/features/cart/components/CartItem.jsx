@@ -6,6 +6,8 @@ import api from '../../../lib/axios';
 
 export default function CartItem({ item, onRemove, onUpdateQuantity }) {
     const [sellerProfile, setSellerProfile] = useState(null);
+    const stockLeft = Math.max(0, Number(item.stock ?? 0));
+    const canIncrease = stockLeft <= 0 ? false : item.quantity < stockLeft;
 
     useEffect(() => {
         if (item.sellerId) {
@@ -76,15 +78,22 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }) {
                             <p className="text-[14px] text-gray-600 mb-4">{item.condition || 'Open box'}</p>
 
                             <div className="mb-4">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-[18px] font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</span>
+                            <div className="flex items-baseline gap-2">
+                                    <span className="text-[18px] font-bold text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}</span>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-1 text-[13px] text-gray-700">
-                                <span className="font-bold">+{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.shippingPrice || 0)} shipping</span>
+                                <span className="font-bold">+{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.shippingPrice || 0)} shipping</span>
                             </div>
                             <p className="text-[13px] text-gray-500 mb-1">eBay International Shipping</p>
+                            <p className={`text-[13px] ${stockLeft <= 0 ? 'text-red-600' : 'text-gray-500'} mb-1`}>
+                                {stockLeft <= 0
+                                    ? 'Out of stock'
+                                    : stockLeft === 1
+                                        ? 'Only 1 left in stock'
+                                        : `Only ${stockLeft} left in stock`}
+                            </p>
                         </div>
 
                         {/* Actions & Quantity */}
@@ -99,7 +108,10 @@ export default function CartItem({ item, onRemove, onUpdateQuantity }) {
                                 <span className="w-8 text-center text-[15px] font-bold text-gray-900">{item.quantity}</span>
                                 <button
                                     onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                                    className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition"
+                                    disabled={!canIncrease}
+                                    className={`w-8 h-8 flex items-center justify-center rounded-full transition ${
+                                        canIncrease ? 'text-gray-500 hover:bg-gray-100' : 'cursor-not-allowed text-gray-300'
+                                    }`}
                                 >
                                     <Plus size={16} />
                                 </button>

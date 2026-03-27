@@ -8,6 +8,7 @@ import useCartStore from '../../features/cart/hooks/useCartStore';
 import AddToCartModal from './AddToCartModal';
 import GuestCheckoutModal from './GuestCheckoutModal';
 import SellerFeedbackModal from './SellerSection/SellerFeedbackModal';
+import Modal from '../ui/Modal';
 import { useDebounceButton } from '../../hooks/useDebounceButton';
 import useAuthStore from '../../store/useAuthStore';
 import useAuctionStore from '../../store/useAuctionStore';
@@ -85,8 +86,11 @@ export default function ProductPurchaseOptions({ product }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
     const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
+    const [isBidConfirmOpen, setIsBidConfirmOpen] = useState(false);
     const [sellerProfile, setSellerProfile] = useState(null);
     const [bidAmount, setBidAmount] = useState('');
+    const [isBidDirty, setIsBidDirty] = useState(false);
+    const [pendingBidAmount, setPendingBidAmount] = useState(null);
     const [auctionFeedback, setAuctionFeedback] = useState(null);
     const [nowTick, setNowTick] = useState(() => Date.now());
 
@@ -147,10 +151,10 @@ export default function ProductPurchaseOptions({ product }) {
     }, [product?.sellerId]);
 
     useEffect(() => {
-        if (isAuction && auctionMinNextBid) {
+        if (isAuction && auctionMinNextBid && !isBidDirty) {
             setBidAmount(formatBidInputValue(auctionMinNextBid));
         }
-    }, [auctionMinNextBid, isAuction]);
+    }, [auctionMinNextBid, isAuction, isBidDirty]);
 
     useEffect(() => {
         if (!isAuction) {
@@ -166,6 +170,7 @@ export default function ProductPurchaseOptions({ product }) {
 
     useEffect(() => {
         setAuctionFeedback(null);
+        setIsBidDirty(false);
         clearBidResult();
     }, [clearBidResult, product?.id]);
 
@@ -186,27 +191,33 @@ export default function ProductPurchaseOptions({ product }) {
         setIsModalOpen(true);
     }, spamOpts);
 
-    const handleAuctionBid = async () => {
+    const validateAuctionBid = () => {
         if (isAuctionScheduled) {
             toast.error('This auction has not started yet.');
-            return;
+            return null;
         }
 
         if (isAuctionClosed) {
             toast.error('Auction has ended.');
-            return;
+            return null;
         }
 
         if (!isAuthenticated) {
             navigate(`/login?redirect=/products/${product.id}`);
-            return;
+            return null;
         }
 
         const parsedBid = parseBidInputValue(bidAmount);
         if (!Number.isFinite(parsedBid) || parsedBid < Number(auctionMinNextBid || 0)) {
             toast.error(`Enter at least ${formatUsd(auctionMinNextBid)}.`);
-            return;
+            return null;
         }
+
+        return parsedBid;
+    };
+
+    const handleAuctionBid = async (confirmedBidAmount) => {
+        const parsedBid = Number(confirmedBidAmount);
 
         const result = await placeBid(product.id, parsedBid);
         if (!result.success) {
@@ -220,12 +231,20 @@ export default function ProductPurchaseOptions({ product }) {
             yourBid: result.yourBid
         });
 
+        setBidAmount(formatBidInputValue(result.yourBid || result.currentPrice || auctionMinNextBid));
+        setIsBidDirty(false);
         fetchAuctionState(product.id);
         toast.success('Bid placed successfully.');
     };
 
     const { trigger: handlePlaceBidClick, isBlocked: bidBlocked } = useDebounceButton(() => {
-        handleAuctionBid();
+        const parsedBid = validateAuctionBid();
+        if (!parsedBid) {
+            return;
+        }
+
+        setPendingBidAmount(parsedBid);
+        setIsBidConfirmOpen(true);
     }, spamOpts);
 
     const { trigger: handleBuyItNow, isBlocked: buyBlocked } = useDebounceButton(() => {
@@ -264,6 +283,7 @@ export default function ProductPurchaseOptions({ product }) {
     const auctionSummaryCopy = isAuctionClosed
         ? `Auction status: ${auctionStatusMeta.label}. Final price ${formatUsd(displayAuctionPrice)}.`
         : `${auctionStatusMeta.label}. Current bid ${formatUsd(displayAuctionPrice)}. Minimum next bid ${formatUsd(auctionMinNextBid)}.`;
+    const shippingCopy = Number(product?.shippingFee || 0) > 0 ? `${formatUsd(product.shippingFee)} shipping` : 'Free shipping';
 
     return (
         <div className="w-full">
@@ -285,6 +305,48 @@ export default function ProductPurchaseOptions({ product }) {
                 sellerId={product?.sellerId}
                 productId={product?.id}
             />
+            <Modal
+                isOpen={isBidConfirmOpen}
+                onClose={() => setIsBidConfirmOpen(false)}
+                title="Confirm your bid"
+                size="md"
+            >
+                <div className="space-y-5">
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-sm text-gray-500">Current price</p>
+                                <p className="text-2xl font-bold text-gray-900">{formatUsd(displayAuctionPrice)}</p>
+                            </div>
+                            <div className="text-right text-sm text-gray-500">
+                                <p>{shippingCopy}</p>
+                                <p>{timeLeft}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f5f7fa] px-4 py-4">
+                        <div>
+                            <p className="text-sm text-gray-500">Your bid amount</p>
+                            <p className="text-3xl font-bold text-gray-900">{formatUsd(pendingBidAmount)}</p>
+                        </div>
+                        <Button
+                            onClick={async () => {
+                                const confirmedBid = pendingBidAmount;
+                                setIsBidConfirmOpen(false);
+                                await handleAuctionBid(confirmedBid);
+                            }}
+                            className="h-12 min-w-[160px] rounded-xl bg-[#3665f3] px-6 text-base font-bold text-white hover:bg-blue-700"
+                        >
+                            Confirm
+                        </Button>
+                    </div>
+
+                    <p className="text-sm leading-relaxed text-gray-600">
+                        When you confirm your bid, you are committing to buy this item if you are the winning bidder.
+                    </p>
+                </div>
+            </Modal>
 
             <div className="mb-6">
                 <h1 className="mb-4 text-[22px] font-bold leading-[1.2] text-gray-900">
@@ -344,17 +406,10 @@ export default function ProductPurchaseOptions({ product }) {
                     </span>
                 </div>
 
-                <div className="mb-2 flex items-center gap-2 text-[14px] text-gray-500">
-                    <span>Approximately</span>
-                    <span className="font-bold text-gray-800">
-                        {(displayPrice * 26231)?.toLocaleString('vi-VN')} VND
-                    </span>
-                </div>
-
                 {isAuthenticated && !isAuction ? (
                     <div className="mb-4 flex items-center gap-2 text-[15px] text-[#248232]">
                         <span className="font-bold">
-                            {(displayPrice * 26231 - 15).toLocaleString('vi-VN')} d
+                            Save $15.00
                         </span>
                         <span className="font-normal text-gray-500">with coupon code</span>
                         <Link to="#" className="text-[13px] text-gray-500 underline">
@@ -432,7 +487,10 @@ export default function ProductPurchaseOptions({ product }) {
                                     type="text"
                                     inputMode="numeric"
                                     value={bidAmount}
-                                    onChange={(event) => setBidAmount(formatBidInputValue(event.target.value))}
+                                    onChange={(event) => {
+                                        setIsBidDirty(true);
+                                        setBidAmount(formatBidInputValue(event.target.value));
+                                    }}
                                     disabled={isAuctionClosed || isAuctionScheduled}
                                     className="h-12 flex-1 rounded-full border border-gray-300 px-4 text-sm outline-none focus:border-[#3665f3] disabled:bg-gray-100"
                                     placeholder={`Min ${formatBidInputValue(auctionMinNextBid)}`}
@@ -607,7 +665,7 @@ export default function ProductPurchaseOptions({ product }) {
                         <span className="w-20 text-gray-500">Shipping:</span>
                         <div className="flex-1">
                             <p className="font-bold text-gray-900">
-                                US $312.97 (approx 8,204,195.58 VND){' '}
+                                {shippingCopy}{' '}
                                 <span className="font-normal italic text-gray-500">eBay International Shipping</span>
                             </p>
                             <Link to="#" className="text-gray-900 underline">

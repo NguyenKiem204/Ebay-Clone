@@ -4,6 +4,8 @@ import useOrderStore from '../store/useOrderStore';
 import { Button } from '../components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { checkoutService } from '../features/checkout/services/checkoutService';
+import MyEbayLayout from '../components/myebay/MyEbayLayout';
+import { isUserInteractingWithForm } from '../lib/autoRefresh';
 
 export default function OrdersPage() {
     const [activeTab, setActiveTab] = useState('All');
@@ -36,14 +38,16 @@ export default function OrdersPage() {
         };
 
         const timer = window.setInterval(() => {
-            fetchOrders(statusMap[activeTab]);
+            if (!isUserInteractingWithForm()) {
+                fetchOrders(statusMap[activeTab], { silent: true });
+            }
         }, 30000);
 
         return () => window.clearInterval(timer);
     }, [activeTab, fetchOrders]);
 
     const formatVND = (amount) => {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
     };
 
     const formatPaymentMethod = (paymentMethod) => {
@@ -92,7 +96,7 @@ export default function OrdersPage() {
             parts.push(`Tracking: ${shippingTracking.trackingNumber}`);
         }
 
-        return parts.length > 0 ? parts.join(' • ') : 'Tracking details are not available yet.';
+        return parts.length > 0 ? parts.join(' â€¢ ') : 'Tracking details are not available yet.';
     };
 
     const formatDateTime = (value) => {
@@ -177,34 +181,12 @@ export default function OrdersPage() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-[1400px]">
-            <div className="flex flex-col md:flex-row gap-8 min-h-screen">
-
-                {/* Sidebar Nav */}
-                <aside className="w-full md:w-64 flex-shrink-0">
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden sticky top-24">
-                        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                            <h2 className="font-bold text-xl text-gray-900">My eBay</h2>
-                        </div>
-                        <nav className="flex flex-col py-2">
-                            <Link to="/profile" className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors font-medium">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 text-gray-400">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                                </svg>
-                                Personal Info
-                            </Link>
-                            <Link to="/orders" className="flex items-center px-6 py-3 text-secondary bg-blue-50/50 border-l-4 border-secondary font-bold">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-3">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                </svg>
-                                Purchase History
-                            </Link>
-                        </nav>
-                    </div>
-                </aside>
-
-                {/* Main Content */}
-                <div className="flex-1 flex flex-col min-h-0 bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+        <MyEbayLayout
+            activeKey="orders"
+            title="Purchase History"
+            description="Review your orders, payments, shipping progress, and follow-up actions without leaving My eBay."
+        >
+            <div className="flex min-h-0 flex-col overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm">
                     <div className="p-6 border-b border-gray-200">
                         <h1 className="text-2xl font-bold mb-6 text-gray-900">Purchase History</h1>
                         <div className="flex space-x-8 text-sm text-gray-600 border-b border-gray-200 overflow-x-auto scrollbar-hide">
@@ -399,8 +381,6 @@ export default function OrdersPage() {
                         )}
                     </div>
                 </div>
-
-            </div>
-        </div>
+        </MyEbayLayout>
     );
 }

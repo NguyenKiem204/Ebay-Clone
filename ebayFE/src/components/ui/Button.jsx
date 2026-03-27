@@ -3,6 +3,8 @@ import { forwardRef } from 'react';
 
 const Button = forwardRef(({ className, variant = 'primary', size = 'md', isLoading, children, ...props }, ref) => {
     const baseStyles = "inline-flex items-center justify-center font-bold transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 active:scale-95";
+    const Component = props.as || 'button';
+    const { as: _as, ...componentProps } = props;
 
     const variants = {
         primary: "bg-primary text-white hover:bg-red-700 shadow-md shadow-red-500/10",
@@ -19,11 +21,11 @@ const Button = forwardRef(({ className, variant = 'primary', size = 'md', isLoad
     };
 
     return (
-        <button
+        <Component
             ref={ref}
             className={cn(baseStyles, variants[variant], sizes[size], className)}
-            disabled={isLoading || props.disabled}
-            {...props}
+            disabled={Component === 'button' ? (isLoading || componentProps.disabled) : undefined}
+            {...componentProps}
         >
             {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -34,7 +36,7 @@ const Button = forwardRef(({ className, variant = 'primary', size = 'md', isLoad
                     <span>{children}</span>
                 </div>
             ) : children}
-        </button>
+        </Component>
     );
 });
 

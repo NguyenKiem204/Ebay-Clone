@@ -279,6 +279,8 @@ Temporary Items
 *.sqlite3
 *.db-shm
 *.db-wal
+ebayBE/db_data/
+db_data/
 
 # ============================================
 # Logs

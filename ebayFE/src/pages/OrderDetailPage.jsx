@@ -5,6 +5,9 @@ import { Button } from '../components/ui/Button';
 import api from '../lib/axios';
 import { checkoutService } from '../features/checkout/services/checkoutService';
 import caseEvidenceService from '../features/cases/services/caseEvidenceService';
+import MyEbayLayout from '../components/myebay/MyEbayLayout';
+import OrderReviewActionsPanel from '../features/reviews/components/OrderReviewActionsPanel';
+import { isUserInteractingWithForm } from '../lib/autoRefresh';
 
 const DEFAULT_RETURN_FORM = {
     orderItemId: '',
@@ -36,7 +39,7 @@ const INR_REASON_OPTIONS = [
     { value: 'other', label: 'Other' }
 ];
 
-const formatVND = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+const formatVND = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
 
 const resolveDefaultOrderItemId = (items) => (
     items?.length === 1 && items[0]?.id ? String(items[0].id) : ''
@@ -134,7 +137,7 @@ function CaseItemTargetPicker({
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        Qty {item.quantity} • {formatVND(item.totalPrice)}
+                                        Qty {item.quantity} â€¢ {formatVND(item.totalPrice)}
                                     </p>
                                 </div>
                             </div>
@@ -176,7 +179,9 @@ export default function OrderDetailPage() {
         }
 
         const timer = window.setInterval(() => {
-            fetchOrderById(id);
+            if (!isUserInteractingWithForm()) {
+                fetchOrderById(id, { silent: true });
+            }
         }, 30000);
 
         return () => window.clearInterval(timer);
@@ -207,30 +212,38 @@ export default function OrderDetailPage() {
     };
 
     const formatDateTime = (value) => {
-        return value ? new Date(value).toLocaleString('vi-VN') : 'Not available';
+        return value ? new Date(value).toLocaleString('en-US') : 'Not available';
     };
 
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-12 max-w-5xl">
-                <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-500 font-medium">
+            <MyEbayLayout
+                activeKey="orders"
+                title="Purchase History"
+                description="Review the order details and continue any after-purchase actions without leaving My eBay."
+            >
+                <div className="rounded-[28px] border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
                     Loading order details...
                 </div>
-            </div>
+            </MyEbayLayout>
         );
     }
 
     if (!selectedOrder) {
         return (
-            <div className="container mx-auto px-4 py-12 max-w-5xl">
-                <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+            <MyEbayLayout
+                activeKey="orders"
+                title="Purchase History"
+                description="Review the order details and continue any after-purchase actions without leaving My eBay."
+            >
+                <div className="rounded-[28px] border border-gray-200 bg-white p-8 text-center shadow-sm">
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Order details</h1>
                     <p className="text-gray-600 mb-6">{error || 'We could not load this order right now.'}</p>
                     <Link to="/orders" className="text-blue-600 hover:underline font-medium">
                         Back to orders
                     </Link>
                 </div>
-            </div>
+            </MyEbayLayout>
         );
     }
 
@@ -429,7 +442,11 @@ export default function OrderDetailPage() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-12 max-w-5xl">
+        <MyEbayLayout
+            activeKey="orders"
+            title="Purchase History"
+            description="Review the order details and continue any after-purchase actions without leaving My eBay."
+        >
             <div className="flex items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">Order details</h1>
@@ -851,6 +868,10 @@ export default function OrderDetailPage() {
                     </div>
                 </div>
 
+                <div className="p-6 border-b border-gray-200 bg-gray-50/40">
+                    <OrderReviewActionsPanel orderId={order.id} />
+                </div>
+
                 <div className="p-6">
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Order summary</h2>
                     <div className="space-y-2 text-sm text-gray-700 max-w-md">
@@ -879,6 +900,6 @@ export default function OrderDetailPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </MyEbayLayout>
     );
 }

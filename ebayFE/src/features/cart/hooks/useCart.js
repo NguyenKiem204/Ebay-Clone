@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import useCartStore from './useCartStore';
 import useAuthStore from '../../../store/useAuthStore';
 import { cartService } from '../services/cartService';
+import toast from 'react-hot-toast';
 
 // Module-level flag: shared across all hook instances.
 // Prevents CartPage remount from re-triggering merge/fetch and doubling quantities.
@@ -73,6 +74,12 @@ export const useCart = () => {
     }, [isAuthenticated, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleAddItem = async (product, quantity = 1) => {
+        const stockLimit = Number(product.stock ?? quantity);
+        if (stockLimit > 0 && quantity > stockLimit) {
+            toast.error(`Only ${stockLimit} item${stockLimit === 1 ? '' : 's'} left in stock.`);
+            quantity = stockLimit;
+        }
+
         const cartItem = {
             id: product.id,
             title: product.title || product.name,
@@ -83,7 +90,8 @@ export const useCart = () => {
             seller: product.sellerName || 'seller',
             condition: product.condition || 'New',
             shippingPrice: product.shippingFee ?? 0,
-            quantity
+            quantity,
+            stock: product.stock
         };
 
         if (isAuthenticated) {
@@ -93,6 +101,7 @@ export const useCart = () => {
                 await fetchCart();
             } catch (error) {
                 console.error('Failed to add item to cart:', error);
+                toast.error(error.response?.data?.message || 'Unable to add this item to cart.');
             }
         } else {
             // Guest: only update localStorage
@@ -116,12 +125,24 @@ export const useCart = () => {
             await handleRemoveItem(productId);
             return;
         }
-        updateQuantity(productId, quantity);
+
+        const currentItem = items.find((item) => item.id === productId);
+        const stockLimit = Number(currentItem?.stock ?? 0);
+        const nextQuantity = stockLimit > 0 ? Math.min(quantity, stockLimit) : quantity;
+
+        if (stockLimit > 0 && quantity > stockLimit) {
+            toast.error(`Only ${stockLimit} item${stockLimit === 1 ? '' : 's'} left in stock.`);
+        }
+
+        updateQuantity(productId, nextQuantity);
         if (isAuthenticated) {
             try {
-                await cartService.updateCartItem(productId, quantity);
+                await cartService.updateCartItem(productId, nextQuantity);
+                await fetchCart();
             } catch (error) {
                 console.error('Failed to update cart quantity:', error);
+                toast.error(error.response?.data?.message || 'Unable to update cart quantity.');
+                await fetchCart();
             }
         }
     };

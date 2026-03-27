@@ -35,11 +35,11 @@ const INR_REASON_OPTIONS = [
 ];
 
 const formatDateTime = (value) => (
-    value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
+    value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
 const formatVND = (amount) => (
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
 const resolveDefaultOrderItemId = (items) => (
@@ -124,7 +124,7 @@ function CaseItemTargetPicker({
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        Qty {item.quantity} • {formatVND(item.totalPrice)}
+                                        Qty {item.quantity} â€¢ {formatVND(item.totalPrice)}
                                     </p>
                                 </div>
                             </div>

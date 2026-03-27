@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BookmarkCheck, ShoppingCart, Loader2, Heart } from 'lucide-react';
 import useWatchlistStore from '../features/watchlist/useWatchlistStore';
 import useAuthStore from '../store/useAuthStore';
+import { isUserInteractingWithForm } from '../lib/autoRefresh';
 
 function formatUsd(value) {
     return `US $${Number(value || 0).toLocaleString()}`;
@@ -63,7 +64,9 @@ export default function WatchlistPage() {
 
         fetchWatchlist();
         const timer = window.setInterval(() => {
-            fetchWatchlist();
+            if (!isUserInteractingWithForm()) {
+                fetchWatchlist();
+            }
         }, 30000);
 
         return () => window.clearInterval(timer);
@@ -152,12 +155,12 @@ export default function WatchlistPage() {
                                     ) : (
                                         <>
                                             <div className="mb-1 text-[18px] font-bold text-gray-900">
-                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                                             </div>
                                             <div className="text-[12px] text-blue-600">
                                                 {item.shippingFee === 0
                                                     ? 'Free shipping'
-                                                    : `+${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.shippingFee)} shipping`}
+                                                    : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.shippingFee)} shipping`}
                                             </div>
                                         </>
                                     )}

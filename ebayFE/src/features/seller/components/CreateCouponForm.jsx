@@ -32,7 +32,7 @@ const schema = yup.object().shape({
     .nullable()
     .when('discountType', {
       is: 'percentage',
-      then: (schema) => schema.required('Max discount amount is required for percentage type').min(1, 'Must be at least 1đ'),
+      then: (schema) => schema.required('Max discount amount is required for percentage type').min(1, 'Must be at least $1'),
       otherwise: (schema) => schema.nullable()
     }),
   startDate: yup.date().required(),
@@ -247,7 +247,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-600 uppercase">Discount Value <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-500">{discountType === 'percentage' ? '%' : 'đ'}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-500">{discountType === 'percentage' ? '%' : '$'}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -261,7 +261,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-600 uppercase">
-                  Min Order Amount (VNĐ)
+                  Min Order Amount (USD)
                 </label>
                 <input
                   type="number"
@@ -274,10 +274,10 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
               {discountType === 'percentage' && (
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-600 uppercase">
-                    Max Discount Amount (VNĐ) <span className="text-red-500">*</span>
+                    Max Discount Amount (USD) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-sm">đ</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-sm">$</span>
                     <input
                       type="number"
                       step="1000"
@@ -286,7 +286,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
                       className="w-full border border-gray-300 pl-8 pr-4 py-3 rounded-md outline-none focus:border-secondary"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-400">The maximum amount (in VNĐ) the coupon can discount, even if the percentage is higher.</p>
+                  <p className="text-[11px] text-gray-400">The maximum amount in USD the coupon can discount, even if the percentage is higher.</p>
                   {errors.maxDiscount && <p className="text-xs text-red-500">{errors.maxDiscount.message}</p>}
                 </div>
               )}
@@ -361,7 +361,9 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
                           <img src={p.thumbnail || p.imageUrl} className="w-8 h-8 rounded object-cover" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-gray-900 truncate">{p.title}</p>
-                            <p className="text-xs text-secondary font-bold">{p.price.toLocaleString()}đ</p>
+                            <p className="text-xs text-secondary font-bold">
+                              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.price)}
+                            </p>
                           </div>
                           <Plus size={16} className="text-gray-400" />
                         </div>

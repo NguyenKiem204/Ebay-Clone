@@ -13,7 +13,8 @@ export function resolveMediaUrl(value) {
         return value;
     }
 
-    const normalized = value.startsWith('/') ? value : `/${value}`;
+    const normalizedPath = value.replace(/\\/g, '/');
+    const normalized = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
     return `${BASE_URL}${normalized}`;
 }
 

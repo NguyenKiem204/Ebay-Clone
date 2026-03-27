@@ -63,11 +63,11 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                     </h3>
                     <div className="flex items-baseline gap-2 mb-4">
                         <span className="font-bold text-[16px] text-gray-900">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                         </span>
                         {item.originalPrice && (
                             <span className="text-sm text-gray-400 line-through">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.originalPrice)}
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.originalPrice)}
                             </span>
                         )}
                     </div>
@@ -94,7 +94,7 @@ const CheckoutItem = ({ item, updateQuantity }) => {
                         <p className="text-[14px] text-gray-900">eBay International Shipping</p>
                         <p className="text-[14px] text-gray-900">30 days returns accepted <span className="text-gray-400 border border-gray-300 rounded-full inline-flex items-center justify-center w-4 h-4 text-[10px] ml-1 cursor-pointer">i</span></p>
                         <p className="font-bold text-[14px] text-gray-900 mt-2">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayShipping)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayShipping)}
                         </p>
                         <p className="text-[13px] text-gray-500 mt-1">Import fees may apply on delivery</p>
                     </div>
@@ -244,7 +244,7 @@ export default function CheckoutPage() {
                                 <span>
                                     {(shouldShowGuestNeutralSubtotal || shouldShowMemberNeutralTotals)
                                         ? 'Calculating...'
-                                        : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displaySubtotal)}
+                                        : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displaySubtotal)}
                                 </span>
                             </div>
                             <div className="flex justify-between text-gray-900 text-[14px]">
@@ -252,7 +252,7 @@ export default function CheckoutPage() {
                                 <span>
                                     {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
                                         ? 'Calculating...'
-                                        : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingCost)}
+                                        : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(shippingCost)}
                                 </span>
                             </div>
                             {(discountAmount > 0 || appliedCoupon) && (
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
                                     <span>
                                         {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
                                             ? 'Calculating...'
-                                            : `-${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}`}
+                                            : `-${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(discountAmount)}`}
                                     </span>
                                 </div>
                             )}
@@ -274,7 +274,7 @@ export default function CheckoutPage() {
                             <span className="text-[18px] font-bold text-gray-900">
                                 {(shouldShowGuestNeutralTotals || shouldShowMemberNeutralTotals)
                                     ? 'Calculating...'
-                                    : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
+                                    : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}
                             </span>
                         </div>
 

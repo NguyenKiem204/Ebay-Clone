@@ -85,7 +85,7 @@ export function RecentlyViewed() {
                                             className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 p-2"
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-200 text-4xl">📦</div>
+                                        <div className="w-full h-full flex items-center justify-center text-gray-200 text-4xl">Ã°Å¸â€œÂ¦</div>
                                     )}
                                     <div className="absolute inset-0 bg-neutral-800 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
                                 </Link>
@@ -97,11 +97,13 @@ export function RecentlyViewed() {
                                 </h3>
                                 <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
                                     <span className="font-bold text-[16px] text-gray-900">
-                                        ₫{Number(item.price).toLocaleString('vi-VN')}
+                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.price || 0))}
                                     </span>
                                 </div>
                                 <span className="text-[11px] text-blue-600 font-medium">
-                                    {item.shippingFee === 0 ? 'Free shipping' : `+₫${Number(item.shippingFee).toLocaleString('vi-VN')} shipping`}
+                                    {item.shippingFee === 0
+                                        ? 'Free shipping'
+                                        : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.shippingFee || 0))} shipping`}
                                 </span>
                             </Link>
                         </div>

@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import api from '../lib/axios';
 import useCartStore from '../features/cart/hooks/useCartStore';
+import useOrderStore from './useOrderStore';
+import useWatchlistStore from '../features/watchlist/useWatchlistStore';
+import useSavedStore from '../features/saved/useSavedStore';
 
 const useAuthStore = create((set) => ({
     user: null,
@@ -116,7 +119,15 @@ const useAuthStore = create((set) => ({
         try {
             await api.post('/api/Auth/logout');
         } finally {
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('verified');
+                sessionStorage.removeItem('verifiedAt');
+            }
+
             useCartStore.getState().clearCart();
+            useOrderStore.getState().clear();
+            useWatchlistStore.getState().clear();
+            useSavedStore.getState().clear();
 
             const { default: useHistoryStore } = await import('../features/history/useHistoryStore');
             useHistoryStore.getState().clear();
@@ -152,7 +163,15 @@ const useAuthStore = create((set) => ({
                 isAuthenticated: true
             });
         } catch (error) {
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('verified');
+                sessionStorage.removeItem('verifiedAt');
+            }
+
             useCartStore.getState().clearCart();
+            useOrderStore.getState().clear();
+            useWatchlistStore.getState().clear();
+            useSavedStore.getState().clear();
 
             const { default: useNotificationStore } = await import('./useNotificationStore');
             useNotificationStore.getState().clear();

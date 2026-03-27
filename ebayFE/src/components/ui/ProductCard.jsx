@@ -101,8 +101,8 @@ export function ProductCard({ product }) {
                 </Link>
                 <div className="flex items-center gap-1 mb-1">
                     <div className="flex text-yellow-400 text-[10px]">
-                        {'★'.repeat(Math.round(product.rating || 5))}
-                        {'☆'.repeat(5 - Math.round(product.rating || 5))}
+                        {'â˜…'.repeat(Math.round(product.rating || 5))}
+                        {'â˜†'.repeat(5 - Math.round(product.rating || 5))}
                     </div>
                     <span className="text-[10px] text-gray-500">({product.reviewCount || 0})</span>
                 </div>
@@ -112,10 +112,10 @@ export function ProductCard({ product }) {
                         {product.isAuction ? (
                             <>
                                 <span className="text-[11px] font-normal text-gray-500 block mb-0.5">Current bid:</span>
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.currentBid || product.price)}
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.currentBid || product.price)}
                             </>
                         ) : (
-                            new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)
+                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)
                         )}
                     </div>
                     {product.isAuction && (
@@ -125,20 +125,22 @@ export function ProductCard({ product }) {
                             </div>
                             {product.buyItNowPrice && (
                                 <div className="text-[11px] text-[#3665f3] font-medium mt-0.5">
-                                    Buy It Now: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.buyItNowPrice)}
+                                    Buy It Now: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.buyItNowPrice)}
                                 </div>
                             )}
                         </>
                     )}
                     {!product.isAuction && product.originalPrice && product.originalPrice > product.price && (
                         <div className="text-[11px] text-gray-500 line-through">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.originalPrice)}
                         </div>
                     )}
 
                     <div className="flex flex-col gap-0.5 mt-1">
                         <span className="text-[11px] text-blue-700 font-medium leading-none">
-                            {product.shippingFee === 0 ? 'Free shipping' : `+₫${product.shippingFee?.toLocaleString('vi-VN')} shipping`}
+                            {product.shippingFee === 0
+                                ? 'Free shipping'
+                                : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.shippingFee || 0)} shipping`}
                         </span>
                         <span className="text-[10px] text-gray-400">From {product.sellerName || 'ebay_seller'}</span>
                     </div>

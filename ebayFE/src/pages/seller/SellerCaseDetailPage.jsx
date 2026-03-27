@@ -8,11 +8,11 @@ import caseEvidenceService from '../../features/cases/services/caseEvidenceServi
 import { BASE_URL } from '../../lib/axios';
 
 const formatDateTime = (value) => (
-    value ? new Date(value).toLocaleString('vi-VN') : 'Not available'
+    value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
 const formatVND = (amount) => (
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
 const formatFileSize = (bytes) => {
@@ -374,7 +374,7 @@ export default function SellerCaseDetailPage() {
                                 <div>
                                     <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Payment</p>
                                     <p className="font-semibold text-gray-900 capitalize">
-                                        {caseData.order.paymentMethod || 'Not available'} • {caseData.order.paymentStatus || 'Not available'}
+                                        {caseData.order.paymentMethod || 'Not available'} â€¢ {caseData.order.paymentStatus || 'Not available'}
                                     </p>
                                 </div>
                                 <div>
@@ -408,7 +408,7 @@ export default function SellerCaseDetailPage() {
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1">Seller: {caseData.orderItem.sellerDisplayName || 'Not available'}</p>
-                                    <p className="text-sm text-gray-600">Qty {caseData.orderItem.quantity} • {formatVND(caseData.orderItem.totalPrice)}</p>
+                                    <p className="text-sm text-gray-600">Qty {caseData.orderItem.quantity} â€¢ {formatVND(caseData.orderItem.totalPrice)}</p>
                                 </div>
                             </div>
                         </div>
@@ -447,7 +447,7 @@ export default function SellerCaseDetailPage() {
                                                 {attachment.label || attachment.originalFileName}
                                             </p>
                                             <p className="text-sm text-gray-600 break-words mt-1">
-                                                {attachment.evidenceType || 'General evidence'} • {formatFileSize(attachment.fileSizeBytes)}
+                                                {attachment.evidenceType || 'General evidence'} â€¢ {formatFileSize(attachment.fileSizeBytes)}
                                             </p>
                                             <p className="text-sm text-gray-600 mt-1">
                                                 Uploaded by {attachment.uploadedByDisplayName || 'case participant'} on {formatDateTime(attachment.uploadedAt)}

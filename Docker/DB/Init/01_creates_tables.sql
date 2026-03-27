@@ -378,12 +378,18 @@ CREATE TABLE reviews (
     product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     reviewer_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     order_id INT REFERENCES orders(id) ON DELETE SET NULL,
+    order_item_id INT REFERENCES order_items(id) ON DELETE SET NULL,
     rating INT NOT NULL,
     title VARCHAR(200),
     comment TEXT,
     images TEXT[], -- Array of review image URLs
     is_verified_purchase BOOLEAN DEFAULT FALSE,
     helpful_count INT DEFAULT 0,
+    status VARCHAR(30) NOT NULL DEFAULT 'published',
+    seller_reply TEXT,
+    seller_reply_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    seller_reply_created_at TIMESTAMP,
+    seller_reply_updated_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -393,6 +399,35 @@ CREATE TABLE reviews (
 
 CREATE INDEX idx_reviews_product ON reviews(product_id);
 CREATE INDEX idx_reviews_reviewer ON reviews(reviewer_id);
+CREATE UNIQUE INDEX reviews_order_item_id_reviewer_id_key ON reviews(order_item_id, reviewer_id) WHERE order_item_id IS NOT NULL;
+
+CREATE TABLE review_helpful_votes (
+    id SERIAL PRIMARY KEY,
+    review_id INT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT review_helpful_votes_review_id_user_id_key UNIQUE (review_id, user_id)
+);
+
+CREATE INDEX idx_review_helpful_votes_review ON review_helpful_votes(review_id);
+CREATE INDEX idx_review_helpful_votes_user ON review_helpful_votes(user_id);
+
+CREATE TABLE review_reports (
+    id SERIAL PRIMARY KEY,
+    review_id INT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    reporter_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reason VARCHAR(100) NOT NULL,
+    details TEXT,
+    status VARCHAR(30) NOT NULL DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT review_reports_review_id_reporter_id_key UNIQUE (review_id, reporter_id)
+);
+
+CREATE INDEX idx_review_reports_review ON review_reports(review_id);
+CREATE INDEX idx_review_reports_reporter ON review_reports(reporter_id);
 
 -- Seller Feedback Table
 CREATE TABLE seller_feedback (
@@ -405,6 +440,27 @@ CREATE TABLE seller_feedback (
     negative_count INT DEFAULT 0,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE seller_transaction_feedback (
+    id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_item_id INT NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+    seller_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    buyer_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sentiment VARCHAR(20) NOT NULL,
+    comment TEXT,
+    status VARCHAR(30) NOT NULL DEFAULT 'published',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_seller_transaction_feedback_sentiment CHECK (sentiment IN ('positive', 'neutral', 'negative')),
+    CONSTRAINT seller_transaction_feedback_order_item_id_buyer_id_key UNIQUE (order_item_id, buyer_id)
+);
+
+CREATE INDEX idx_seller_transaction_feedback_order ON seller_transaction_feedback(order_id);
+CREATE INDEX idx_seller_transaction_feedback_order_item ON seller_transaction_feedback(order_item_id);
+CREATE INDEX idx_seller_transaction_feedback_seller ON seller_transaction_feedback(seller_id);
+CREATE INDEX idx_seller_transaction_feedback_buyer ON seller_transaction_feedback(buyer_id);
 
 -- ============================================
 -- AUCTION & BIDDING

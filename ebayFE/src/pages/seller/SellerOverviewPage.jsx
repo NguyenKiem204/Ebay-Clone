@@ -352,8 +352,11 @@ export default function SellerOverviewPage() {
                     </div>
                     <div className="border-t border-gray-100 pt-4 space-y-2">
                         <p className="text-xs text-gray-500 font-semibold">Feedback for buyers</p>
-                        {['Leave feedback', 'Manage automated feedback'].map(label => (
-                            <Link key={label} to="#" className="block text-sm text-[#3665f3] hover:underline">{label}</Link>
+                        {[
+                            { label: 'Review buyer feedback', to: '/seller/reviews' },
+                            { label: 'Manage automated feedback', to: '#' }
+                        ].map(item => (
+                            <Link key={item.label} to={item.to} className="block text-sm text-[#3665f3] hover:underline">{item.label}</Link>
                         ))}
                     </div>
                 </Card>

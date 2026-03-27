@@ -5,6 +5,7 @@ import useProductStore from '../store/useProductStore';
 import useSavedStore from '../features/saved/useSavedStore';
 import useAuthStore from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
+import { resolveMediaUrl } from '../lib/media';
 
 export default function RelatedItemsPage() {
     const { id } = useParams();
@@ -78,7 +79,7 @@ export default function RelatedItemsPage() {
                                     />
                                 </button>
                                 <img 
-                                    src={item.thumbnail || 'https://via.placeholder.com/200'} 
+                                    src={resolveMediaUrl(item.thumbnail) || 'https://via.placeholder.com/200'} 
                                     alt={item.title} 
                                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
                                 />
@@ -94,12 +95,12 @@ export default function RelatedItemsPage() {
                                 </div>
                                 
                                 <div className="text-[16px] font-bold text-gray-900 mt-1">
-                                    {item.price.toLocaleString()} VND
+                                    {item.price.toLocaleString()} USD
                                 </div>
                                 
                                 {item.discountPrice && item.discountPrice > item.price && (
                                     <div className="text-[13px] text-gray-500 flex items-center gap-1">
-                                        <span className="line-through">{item.discountPrice.toLocaleString()} VND</span>
+                                        <span className="line-through">{item.discountPrice.toLocaleString()} USD</span>
                                         <span className="font-medium text-gray-900">
                                             {Math.round((1 - item.price / item.discountPrice) * 100)}% off
                                         </span>
@@ -107,7 +108,7 @@ export default function RelatedItemsPage() {
                                 )}
                                 
                                 <div className="text-[13px] text-gray-500">
-                                    {item.shippingFee === 0 ? 'Free delivery' : `+ ${item.shippingFee.toLocaleString()} VND delivery`}
+                                    {item.shippingFee === 0 ? 'Free delivery' : `+ ${item.shippingFee.toLocaleString()} USD delivery`}
                                 </div>
                                 
                                 {/* Top Rated Plus Mock Badge - added because screenshot had it */}

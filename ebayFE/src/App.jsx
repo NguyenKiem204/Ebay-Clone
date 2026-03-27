@@ -8,6 +8,7 @@ import useAuthStore from './store/useAuthStore';
 import MainLayout from './components/layouts/MainLayout';
 import AuthLayout from './components/layouts/AuthLayout';
 import SellerLayout from './components/layouts/SellerLayout';
+import RequireVerifiedAuth from './components/auth/RequireVerifiedAuth';
 
 // Pages (Lazy Loaded)
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -42,6 +43,7 @@ const SellerEditListingPage = lazy(() => import('./pages/seller/SellerEditListin
 const SellerInventoryPage = lazy(() => import('./pages/seller/SellerInventoryPage'));
 const SellerMarketingPage = lazy(() => import('./pages/seller/SellerMarketingPage'));
 const SellerStorePage = lazy(() => import('./pages/seller/SellerStorePage'));
+const SellerReviewsPage = lazy(() => import('./pages/seller/SellerReviewsPage'));
 const CouponProductsPage = lazy(() => import('./pages/CouponProductsPage'));
 
 // Auth Pages (Lazy Loaded)
@@ -110,31 +112,31 @@ const router = createBrowserRouter([
       },
       {
         path: 'profile',
-        element: <Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><ProfilePage /></Suspense></RequireVerifiedAuth>,
       },
       {
         path: 'orders',
-        element: <Suspense fallback={<PageLoader />}><OrdersPage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><OrdersPage /></Suspense></RequireVerifiedAuth>,
       },
       {
         path: 'orders/:id',
-        element: <Suspense fallback={<PageLoader />}><OrderDetailPage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><OrderDetailPage /></Suspense></RequireVerifiedAuth>,
       },
       {
         path: 'cases',
-        element: <Suspense fallback={<PageLoader />}><CasesPage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><CasesPage /></Suspense></RequireVerifiedAuth>,
       },
       {
         path: 'cases/:caseKind/:id',
-        element: <Suspense fallback={<PageLoader />}><CaseDetailPage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><CaseDetailPage /></Suspense></RequireVerifiedAuth>,
       },
       {
         path: 'saved',
-        element: <Suspense fallback={<PageLoader />}><SavedPage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><SavedPage /></Suspense></RequireVerifiedAuth>,
       },
       {
         path: 'watchlist',
-        element: <Suspense fallback={<PageLoader />}><WatchlistPage /></Suspense>,
+        element: <RequireVerifiedAuth><Suspense fallback={<PageLoader />}><WatchlistPage /></Suspense></RequireVerifiedAuth>,
       },
     ],
   },
@@ -249,6 +251,10 @@ const router = createBrowserRouter([
       {
         path: 'marketing',
         element: <Suspense fallback={<PageLoader />}><SellerMarketingPage /></Suspense>
+      },
+      {
+        path: 'reviews',
+        element: <Suspense fallback={<PageLoader />}><SellerReviewsPage /></Suspense>
       },
       {
         path: 'store',

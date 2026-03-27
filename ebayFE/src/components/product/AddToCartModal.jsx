@@ -1,20 +1,29 @@
 import { X, Check, ChevronRight, Info, Heart } from 'lucide-react';
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import useProductStore from '../../store/useProductStore';
 import useWatchlistStore from '../../features/watchlist/useWatchlistStore';
 import useAuthStore from '../../store/useAuthStore';
 import useCartStore from '../../features/cart/hooks/useCartStore';
+import { resolveMediaUrl } from '../../lib/media';
 
 export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
     const navigate = useNavigate();
     const relatedProducts = useProductStore(state => state.relatedProducts);
+    const fetchRelatedProducts = useProductStore(state => state.fetchRelatedProducts);
     const watchIds = useWatchlistStore(s => s.watchIds);
     const toggleWatch = useWatchlistStore(s => s.toggleWatch);
     const isAuthenticated = useAuthStore(s => s.isAuthenticated);
     
     const cartItems = useCartStore(state => state.items);
     const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    useEffect(() => {
+        if (isOpen && product?.id) {
+            fetchRelatedProducts(product.id);
+        }
+    }, [fetchRelatedProducts, isOpen, product?.id]);
 
     if (!isOpen) return null;
 
@@ -44,7 +53,9 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
     };
 
     // Retrieve up to 3 real related items from the store
-    const displayItems = relatedProducts && relatedProducts.length > 0 ? relatedProducts.slice(0, 3) : [];
+    const displayItems = relatedProducts && relatedProducts.length > 0
+        ? relatedProducts.filter((item) => item?.id !== product?.id).slice(0, 3)
+        : [];
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -71,7 +82,7 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
                         <div className="flex gap-4">
                             <div className="w-24 h-24 flex-shrink-0 bg-white border border-gray-100 rounded-lg overflow-hidden">
                                 <img
-                                    src={product.thumbnail || product.imageUrl}
+                                    src={resolveMediaUrl(product.thumbnail || product.imageUrl)}
                                     alt={product.title}
                                     className="w-full h-full object-contain"
                                 />
@@ -128,13 +139,13 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
                             {displayItems.map((item) => (
                                 <Link
                                     key={item.id}
-                                    to={`/products/${item.slug || item.id}`}
+                                    to={`/products/${item.id}`}
                                     className="flex flex-col group"
                                     onClick={onClose}
                                 >
                                     <div className="relative aspect-square bg-white border border-gray-200 rounded-lg overflow-hidden p-2 group-hover:shadow-sm transition-shadow">
                                         <img
-                                            src={item.thumbnail}
+                                            src={resolveMediaUrl(item.thumbnail)}
                                             alt={item.title}
                                             className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                                         />
@@ -148,9 +159,8 @@ export default function AddToCartModal({ isOpen, onClose, product, quantity }) {
                                         </h4>
                                         <p className="text-[13px] text-gray-500 mt-1">{item.condition || 'Pre-owned'}</p>
                                         <p className="text-[16px] font-bold text-gray-900 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                                            {(item.price * 26231).toLocaleString('vi-VN')}
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                                         </p>
-                                        <span className="text-[11px] font-bold text-gray-900">VND</span>
                                     </div>
                                 </Link>
                             ))}
