@@ -476,7 +476,17 @@ INSERT INTO products (title, slug, description, price, images, category_id, sell
 -- ============================================
 -- INVENTORY
 -- ============================================
-
+UPDATE products SET
+  price = ROUND((price / 25000.0)::numeric, 2),
+  original_price = CASE 
+    WHEN original_price IS NOT NULL THEN ROUND((original_price / 25000.0)::numeric, 2)
+    ELSE NULL
+  END,
+  shipping_fee = CASE
+    WHEN shipping_fee > 0 THEN ROUND((shipping_fee / 25000.0)::numeric, 2)
+    ELSE 0
+  END;
+  
 INSERT INTO inventory (product_id, quantity, reserved_quantity, last_updated) VALUES
 (1, 15, 2, CURRENT_TIMESTAMP),
 (2, 50, 5, CURRENT_TIMESTAMP),

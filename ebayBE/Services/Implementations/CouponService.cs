@@ -149,6 +149,12 @@ namespace ebay.Services.Implementations
             await _context.Entry(coupon).Reference(c => c.Store).LoadAsync();
             await _context.Entry(coupon).Reference(c => c.Category).LoadAsync();
             await _context.Entry(coupon).Collection(c => c.Products).LoadAsync();
+            await CreatePromotionNotificationAsync(
+                coupon.Store?.SellerId,
+                "promotion_created",
+                "Promotion created",
+                $"Promotion {coupon.Code} is now active.",
+                "/seller/marketing");
 
             return coupon;
         }
@@ -271,6 +277,12 @@ namespace ebay.Services.Implementations
             await _context.Entry(coupon).Reference(c => c.Store).LoadAsync();
             await _context.Entry(coupon).Reference(c => c.Category).LoadAsync();
             await _context.Entry(coupon).Collection(c => c.Products).LoadAsync();
+            await CreatePromotionNotificationAsync(
+                sellerId,
+                "promotion_updated",
+                "Promotion updated",
+                $"Promotion {coupon.Code} was updated successfully.",
+                "/seller/marketing");
 
             return MapCouponToResponseDto(coupon);
         }
@@ -393,12 +405,42 @@ namespace ebay.Services.Implementations
         {
             var coupon = await _context.Coupons.FindAsync(id);
             if (coupon == null) return false;
+            var sellerUserId = coupon.StoreId.HasValue
+                ? (await _context.Stores.AsNoTracking().Where(store => store.Id == coupon.StoreId.Value).Select(store => (int?)store.SellerId).FirstOrDefaultAsync())
+                : null;
 
             coupon.IsActive = false;
             coupon.EndDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            await CreatePromotionNotificationAsync(
+                sellerUserId,
+                "promotion_ended",
+                "Promotion ended",
+                $"Promotion {coupon.Code} has ended.",
+                "/seller/marketing");
             return true;
+        }
+
+        private async Task CreatePromotionNotificationAsync(int? userId, string type, string title, string body, string link)
+        {
+            if (!userId.HasValue)
+            {
+                return;
+            }
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = userId.Value,
+                Type = type,
+                Title = title,
+                Body = body,
+                Link = link,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task ValidateStoreAsync(int storeId)

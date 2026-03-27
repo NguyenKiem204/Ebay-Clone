@@ -20,6 +20,7 @@ namespace ebay.Services.Implementations
         {
             var cart = await GetOrCreateCartAsync(userId);
             await RemoveIneligibleCartItemsAsync(cart, userId);
+            await NormalizeCartQuantitiesAsync(cart);
             
             var items = cart.CartItems.Select(ci => new CartItemResponseDto
             {
@@ -210,6 +211,45 @@ namespace ebay.Services.Implementations
             }
 
             _context.CartItems.RemoveRange(invalidItems);
+            cart.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task NormalizeCartQuantitiesAsync(Cart cart)
+        {
+            var soldOutItems = cart.CartItems
+                .Where(ci => ci.Product != null && (ci.Product.Stock ?? 0) <= 0)
+                .ToList();
+
+            var hasChanges = false;
+
+            if (soldOutItems.Any())
+            {
+                foreach (var item in soldOutItems)
+                {
+                    cart.CartItems.Remove(item);
+                }
+
+                _context.CartItems.RemoveRange(soldOutItems);
+                hasChanges = true;
+            }
+
+            foreach (var item in cart.CartItems.Where(ci => ci.Product != null))
+            {
+                var availableStock = item.Product!.Stock ?? 0;
+                if (item.Quantity > availableStock)
+                {
+                    item.Quantity = availableStock;
+                    item.UpdatedAt = DateTime.UtcNow;
+                    hasChanges = true;
+                }
+            }
+
+            if (!hasChanges)
+            {
+                return;
+            }
+
             cart.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }

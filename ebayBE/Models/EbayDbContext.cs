@@ -63,7 +63,13 @@ public partial class EbayDbContext : DbContext
 
     public virtual DbSet<Review> Reviews { get; set; }
 
+    public virtual DbSet<ReviewHelpfulVote> ReviewHelpfulVotes { get; set; }
+
+    public virtual DbSet<ReviewReport> ReviewReports { get; set; }
+
     public virtual DbSet<SellerFeedback> SellerFeedbacks { get; set; }
+
+    public virtual DbSet<SellerTransactionFeedback> SellerTransactionFeedbacks { get; set; }
 
     public virtual DbSet<ShippingInfo> ShippingInfos { get; set; }
 
@@ -1337,6 +1343,8 @@ public partial class EbayDbContext : DbContext
 
             entity.HasIndex(e => new { e.ProductId, e.ReviewerId, e.OrderId }, "reviews_product_id_reviewer_id_order_id_key").IsUnique();
 
+            entity.HasIndex(e => new { e.OrderItemId, e.ReviewerId }, "reviews_order_item_id_reviewer_id_key").IsUnique();
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.CreatedAt)
@@ -1351,9 +1359,22 @@ public partial class EbayDbContext : DbContext
                 .HasDefaultValue(false)
                 .HasColumnName("is_verified_purchase");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.OrderItemId).HasColumnName("order_item_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.ReviewerId).HasColumnName("reviewer_id");
+            entity.Property(e => e.SellerReply).HasColumnName("seller_reply");
+            entity.Property(e => e.SellerReplyByUserId).HasColumnName("seller_reply_by_user_id");
+            entity.Property(e => e.SellerReplyCreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("seller_reply_created_at");
+            entity.Property(e => e.SellerReplyUpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("seller_reply_updated_at");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'published'::character varying")
+                .HasColumnName("status");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .HasColumnName("title");
@@ -1367,6 +1388,11 @@ public partial class EbayDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("reviews_order_id_fkey");
 
+            entity.HasOne(d => d.OrderItem).WithMany(p => p.Reviews)
+                .HasForeignKey(d => d.OrderItemId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("reviews_order_item_id_fkey");
+
             entity.HasOne(d => d.Product).WithMany(p => p.Reviews)
                 .HasForeignKey(d => d.ProductId)
                 .HasConstraintName("reviews_product_id_fkey");
@@ -1374,6 +1400,85 @@ public partial class EbayDbContext : DbContext
             entity.HasOne(d => d.Reviewer).WithMany(p => p.Reviews)
                 .HasForeignKey(d => d.ReviewerId)
                 .HasConstraintName("reviews_reviewer_id_fkey");
+
+            entity.HasOne(d => d.SellerReplyByUser).WithMany(p => p.SellerRepliesAuthored)
+                .HasForeignKey(d => d.SellerReplyByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("reviews_seller_reply_by_user_id_fkey");
+        });
+
+        modelBuilder.Entity<ReviewHelpfulVote>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("review_helpful_votes_pkey");
+
+            entity.ToTable("review_helpful_votes");
+
+            entity.HasIndex(e => e.ReviewId, "idx_review_helpful_votes_review");
+
+            entity.HasIndex(e => e.UserId, "idx_review_helpful_votes_user");
+
+            entity.HasIndex(e => new { e.ReviewId, e.UserId }, "review_helpful_votes_review_id_user_id_key").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ReviewId).HasColumnName("review_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Review).WithMany(p => p.ReviewHelpfulVotes)
+                .HasForeignKey(d => d.ReviewId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("review_helpful_votes_review_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ReviewHelpfulVotes)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("review_helpful_votes_user_id_fkey");
+        });
+
+        modelBuilder.Entity<ReviewReport>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("review_reports_pkey");
+
+            entity.ToTable("review_reports");
+
+            entity.HasIndex(e => e.ReporterId, "idx_review_reports_reporter");
+
+            entity.HasIndex(e => e.ReviewId, "idx_review_reports_review");
+
+            entity.HasIndex(e => new { e.ReviewId, e.ReporterId }, "review_reports_review_id_reporter_id_key").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Details).HasColumnName("details");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(100)
+                .HasColumnName("reason");
+            entity.Property(e => e.ReporterId).HasColumnName("reporter_id");
+            entity.Property(e => e.ReviewId).HasColumnName("review_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'open'::character varying")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Reporter).WithMany(p => p.ReviewReports)
+                .HasForeignKey(d => d.ReporterId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("review_reports_reporter_id_fkey");
+
+            entity.HasOne(d => d.Review).WithMany(p => p.ReviewReports)
+                .HasForeignKey(d => d.ReviewId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("review_reports_review_id_fkey");
         });
 
         modelBuilder.Entity<SellerFeedback>(entity =>
@@ -1410,6 +1515,65 @@ public partial class EbayDbContext : DbContext
             entity.HasOne(d => d.Seller).WithOne(p => p.SellerFeedback)
                 .HasForeignKey<SellerFeedback>(d => d.SellerId)
                 .HasConstraintName("seller_feedback_seller_id_fkey");
+        });
+
+        modelBuilder.Entity<SellerTransactionFeedback>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("seller_transaction_feedback_pkey");
+
+            entity.ToTable("seller_transaction_feedback");
+
+            entity.HasIndex(e => e.BuyerId, "idx_seller_transaction_feedback_buyer");
+
+            entity.HasIndex(e => e.OrderId, "idx_seller_transaction_feedback_order");
+
+            entity.HasIndex(e => e.OrderItemId, "idx_seller_transaction_feedback_order_item");
+
+            entity.HasIndex(e => e.SellerId, "idx_seller_transaction_feedback_seller");
+
+            entity.HasIndex(e => new { e.OrderItemId, e.BuyerId }, "seller_transaction_feedback_order_item_id_buyer_id_key").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BuyerId).HasColumnName("buyer_id");
+            entity.Property(e => e.Comment).HasColumnName("comment");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.OrderItemId).HasColumnName("order_item_id");
+            entity.Property(e => e.SellerId).HasColumnName("seller_id");
+            entity.Property(e => e.Sentiment)
+                .HasMaxLength(20)
+                .HasColumnName("sentiment");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'published'::character varying")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Buyer).WithMany(p => p.SellerTransactionFeedbackBuyerNavigations)
+                .HasForeignKey(d => d.BuyerId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("seller_transaction_feedback_buyer_id_fkey");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.SellerTransactionFeedbacks)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("seller_transaction_feedback_order_id_fkey");
+
+            entity.HasOne(d => d.OrderItem).WithMany(p => p.SellerTransactionFeedbacks)
+                .HasForeignKey(d => d.OrderItemId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("seller_transaction_feedback_order_item_id_fkey");
+
+            entity.HasOne(d => d.Seller).WithMany(p => p.SellerTransactionFeedbackSellerNavigations)
+                .HasForeignKey(d => d.SellerId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("seller_transaction_feedback_seller_id_fkey");
         });
 
         modelBuilder.Entity<ShippingInfo>(entity =>

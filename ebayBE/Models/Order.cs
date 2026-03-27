@@ -83,5 +83,7 @@ public partial class Order
 
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
+    public virtual ICollection<SellerTransactionFeedback> SellerTransactionFeedbacks { get; set; } = new List<SellerTransactionFeedback>();
+
     public virtual ShippingInfo? ShippingInfo { get; set; }
 }

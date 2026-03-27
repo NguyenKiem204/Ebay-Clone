@@ -5,126 +5,157 @@ using Microsoft.Extensions.Caching.Memory;
 namespace ebay.Middlewares
 {
     public class RateLimitingMiddleware
-        {
-            private readonly RequestDelegate _next;
-            private readonly IMemoryCache _cache;
-            private readonly ILogger<RateLimitingMiddleware> _logger;
+    {
+        private readonly RequestDelegate _next;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<RateLimitingMiddleware> _logger;
 
-            public RateLimitingMiddleware(
-                RequestDelegate next,
-                IMemoryCache cache,
-                ILogger<RateLimitingMiddleware> logger)
+        public RateLimitingMiddleware(
+            RequestDelegate next,
+            IMemoryCache cache,
+            ILogger<RateLimitingMiddleware> logger)
+        {
+            _next = next;
+            _cache = cache;
+            _logger = logger;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            if (HttpMethods.IsOptions(context.Request.Method))
             {
-                _next = next;
-                _cache = cache;
-                _logger = logger;
+                await _next(context);
+                return;
             }
 
-            public async Task InvokeAsync(HttpContext context)
+            var endpoint = context.GetEndpoint();
+            var rateLimitAttribute = endpoint?.Metadata.GetMetadata<RateLimitAttribute>();
+
+            if (rateLimitAttribute != null)
             {
-                if (HttpMethods.IsOptions(context.Request.Method))
+                var clientId = GetClientIdentifier(context);
+                var key = $"RateLimit_{rateLimitAttribute.Name}_{clientId}";
+                var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
+                var hasCaptchaVerification = string.Equals(context.Request.Cookies["hcaptcha_verified"], "true", StringComparison.Ordinal);
+                var effectiveLimit = hasCaptchaVerification
+                    ? rateLimitAttribute.Limit * 20
+                    : isAuthenticated
+                        ? rateLimitAttribute.Limit * 5
+                        : rateLimitAttribute.Limit;
+
+                var requestCount = _cache.GetOrCreate(key, entry =>
                 {
-                    await _next(context);
-                    return;
-                }
+                    entry.AbsoluteExpirationRelativeToNow = rateLimitAttribute.Period;
+                    return 0;
+                });
 
-                var endpoint = context.GetEndpoint();
-                var rateLimitAttribute = endpoint?.Metadata.GetMetadata<RateLimitAttribute>();
-
-                if (rateLimitAttribute != null)
+                if (requestCount >= effectiveLimit)
                 {
-                    var clientId = GetClientIdentifier(context);
-                    var key = $"RateLimit_{rateLimitAttribute.Name}_{clientId}";
+                    _logger.LogWarning(
+                        "Rate limit exceeded for {Endpoint} by {ClientId}. Limit: {Limit}, Period: {Period}",
+                        rateLimitAttribute.Name, clientId, effectiveLimit, rateLimitAttribute.Period);
 
-                    var requestCount = _cache.GetOrCreate(key, entry =>
+                    context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
+                    context.Response.ContentType = "application/json";
+
+                    var cacheEntry = _cache.Get<CacheItem>(key + "_meta");
+                    var retryAfter = cacheEntry?.ExpiresAt != null
+                        ? (int)(cacheEntry.ExpiresAt.Value - DateTimeOffset.UtcNow).TotalSeconds
+                        : (int)rateLimitAttribute.Period.TotalSeconds;
+
+                    if (retryAfter < 0)
                     {
-                        entry.AbsoluteExpirationRelativeToNow = rateLimitAttribute.Period;
-                        return 0;
-                    });
+                        retryAfter = 0;
+                    }
 
-                    if (requestCount >= rateLimitAttribute.Limit)
+                    context.Response.Headers["Retry-After"] = retryAfter.ToString();
+                    context.Response.Headers["X-RateLimit-Limit"] = effectiveLimit.ToString();
+                    context.Response.Headers["X-RateLimit-Remaining"] = "0";
+                    context.Response.Headers["X-RateLimit-Reset"] = DateTimeOffset.UtcNow.AddSeconds(retryAfter).ToUnixTimeSeconds().ToString();
+
+                    if (!isAuthenticated && !hasCaptchaVerification)
                     {
-                        _logger.LogWarning(
-                            "Rate limit exceeded for {Endpoint} by {ClientId}. Limit: {Limit}, Period: {Period}",
-                            rateLimitAttribute.Name, clientId, rateLimitAttribute.Limit, rateLimitAttribute.Period);
-
-                        context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
-                        context.Response.ContentType = "application/json";
-
-                        var cacheEntry = _cache.Get<CacheItem>(key + "_meta");
-                        var retryAfter = cacheEntry?.ExpiresAt != null
-                            ? (int)(cacheEntry.ExpiresAt.Value - DateTimeOffset.UtcNow).TotalSeconds
-                            : (int)rateLimitAttribute.Period.TotalSeconds;
-
-                        if (retryAfter < 0) retryAfter = 0;
-
-                        context.Response.Headers["Retry-After"] = retryAfter.ToString();
-                        context.Response.Headers["X-RateLimit-Limit"] = rateLimitAttribute.Limit.ToString();
-                        context.Response.Headers["X-RateLimit-Remaining"] = "0";
-                        context.Response.Headers["X-RateLimit-Reset"] = DateTimeOffset.UtcNow.AddSeconds(retryAfter).ToUnixTimeSeconds().ToString();
-
                         await context.Response.WriteAsJsonAsync(new
                         {
                             error = "TooManyRequests",
-                            message = $"Bạn đã vượt quá giới hạn {rateLimitAttribute.Limit} requests trong {FormatPeriod(rateLimitAttribute.Period)}. Vui lòng thử lại sau {retryAfter} giây.",
-                            retryAfter = retryAfter
+                            message = "Please complete hCaptcha to continue.",
+                            retryAfter,
+                            captchaRequired = true
                         });
                         return;
                     }
 
-                    var expiresAt = DateTimeOffset.UtcNow.Add(rateLimitAttribute.Period);
-                    _cache.Set(key, requestCount + 1, rateLimitAttribute.Period);
-                    _cache.Set(key + "_meta", new CacheItem { ExpiresAt = expiresAt }, rateLimitAttribute.Period);
-
-                    // Add rate limit headers to response
-                    context.Response.OnStarting(() =>
+                    await context.Response.WriteAsJsonAsync(new
                     {
-                        context.Response.Headers["X-RateLimit-Limit"] = rateLimitAttribute.Limit.ToString();
-                        context.Response.Headers["X-RateLimit-Remaining"] = (rateLimitAttribute.Limit - requestCount - 1).ToString();
-                        context.Response.Headers["X-RateLimit-Reset"] = expiresAt.ToUnixTimeSeconds().ToString();
-                        return Task.CompletedTask;
+                        error = "TooManyRequests",
+                        message = $"You exceeded the limit of {effectiveLimit} requests in {FormatPeriod(rateLimitAttribute.Period)}. Please retry in {retryAfter} seconds.",
+                        retryAfter
                     });
+                    return;
                 }
 
-                await _next(context);
-            }
+                var expiresAt = DateTimeOffset.UtcNow.Add(rateLimitAttribute.Period);
+                _cache.Set(key, requestCount + 1, rateLimitAttribute.Period);
+                _cache.Set(key + "_meta", new CacheItem { ExpiresAt = expiresAt }, rateLimitAttribute.Period);
 
-            private string GetClientIdentifier(HttpContext context)
-            {
-                // Priority: User ID > IP Address
-                var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-                if (!string.IsNullOrEmpty(userId))
-                    return $"User_{userId}";
-
-                var ipAddress = context.Connection.RemoteIpAddress?.ToString();
-
-                if (context.Request.Headers.ContainsKey("X-Forwarded-For"))
+                context.Response.OnStarting(() =>
                 {
-                    ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim();
-                }
-                else if (context.Request.Headers.ContainsKey("X-Real-IP"))
-                {
-                    ipAddress = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-                }
-
-                return $"IP_{ipAddress ?? "Unknown"}";
+                    context.Response.Headers["X-RateLimit-Limit"] = effectiveLimit.ToString();
+                    context.Response.Headers["X-RateLimit-Remaining"] = Math.Max(0, effectiveLimit - requestCount - 1).ToString();
+                    context.Response.Headers["X-RateLimit-Reset"] = expiresAt.ToUnixTimeSeconds().ToString();
+                    return Task.CompletedTask;
+                });
             }
 
-            private string FormatPeriod(TimeSpan period)
-            {
-                if (period.TotalDays >= 1)
-                    return $"{(int)period.TotalDays} ngày";
-                if (period.TotalHours >= 1)
-                    return $"{(int)period.TotalHours} giờ";
-                if (period.TotalMinutes >= 1)
-                    return $"{(int)period.TotalMinutes} phút";
-                return $"{(int)period.TotalSeconds} giây";
-            }
-
-            private class CacheItem
-            {
-                public DateTimeOffset? ExpiresAt { get; set; }
-            }
+            await _next(context);
         }
+
+        private string GetClientIdentifier(HttpContext context)
+        {
+            var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                return $"User_{userId}";
+            }
+
+            var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+
+            if (context.Request.Headers.ContainsKey("X-Forwarded-For"))
+            {
+                ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim();
+            }
+            else if (context.Request.Headers.ContainsKey("X-Real-IP"))
+            {
+                ipAddress = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+            }
+
+            return $"IP_{ipAddress ?? "Unknown"}";
+        }
+
+        private string FormatPeriod(TimeSpan period)
+        {
+            if (period.TotalDays >= 1)
+            {
+                return $"{(int)period.TotalDays} day(s)";
+            }
+
+            if (period.TotalHours >= 1)
+            {
+                return $"{(int)period.TotalHours} hour(s)";
+            }
+
+            if (period.TotalMinutes >= 1)
+            {
+                return $"{(int)period.TotalMinutes} minute(s)";
+            }
+
+            return $"{(int)period.TotalSeconds} second(s)";
+        }
+
+        private class CacheItem
+        {
+            public DateTimeOffset? ExpiresAt { get; set; }
+        }
+    }
 }

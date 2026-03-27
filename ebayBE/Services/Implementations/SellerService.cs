@@ -22,9 +22,11 @@ namespace ebay.Services.Implementations
                 .FirstOrDefaultAsync(u => u.Id == sellerId)
                 ?? throw new KeyNotFoundException($"Seller {sellerId} not found");
 
+            var feedbackQuery = _context.SellerTransactionFeedbacks
+                .Where(feedback => feedback.SellerId == sellerId && feedback.Status == "published");
+
             // Count total reviews across all seller's products
-            var totalReviews = await _context.Reviews
-                .Where(r => r.Product.SellerId == sellerId)
+            var totalReviews = await feedbackQuery
                 .CountAsync();
 
             // Count total items sold
@@ -42,22 +44,34 @@ namespace ebay.Services.Implementations
             }
             else if (totalReviews > 0)
             {
-                var positiveCount = await _context.Reviews
-                    .Where(r => r.Product.SellerId == sellerId && r.Rating >= 4)
+                var positiveCount = await feedbackQuery
+                    .Where(feedback => feedback.Sentiment == "positive")
                     .CountAsync();
                 positivePercent = Math.Round((decimal)positiveCount / totalReviews * 100, 1);
             }
 
-            // Calculate detailed ratings from actual reviews
-            var ratings = await _context.Reviews
-                .Where(r => r.Product.SellerId == sellerId)
+            // Calculate detailed ratings from transaction feedback first, then product reviews as fallback
+            var ratings = await feedbackQuery
                 .GroupBy(r => 1)
                 .Select(g => new
                 {
-                    Avg = g.Average(r => r.Rating),
+                    Avg = g.Average(r => r.Sentiment == "positive" ? 5 : r.Sentiment == "neutral" ? 3 : 1),
                     Count = g.Count()
                 })
                 .FirstOrDefaultAsync();
+
+            if (ratings == null)
+            {
+                ratings = await _context.Reviews
+                    .Where(r => r.Product.SellerId == sellerId && (r.Status ?? "published") == "published")
+                    .GroupBy(r => 1)
+                    .Select(g => new
+                    {
+                        Avg = g.Average(r => r.Rating),
+                        Count = g.Count()
+                    })
+                    .FirstOrDefaultAsync();
+            }
 
             var avgRating = ratings?.Avg ?? 5.0;
 
@@ -85,14 +99,15 @@ namespace ebay.Services.Implementations
 
         public async Task<PagedResponseDto<SellerReviewDto>> GetSellerReviewsAsync(int sellerId, int? productId, int page, int pageSize)
         {
-            var query = _context.Reviews
-                .Include(r => r.Reviewer)
-                .Include(r => r.Product)
-                .Where(r => r.Product.SellerId == sellerId);
+            var query = _context.SellerTransactionFeedbacks
+                .Include(r => r.Buyer)
+                .Include(r => r.OrderItem)
+                    .ThenInclude(item => item.Product)
+                .Where(r => r.SellerId == sellerId && r.Status == "published");
 
             if (productId.HasValue)
             {
-                query = query.Where(r => r.ProductId == productId.Value);
+                query = query.Where(r => r.OrderItem.ProductId == productId.Value);
             }
 
             var totalCount = await query.CountAsync();
@@ -104,15 +119,15 @@ namespace ebay.Services.Implementations
                 .Select(r => new SellerReviewDto
                 {
                     Id = r.Id,
-                    ReviewerName = MaskUsername(r.Reviewer.Username),
-                    ReviewerTotalReviews = r.Reviewer.Reviews.Count,
-                    Rating = r.Rating,
+                    ReviewerName = MaskUsername(r.Buyer.Username),
+                    ReviewerTotalReviews = r.Buyer.Reviews.Count,
+                    Rating = r.Sentiment == "positive" ? 5 : r.Sentiment == "neutral" ? 3 : 1,
                     Comment = r.Comment,
-                    Title = r.Title,
+                    Title = r.Sentiment == "positive" ? "Positive feedback" : r.Sentiment == "neutral" ? "Neutral feedback" : "Negative feedback",
                     TimeAgo = GetTimeAgo(r.CreatedAt),
-                    IsVerifiedPurchase = r.IsVerifiedPurchase ?? false,
-                    ProductTitle = r.Product.Title,
-                    ProductId = r.ProductId
+                    IsVerifiedPurchase = true,
+                    ProductTitle = r.OrderItem.ProductTitleSnapshot ?? r.OrderItem.Product.Title,
+                    ProductId = r.OrderItem.ProductId
                 })
                 .ToListAsync();
 
