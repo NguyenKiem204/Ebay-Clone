@@ -9,7 +9,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - ebay_postgres_data:/var/lib/postgresql/data
       - ../Docker/DB/Init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
@@ -31,5 +31,8 @@ services:
     ports:
       - "5000:8080"
     restart: unless-stopped
+
+volumes:
+  ebay_postgres_data:
 
 # End of file

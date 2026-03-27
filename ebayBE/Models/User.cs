@@ -81,9 +81,19 @@ public partial class User
 
     public virtual ICollection<ReturnRequest> ReturnRequests { get; set; } = new List<ReturnRequest>();
 
+    public virtual ICollection<ReviewHelpfulVote> ReviewHelpfulVotes { get; set; } = new List<ReviewHelpfulVote>();
+
+    public virtual ICollection<ReviewReport> ReviewReports { get; set; } = new List<ReviewReport>();
+
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
+    public virtual ICollection<Review> SellerRepliesAuthored { get; set; } = new List<Review>();
+
     public virtual SellerFeedback? SellerFeedback { get; set; }
+
+    public virtual ICollection<SellerTransactionFeedback> SellerTransactionFeedbackBuyerNavigations { get; set; } = new List<SellerTransactionFeedback>();
+
+    public virtual ICollection<SellerTransactionFeedback> SellerTransactionFeedbackSellerNavigations { get; set; } = new List<SellerTransactionFeedback>();
 
     public virtual Store? Store { get; set; }
 

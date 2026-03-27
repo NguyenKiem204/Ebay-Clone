@@ -319,6 +319,13 @@ namespace ebay.Controllers
                 if (success)
                 {
                     _logger.LogInformation("hCaptcha verified successfully for IP: {IP}", GetIpAddress());
+                    Response.Cookies.Append("hcaptcha_verified", "true", new CookieOptions
+                    {
+                        HttpOnly = true,
+                        SameSite = SameSiteMode.Lax,
+                        IsEssential = true,
+                        Expires = DateTimeOffset.UtcNow.AddMinutes(30)
+                    });
                     return Ok(ApiResponse<object>.SuccessResponse(null, "Xác minh captcha thành công."));
                 }
                 

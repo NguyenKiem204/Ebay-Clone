@@ -28,6 +28,8 @@ builder.Services.Configure<ExternalAuthSettings>(
     builder.Configuration.GetSection("ExternalAuthSettings"));
 builder.Services.Configure<MailSettings>(
     builder.Configuration.GetSection("MailSettings"));
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("Cloudinary"));
 
 var jwtSettings = builder.Configuration
     .GetSection("JwtSettings")
@@ -40,6 +42,7 @@ builder.Services.AddDbContext<EbayDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
 builder.Services.AddDataProtection();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -83,6 +86,7 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IBidService, BidService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISellerService, SellerService>();
+builder.Services.AddScoped<IReviewFeedbackService, ReviewFeedbackService>();
 builder.Services.AddScoped<ISellerOrderQueryService, SellerOrderQueryService>();
 builder.Services.AddScoped<ISellerOrderFulfillmentService, SellerOrderFulfillmentService>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -203,6 +207,7 @@ using (var scope = app.Services.CreateScope())
             context.Database.Migrate();
             Console.WriteLine("✅ Database updated with new migrations.");
         }
+        await ReviewFeedbackSchemaSync.EnsureAsync(context);
     }
     catch (Exception ex)
     {

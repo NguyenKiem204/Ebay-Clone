@@ -31,5 +31,9 @@ public partial class OrderItem
 
     public virtual Product Product { get; set; } = null!;
 
+    public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+
     public virtual User Seller { get; set; } = null!;
+
+    public virtual ICollection<SellerTransactionFeedback> SellerTransactionFeedbacks { get; set; } = new List<SellerTransactionFeedback>();
 }
