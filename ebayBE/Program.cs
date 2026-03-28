@@ -194,8 +194,8 @@ app.UseStaticFiles();
 app.UseCors("AllowFrontend");
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseMiddleware<AntiSpamMiddleware>();
-app.UseMiddleware<RateLimitingMiddleware>();
+// app.UseMiddleware<AntiSpamMiddleware>();
+// app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
