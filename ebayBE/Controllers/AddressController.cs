@@ -42,7 +42,6 @@ namespace ebay.Controllers
             return CreatedAtAction(nameof(GetById), new { id = data.Id }, ApiResponse<AddressResponseDto>.SuccessResponse(data, "Thêm địa chỉ thành công"));
         }
 
-// test
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse<AddressResponseDto>>> Update(int id, AddressRequestDto request)
         {
