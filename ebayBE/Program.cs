@@ -189,14 +189,17 @@ app.UseSwaggerUI(c =>
 });
 
 app.MapHealthChecks("/health");
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseCors("AllowFrontend");
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<AntiSpamMiddleware>();
 app.UseMiddleware<RateLimitingMiddleware>();
-app.UseCors("AllowFrontend");
-app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles();
+
 app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
