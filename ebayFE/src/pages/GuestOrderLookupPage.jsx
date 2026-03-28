@@ -9,11 +9,12 @@ export default function GuestOrderLookupPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const initialOrderNumber = searchParams.get('orderNumber') || '';
+    const initialEmail = searchParams.get('email') || '';
     const storedGuestAccess = initialOrderNumber
         ? guestCaseService.getStoredGuestAfterSalesAccess(initialOrderNumber)
         : null;
     const [orderNumber, setOrderNumber] = useState(() => initialOrderNumber);
-    const [email, setEmail] = useState(() => location.state?.email || storedGuestAccess?.email || '');
+    const [email, setEmail] = useState(() => initialEmail || location.state?.email || storedGuestAccess?.email || '');
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
     const [message, setMessage] = useState('');
