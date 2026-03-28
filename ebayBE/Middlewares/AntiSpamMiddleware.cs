@@ -38,14 +38,6 @@ namespace ebay.Middlewares
                 return;
             }
 
-            // Hardblock specific spamming IP (Crawler/Bot)
-            if (ipAddress == "58.186.68.138")
-            {
-                _logger.LogWarning("BOT/SPAM HARD BLOCKED: IP {IP}.", ipAddress);
-                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                return;
-            }
-
             var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
             var hasCaptchaVerification = string.Equals(context.Request.Cookies["hcaptcha_verified"], "true", StringComparison.Ordinal);
             var requestLimit = (isAuthenticated || hasCaptchaVerification) ? VerifiedLimitPerMinute : AnonymousLimitPerMinute;

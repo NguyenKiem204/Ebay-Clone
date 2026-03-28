@@ -34,14 +34,6 @@ namespace ebay.Middlewares
                 return;
             }
 
-            // Hardblock specific spamming IP (Crawler/Bot)
-            if (ipAddress == "58.186.68.138")
-            {
-                _logger.LogWarning("RATE LIMIT HARD BLOCK: Blocked known spammer {IP}.", ipAddress);
-                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                return;
-            }
-
             if (HttpMethods.IsOptions(context.Request.Method))
             {
                 await _next(context);
