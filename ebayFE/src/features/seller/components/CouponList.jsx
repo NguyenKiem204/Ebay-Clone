@@ -55,7 +55,7 @@ export default function CouponList({ onEdit, onCreateClick, onCouponsLoaded }) {
             setCoupons(arr);
             if (onCouponsLoaded) onCouponsLoaded(arr);
         } catch (error) {
-            const message = error.response?.data?.message || 'Không thể tải danh sách mã giảm giá';
+            const message = error.response?.data?.message || 'Could not load coupon list';
             toast.error(message);
             console.error(error);
         } finally {
@@ -64,15 +64,15 @@ export default function CouponList({ onEdit, onCreateClick, onCouponsLoaded }) {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?')) return;
+        if (!window.confirm('Are you sure you want to delete this coupon?')) return;
         try {
             await couponService.deleteCoupon(id);
-            toast.success('Đã xóa mã giảm giá');
+            toast.success('Coupon deleted successfully');
             const updated = coupons.filter(c => c.id !== id);
             setCoupons(updated);
             if (onCouponsLoaded) onCouponsLoaded(updated);
         } catch (error) {
-            toast.error('Lỗi khi xóa mã giảm giá');
+            toast.error('Error deleting coupon');
         }
     };
 
@@ -180,10 +180,10 @@ export default function CouponList({ onEdit, onCreateClick, onCouponsLoaded }) {
                                 </td>
                                 <td className="px-6 py-4 font-medium text-gray-700">
                                     <div className="text-[11px] text-gray-500">
-                                        {new Date(coupon.startDate).toLocaleDateString('vi-VN')} →
+                                        {new Date(coupon.startDate).toLocaleDateString('en-US')} →
                                     </div>
                                     <div className="text-[11px] text-gray-500 mb-1">
-                                        {new Date(coupon.endDate).toLocaleDateString('vi-VN')}
+                                        {new Date(coupon.endDate).toLocaleDateString('en-US')}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">

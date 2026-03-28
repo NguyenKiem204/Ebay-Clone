@@ -7,18 +7,18 @@ import { Mail, Lock, ArrowLeft, ShieldCheck, KeyRound } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 
 const emailSchema = yup.object({
-    email: yup.string().email('Email không hợp lệ').required('Email là bắt buộc'),
+    email: yup.string().email('Invalid email').required('Email is required'),
 }).required();
 
 const otpSchema = yup.object({
-    otp: yup.string().length(6, 'Mã OTP phải có 6 chữ số').required('Mã OTP là bắt buộc'),
+    otp: yup.string().length(6, 'OTP must be 6 digits').required('OTP is required'),
 }).required();
 
 const resetSchema = yup.object({
-    newPassword: yup.string().min(6, 'Mật khẩu phải ít nhất 6 ký tự').required('Mật khẩu mới là bắt buộc'),
+    newPassword: yup.string().min(6, 'Password must be at least 6 characters').required('New password is required'),
     confirmPassword: yup.string()
-        .oneOf([yup.ref('newPassword'), null], 'Mật khẩu xác nhận không khớp')
-        .required('Xác nhận mật khẩu là bắt buộc'),
+        .oneOf([yup.ref('newPassword'), null], 'Passwords do not match')
+        .required('Confirm password is required'),
 }).required();
 
 export default function ForgotPassword() {
@@ -96,15 +96,15 @@ export default function ForgotPassword() {
                     <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                         <ShieldCheck size={40} />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Đặt lại thành công!</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Reset successful!</h2>
                     <p className="text-gray-600 mb-8">
-                        Mật khẩu của bạn đã được cập nhật. Hệ thống sẽ tự động chuyển về trang đăng nhập sau vài giây.
+                        Your password has been updated. You will be redirected to the login page in a few seconds.
                     </p>
                     <button
                         onClick={() => navigate('/login')}
                         className="w-full py-3.5 bg-[#3665F3] text-white font-medium rounded-full hover:bg-[#382aef] transition-colors"
                     >
-                        Đăng nhập ngay
+                        Login now
                     </button>
                 </div>
             </div>
@@ -120,14 +120,14 @@ export default function ForgotPassword() {
                         {step === 1 ? <KeyRound size={32} /> : step === 2 ? <Mail size={32} /> : <Lock size={32} />}
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800">
-                        {step === 1 ? 'Quên mật khẩu?' : step === 2 ? 'Xác thực OTP' : 'Mật khẩu mới'}
+                        {step === 1 ? 'Forgot password?' : step === 2 ? 'Verify OTP' : 'New password'}
                     </h1>
                     <p className="text-gray-600 mt-2">
                         {step === 1 
-                            ? 'Nhập email của bạn để nhận mã OTP đặt lại mật khẩu.'
+                            ? 'Enter your email to receive an OTP code to reset your password.'
                             : step === 2
-                            ? `Chúng tôi đã gửi mã xác thực đến ${email}`
-                            : 'Nhập mật khẩu mới cho tài khoản của bạn'
+                            ? `We have sent a verification code to ${email}`
+                            : 'Enter a new password for your account'
                         }
                     </p>
                 </div>
@@ -142,7 +142,7 @@ export default function ForgotPassword() {
                 {step === 1 && (
                     <form onSubmit={emailForm.handleSubmit(handleEmailSubmit)} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Địa chỉ Email</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
                                     <Mail size={18} />
@@ -173,13 +173,13 @@ export default function ForgotPassword() {
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                'Gửi mã xác thực'
+                                'Send verification code'
                             )}
                         </button>
 
                         <Link to="/login" className="flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-[#3665F3] transition-colors font-medium">
                             <ArrowLeft size={16} />
-                            Quay lại đăng nhập
+                            Back to login
                         </Link>
                     </form>
                 )}
@@ -187,7 +187,7 @@ export default function ForgotPassword() {
                 {step === 2 && (
                     <form onSubmit={otpForm.handleSubmit(handleOtpVerify)} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center w-full">Nhập mã OTP (6 chữ số)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 text-center w-full">Enter OTP (6 digits)</label>
                             <input
                                 type="text"
                                 maxLength={6}
@@ -214,7 +214,7 @@ export default function ForgotPassword() {
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                'Xác thực mã OTP'
+                                'Verify OTP code'
                             )}
                         </button>
 
@@ -224,7 +224,7 @@ export default function ForgotPassword() {
                             className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-[#3665F3] transition-colors font-medium mt-2"
                         >
                             <ArrowLeft size={16} />
-                            Quay lại nhập Email
+                            Back to Email input
                         </button>
                     </form>
                 )}
@@ -232,7 +232,7 @@ export default function ForgotPassword() {
                 {step === 3 && (
                     <form onSubmit={resetForm.handleSubmit(handleResetSubmit)} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">New password</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
                                     <Lock size={18} />
@@ -256,7 +256,7 @@ export default function ForgotPassword() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Xác nhận mật khẩu</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm password</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
                                     <ShieldCheck size={18} />
@@ -287,7 +287,7 @@ export default function ForgotPassword() {
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                'Đặt lại mật khẩu'
+                                'Reset password'
                             )}
                         </button>
                     </form>

@@ -11,9 +11,9 @@ let hasSyncedGuestHistoryAfterAuth = false;
  */
 export default function HistoryInitializer() {
     const { isAuthenticated } = useAuthStore();
-    const clear            = useHistoryStore(s => s.clear);
+    const clear = useHistoryStore(s => s.clear);
     const syncGuestHistory = useHistoryStore(s => s.syncGuestHistory);
-    const fetchHistory     = useHistoryStore(s => s.fetchHistory);
+    const fetchHistory = useHistoryStore(s => s.fetchHistory);
 
     useEffect(() => {
         // Always clear first to prevent cross-user data leaking

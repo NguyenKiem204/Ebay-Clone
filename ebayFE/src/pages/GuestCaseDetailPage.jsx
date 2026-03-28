@@ -5,7 +5,7 @@ import { BASE_URL } from '../lib/axios';
 import { Button } from '../components/ui/Button';
 
 const formatDateTime = (value) => (value ? new Date(value).toLocaleString('en-US') : 'Not available');
-const formatVND = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
 const formatAge = (hours) => (hours == null ? 'Not available' : hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d ${hours % 24}h`);
 const formatFileSize = (bytes) => {
     if (!bytes) return '0 B';
@@ -312,7 +312,7 @@ export default function GuestCaseDetailPage() {
                             {'caseType' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Case type</p><p className="font-semibold text-gray-900 capitalize">{caseData.caseType || 'Not available'}</p></div>}
                             {'reasonCode' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Reason code</p><p className="font-semibold text-gray-900">{caseData.reasonCode || 'Not provided'}</p></div>}
                             {'resolutionType' in caseData && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Requested resolution</p><p className="font-semibold text-gray-900 capitalize">{caseData.requestedResolution || caseData.resolutionType || 'Not available'}</p></div>}
-                            {'refundAmount' in caseData && caseData.refundAmount != null && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Refund amount</p><p className="font-semibold text-gray-900">{formatVND(caseData.refundAmount)}</p></div>}
+                             {'refundAmount' in caseData && caseData.refundAmount != null && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Refund amount</p><p className="font-semibold text-gray-900">{formatCurrency(caseData.refundAmount)}</p></div>}
                             {'resolvedAt' in caseData && caseData.resolvedAt && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Resolved at</p><p className="font-semibold text-gray-900">{formatDateTime(caseData.resolvedAt)}</p></div>}
                             {'reason' in caseData && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Reason</p><p className="text-gray-700">{caseData.reason || 'Not provided'}</p></div>}
                             {'description' in caseData && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Description</p><p className="text-gray-700">{caseData.description || 'Not provided'}</p></div>}
@@ -320,7 +320,7 @@ export default function GuestCaseDetailPage() {
                             {'closedReason' in caseData && caseData.closedReason && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Closed reason</p><p className="text-gray-700">{caseData.closedReason}</p></div>}
                             <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Case scope</p><p className="font-semibold text-gray-900">{caseData.orderItemId ? 'Item-level case' : 'Order-level case'}</p></div>
                             {caseData.orderItemId && <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Linked order item ID</p><p className="font-mono font-semibold text-gray-900">{caseData.orderItemId}</p></div>}
-                            {caseData.returnTracking && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Return tracking</p><p className="font-semibold text-gray-900">{caseData.returnTracking.carrier || 'Carrier not provided'} â€¢ {caseData.returnTracking.trackingNumber || 'Tracking number not provided'}</p><p className="text-sm text-gray-600 mt-1">Shipped at {formatDateTime(caseData.returnTracking.shippedAt)}</p></div>}
+                             {caseData.returnTracking && <div className="md:col-span-2"><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Return tracking</p><p className="font-semibold text-gray-900">{caseData.returnTracking.carrier || 'Carrier not provided'} • {caseData.returnTracking.trackingNumber || 'Tracking number not provided'}</p><p className="text-sm text-gray-600 mt-1">Shipped at {formatDateTime(caseData.returnTracking.shippedAt)}</p></div>}
                         </div>
 
                         {(canCancelCase || canSubmitTracking || canEscalateInr) && (
@@ -417,12 +417,12 @@ export default function GuestCaseDetailPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Order number</p><p className="font-mono font-semibold text-gray-900">{caseData.order.orderNumber}</p></div>
                                 <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Order status</p><p className="font-semibold text-gray-900 capitalize">{caseData.order.status}</p></div>
-                                <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Payment</p><p className="font-semibold text-gray-900 capitalize">{caseData.order.paymentMethod || 'Not available'} â€¢ {caseData.order.paymentStatus || 'Not available'}</p></div>
+                                 <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Payment</p><p className="font-semibold text-gray-900 capitalize">{caseData.order.paymentMethod || 'Not available'} • {caseData.order.paymentStatus || 'Not available'}</p></div>
                                 <div><p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Shipping</p><p className="font-semibold text-gray-900 capitalize">{caseData.order.shippingStatus || 'Not available'}</p></div>
                             </div>
                             <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-                                <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-2">Order total</p>
-                                <p className="font-semibold text-gray-900">{formatVND(caseData.order.totalAmount)}</p>
+                                 <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-2">Order total</p>
+                                 <p className="font-semibold text-gray-900">{formatCurrency(caseData.order.totalAmount)}</p>
                             </div>
                         </div>
                     )}
@@ -442,8 +442,8 @@ export default function GuestCaseDetailPage() {
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1">Seller: {caseData.orderItem.sellerDisplayName || 'Not available'}</p>
-                                    <p className="text-sm text-gray-600">Qty {caseData.orderItem.quantity} â€¢ Unit price {formatVND(caseData.orderItem.unitPrice)}</p>
-                                    <p className="text-sm font-semibold text-gray-900 mt-2">Line total: {formatVND(caseData.orderItem.totalPrice)}</p>
+                                     <p className="text-sm text-gray-600">Qty {caseData.orderItem.quantity} • Unit price {formatCurrency(caseData.orderItem.unitPrice)}</p>
+                                     <p className="text-sm font-semibold text-gray-900 mt-2">Line total: {formatCurrency(caseData.orderItem.totalPrice)}</p>
                                 </div>
                             </div>
                         ) : (
@@ -461,7 +461,7 @@ export default function GuestCaseDetailPage() {
                                     <div key={attachment.id} className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="min-w-0">
                                             <p className="font-semibold text-gray-900 break-words">{attachment.label || attachment.originalFileName}</p>
-                                            <p className="text-sm text-gray-600 break-words mt-1">{attachment.evidenceType || 'General evidence'} â€¢ {formatFileSize(attachment.fileSizeBytes)}</p>
+                                             <p className="text-sm text-gray-600 break-words mt-1">{attachment.evidenceType || 'General evidence'} • {formatFileSize(attachment.fileSizeBytes)}</p>
                                             <p className="text-sm text-gray-600 mt-1">Uploaded by {attachment.uploadedByDisplayName || 'case participant'} on {formatDateTime(attachment.uploadedAt)}</p>
                                         </div>
                                         <a href={getEvidenceFileUrl(attachment.filePath)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-white">

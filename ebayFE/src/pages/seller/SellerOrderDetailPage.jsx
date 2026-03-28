@@ -9,7 +9,7 @@ const formatDateTime = (value) => (
     value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
-const formatVND = (amount) => (
+const formatCurrency = (amount) => (
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
@@ -465,8 +465,8 @@ export default function SellerOrderDetailPage() {
                                             </span>
                                         </div>
                                         <p className="text-sm text-gray-600">Qty {item.quantity}</p>
-                                        <p className="text-sm text-gray-600">Unit price {formatVND(item.unitPrice)}</p>
-                                        <p className="text-sm font-semibold text-gray-900 mt-2">Line total {formatVND(item.totalPrice)}</p>
+                                        <p className="text-sm text-gray-600">Unit price {formatCurrency(item.unitPrice)}</p>
+                                        <p className="text-sm font-semibold text-gray-900 mt-2">Line total {formatCurrency(item.totalPrice)}</p>
                                     </div>
                                 </div>
                             ))}
@@ -488,23 +488,23 @@ export default function SellerOrderDetailPage() {
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span>Your seller total</span>
-                                <span className="font-semibold text-gray-900">{formatVND(order.sellerTotalAmount)}</span>
+                                <span className="font-semibold text-gray-900">{formatCurrency(order.sellerTotalAmount)}</span>
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span>Order subtotal</span>
-                                <span className="font-semibold text-gray-900">{formatVND(order.orderSubtotal)}</span>
+                                <span className="font-semibold text-gray-900">{formatCurrency(order.orderSubtotal)}</span>
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span>Order shipping</span>
-                                <span className="font-semibold text-gray-900">{formatVND(order.orderShippingFee)}</span>
+                                <span className="font-semibold text-gray-900">{formatCurrency(order.orderShippingFee)}</span>
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span>Order discount</span>
-                                <span className="font-semibold text-gray-900">{formatVND(order.orderDiscountAmount)}</span>
+                                <span className="font-semibold text-gray-900">{formatCurrency(order.orderDiscountAmount)}</span>
                             </div>
                             <div className="flex justify-between gap-4 border-t border-gray-100 pt-3">
                                 <span className="font-bold text-gray-900">Order total</span>
-                                <span className="font-bold text-gray-900">{formatVND(order.orderTotalAmount)}</span>
+                                <span className="font-bold text-gray-900">{formatCurrency(order.orderTotalAmount)}</span>
                             </div>
                         </div>
                     </div>

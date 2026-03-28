@@ -523,20 +523,18 @@ export default function SellerCaseDetailPage() {
                                     <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-1">Aging</p>
                                     <p className="font-semibold text-gray-900">{formatAge(caseData.sla.ageHours)}</p>
                                 </div>
-                                <div className={`rounded-lg border px-4 py-3 ${
-                                    caseData.sla.isOverdue
+                                <div className={`rounded-lg border px-4 py-3 ${caseData.sla.isOverdue
                                         ? 'border-red-200 bg-red-50'
                                         : caseData.sla.reminderSuggested
                                             ? 'border-amber-200 bg-amber-50'
                                             : 'border-emerald-200 bg-emerald-50'
-                                }`}>
-                                    <p className={`font-semibold ${
-                                        caseData.sla.isOverdue
+                                    }`}>
+                                    <p className={`font-semibold ${caseData.sla.isOverdue
                                             ? 'text-red-800'
                                             : caseData.sla.reminderSuggested
                                                 ? 'text-amber-800'
                                                 : 'text-emerald-800'
-                                    }`}>
+                                        }`}>
                                         {caseData.sla.isOverdue
                                             ? `Overdue by ${caseData.sla.hoursOverdue ?? 0}h`
                                             : caseData.sla.hoursUntilDue != null

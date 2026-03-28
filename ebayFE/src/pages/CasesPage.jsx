@@ -194,18 +194,18 @@ export default function CasesPage() {
             const displayStatus = (item.displayStatus || item.status || '').toLowerCase();
 
             switch (activeFilter) {
-            case 'open':
-                return ['waiting seller response', 'seller responded', 'escalated to platform', 'return shipping required', 'buyer shipped return'].includes(displayStatus);
-            case 'waiting':
-                return ['waiting seller response', 'return shipping required'].includes(displayStatus);
-            case 'approved':
-                return ['approved refund only', 'seller responded', 'escalated to platform', 'seller received return'].includes(displayStatus);
-            case 'refunded':
-                return ['refunded', 'resolved refunded'].includes(displayStatus);
-            case 'closed':
-                return ['closed', 'cancelled', 'rejected', 'resolved delivered'].includes(displayStatus);
-            default:
-                return true;
+                case 'open':
+                    return ['waiting seller response', 'seller responded', 'escalated to platform', 'return shipping required', 'buyer shipped return'].includes(displayStatus);
+                case 'waiting':
+                    return ['waiting seller response', 'return shipping required'].includes(displayStatus);
+                case 'approved':
+                    return ['approved refund only', 'seller responded', 'escalated to platform', 'seller received return'].includes(displayStatus);
+                case 'refunded':
+                    return ['refunded', 'resolved refunded'].includes(displayStatus);
+                case 'closed':
+                    return ['closed', 'cancelled', 'rejected', 'resolved delivered'].includes(displayStatus);
+                default:
+                    return true;
             }
         });
     }, [activeFilter, cases]);
@@ -237,11 +237,10 @@ export default function CasesPage() {
                         key={value}
                         type="button"
                         onClick={() => setActiveFilter(value)}
-                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                            activeFilter === value
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${activeFilter === value
                                 ? 'border-blue-600 bg-blue-600 text-white'
                                 : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                        }`}
+                            }`}
                     >
                         {label}
                     </button>

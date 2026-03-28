@@ -254,11 +254,10 @@ export default function SellerOrdersPage() {
                             key={tab.key}
                             type="button"
                             onClick={() => setActiveTab(tab.key)}
-                            className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                                isActive
+                            className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${isActive
                                     ? 'border-gray-900 text-gray-900'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
-                            }`}
+                                }`}
                         >
                             {tab.label} ({tabCounts[tab.key] || 0})
                         </button>

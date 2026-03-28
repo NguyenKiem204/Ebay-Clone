@@ -107,7 +107,7 @@ export default function CartSummary({ subtotal, totalItems }) {
                 setIsCheckingEligibility(false);
             }
         },
-        { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Vui lÃ²ng khÃ´ng nháº¥n quÃ¡ nhanh!' }
+        { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Please do not click too fast!' }
     );
 
     return (

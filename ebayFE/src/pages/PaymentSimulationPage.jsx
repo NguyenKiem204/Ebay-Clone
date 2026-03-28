@@ -5,7 +5,7 @@ import api from '../lib/axios';
 import { checkoutService } from '../features/checkout/services/checkoutService';
 import useAuthStore from '../store/useAuthStore';
 
-const formatVND = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
 
 export default function PaymentSimulationPage() {
     const navigate = useNavigate();
@@ -211,19 +211,19 @@ export default function PaymentSimulationPage() {
                     <div className="space-y-5">
                         <div className="rounded-lg border border-gray-200 p-5">
                             <p className="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-3">Order total</p>
-                            <p className="text-3xl font-black text-gray-900">{formatVND(order.totalAmount)}</p>
+                            <p className="text-3xl font-black text-gray-900">{formatCurrency(order.totalAmount)}</p>
                             <div className="mt-4 space-y-2 text-sm text-gray-600">
                                 <div className="flex justify-between">
                                     <span>Subtotal</span>
-                                    <span>{formatVND(order.subtotal)}</span>
+                                    <span>{formatCurrency(order.subtotal)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Shipping</span>
-                                    <span>{formatVND(order.shippingFee)}</span>
+                                    <span>{formatCurrency(order.shippingFee)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Discount</span>
-                                    <span>{formatVND(order.discountAmount)}</span>
+                                    <span>{formatCurrency(order.discountAmount)}</span>
                                 </div>
                             </div>
                         </div>

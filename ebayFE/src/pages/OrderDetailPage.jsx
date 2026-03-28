@@ -47,12 +47,12 @@ const resolveDefaultOrderItemId = (items) => (
 
 const getCancellationRequestStyles = (status) => {
     switch ((status || '').toLowerCase()) {
-    case 'approved':
-        return 'border-emerald-200 bg-emerald-50 text-emerald-900';
-    case 'rejected':
-        return 'border-rose-200 bg-rose-50 text-rose-900';
-    default:
-        return 'border-amber-200 bg-amber-50 text-amber-900';
+        case 'approved':
+            return 'border-emerald-200 bg-emerald-50 text-emerald-900';
+        case 'rejected':
+            return 'border-rose-200 bg-rose-50 text-rose-900';
+        default:
+            return 'border-amber-200 bg-amber-50 text-amber-900';
     }
 };
 
@@ -84,11 +84,10 @@ function CaseItemTargetPicker({
             <div className="space-y-3">
                 {allowOrderLevel && (
                     <label
-                        className={`block rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
-                            selectedItemId
+                        className={`block rounded-lg border px-4 py-3 cursor-pointer transition-colors ${selectedItemId
                                 ? 'border-gray-200 bg-white'
                                 : 'border-primary/30 bg-primary/5'
-                        }`}
+                            }`}
                     >
                         <div className="flex items-start gap-3">
                             <input
@@ -115,11 +114,10 @@ function CaseItemTargetPicker({
                     return (
                         <label
                             key={item.id || `${item.productId}-${item.title}`}
-                            className={`block rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
-                                isSelected
+                            className={`block rounded-lg border px-4 py-3 cursor-pointer transition-colors ${isSelected
                                     ? 'border-primary/30 bg-primary/5'
                                     : 'border-gray-200 bg-white hover:border-gray-300'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-start gap-3">
                                 <input
@@ -460,29 +458,26 @@ export default function OrderDetailPage() {
             </div>
 
             {order.isAuctionOrder && (
-                <div className={`mb-6 rounded-2xl border px-5 py-4 ${
-                    canPayAuctionOrder
+                <div className={`mb-6 rounded-2xl border px-5 py-4 ${canPayAuctionOrder
                         ? 'border-blue-200 bg-blue-50'
                         : order.isPaymentOverdue
                             ? 'border-red-200 bg-red-50'
                             : 'border-gray-200 bg-gray-50'
-                }`}>
-                    <p className={`text-sm font-black uppercase tracking-wide ${
-                        canPayAuctionOrder
+                    }`}>
+                    <p className={`text-sm font-black uppercase tracking-wide ${canPayAuctionOrder
                             ? 'text-blue-700'
                             : order.isPaymentOverdue
                                 ? 'text-red-700'
                                 : 'text-gray-700'
-                    }`}>
+                        }`}>
                         {canPayAuctionOrder ? 'You won this auction' : 'Auction order'}
                     </p>
-                    <p className={`mt-1 text-sm ${
-                        canPayAuctionOrder
+                    <p className={`mt-1 text-sm ${canPayAuctionOrder
                             ? 'text-blue-900'
                             : order.isPaymentOverdue
                                 ? 'text-red-900'
                                 : 'text-gray-700'
-                    }`}>
+                        }`}>
                         {canPayAuctionOrder
                             ? `Complete payment before ${formatDateTime(order.paymentDueAt)} to keep this order.`
                             : order.isPaymentOverdue
@@ -626,11 +621,10 @@ export default function OrderDetailPage() {
 
                     {caseFeedback && (
                         <div
-                            className={`rounded-lg border px-4 py-3 mb-4 ${
-                                caseFeedback.type === 'success'
+                            className={`rounded-lg border px-4 py-3 mb-4 ${caseFeedback.type === 'success'
                                     ? 'border-green-200 bg-green-50 text-green-800'
                                     : 'border-red-200 bg-red-50 text-red-800'
-                            }`}
+                                }`}
                         >
                             <p className="font-semibold">{caseFeedback.title}</p>
                             <p className="text-sm mt-1">{caseFeedback.message}</p>

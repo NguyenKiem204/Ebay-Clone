@@ -38,7 +38,7 @@ const formatDateTime = (value) => (
     value ? new Date(value).toLocaleString('en-US') : 'Not available'
 );
 
-const formatVND = (amount) => (
+const formatCurrency = (amount) => (
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
 );
 
@@ -124,7 +124,7 @@ function CaseItemTargetPicker({
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        Qty {item.quantity} â€¢ {formatVND(item.totalPrice)}
+                                        Qty {item.quantity} • {formatCurrency(item.totalPrice)}
                                     </p>
                                 </div>
                             </div>
@@ -510,7 +510,7 @@ export default function GuestOrderDetailPage() {
                                         <p className="text-sm text-gray-600 mb-1">Seller: {item.sellerDisplayName}</p>
                                         <p className="text-sm text-gray-600 mb-1">Quantity: {item.quantity}</p>
                                         <p className="text-sm font-medium text-gray-900">
-                                            {formatVND(item.totalPrice)}
+                                        {formatCurrency(item.totalPrice)}
                                         </p>
                                     </div>
                                 </div>
@@ -524,16 +524,16 @@ export default function GuestOrderDetailPage() {
                         <div className="space-y-2 text-sm text-gray-700">
                             <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span>{formatVND(order.totals.subtotal)}</span>
+                                <span>{formatCurrency(order.totals.subtotal)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Shipping</span>
-                                <span>{formatVND(order.totals.shippingFee)}</span>
+                                <span>{formatCurrency(order.totals.shippingFee)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Total</span>
                                 <span className="font-bold text-gray-900">
-                                    {formatVND(order.totals.totalAmount)}
+                                    {formatCurrency(order.totals.totalAmount)}
                                 </span>
                             </div>
                         </div>

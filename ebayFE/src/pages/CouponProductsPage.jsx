@@ -69,7 +69,7 @@ export default function CouponProductsPage() {
                                 </h1>
                             </div>
                             <p className="text-gray-600 max-w-2xl font-medium">
-                                {coupon.description || `Sử dụng mã ${coupon.code} để nhận ưu đãi cho các sản phẩm bên dưới.`}
+                                {coupon.description || `Use code ${coupon.code} to get discounts on the products below.`}
                             </p>
                             <div className="flex flex-wrap gap-4 pt-2">
                                 <div className="bg-white px-4 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">

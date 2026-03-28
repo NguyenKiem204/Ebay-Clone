@@ -16,10 +16,10 @@ export default function PersonalInfoView({ setActiveTab }) {
     const handleSave = async (section) => {
         try {
             await updateProfile(formData);
-            toast.success('Cập nhật thành công');
+            toast.success('Update successful');
             setEditingSection(null);
         } catch (error) {
-            toast.error('Cập nhật thất bại');
+            toast.error('Update failed');
         }
     };
 
@@ -30,7 +30,7 @@ export default function PersonalInfoView({ setActiveTab }) {
     };
 
     const maskPhone = (phone) => {
-        if (!phone) return 'Chưa thiết lập';
+        if (!phone) return 'Not set';
         return `${phone.slice(0, 3)} xxxxxxxx${phone.slice(-2)}`;
     };
 
@@ -207,7 +207,7 @@ export default function PersonalInfoView({ setActiveTab }) {
                                         {user.addresses[0].city}, {user.addresses[0].country}
                                     </>
                                 ) : (
-                                    <span className="text-gray-400 normal-case italic">Chưa cập nhật địa chỉ mặc định</span>
+                                    <span className="text-gray-400 normal-case italic">No default address updated</span>
                                 )}
                             </p>
                         </div>

@@ -287,13 +287,12 @@ export default function SellerCasesQueuePage() {
                                             {item.sla?.dueBy ? (
                                                 <div className="space-y-1 max-w-[220px]">
                                                     <span
-                                                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                                                            item.sla.isOverdue
+                                                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${item.sla.isOverdue
                                                                 ? 'text-red-700 bg-red-50 border-red-200'
                                                                 : item.sla.reminderSuggested
                                                                     ? 'text-amber-700 bg-amber-50 border-amber-200'
                                                                     : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {item.sla.isOverdue ? 'Overdue' : item.sla.stageLabel}
                                                     </span>

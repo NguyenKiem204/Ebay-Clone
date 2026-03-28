@@ -85,14 +85,13 @@ export default function SellerStorePage() {
         setNotification(null);
         const result = await upgradeToSeller();
         if (result.success) {
-            setNotification({ type: 'success', message: 'Nâng cấp tài khoản thành công! Bây giờ bạn có thể tạo cửa hàng.' });
+            setNotification({ type: 'success', message: 'Account upgraded successfully! You can now create your store.' });
         } else {
-            setNotification({ type: 'error', message: result.error || 'Nâng cấp thất bại' });
+            setNotification({ type: 'error', message: result.error || 'Upgrade failed' });
         }
     };
 
     const handlePublish = async () => {
-        // ... (giữ nguyên handlePublish)
         setNotification(null);
         const data = new FormData();
         data.append('StoreName', formData.storeName);
@@ -114,18 +113,18 @@ export default function SellerStorePage() {
         }
 
         if (result.success) {
-            setNotification({ type: 'success', message: result.message || 'Cập nhật thành công!' });
+            setNotification({ type: 'success', message: result.message || 'Updated successfully!' });
             setTimeout(() => setNotification(null), 5000);
         } else {
             setNotification({
                 type: 'error',
-                message: result.error || 'Có lỗi xảy ra',
+                message: result.error || 'An error occurred',
                 details: result.errors
             });
         }
     };
 
-    // --- VIEW TRA CHO BUYER: HIEN BANG GIA ---
+    // --- BUYER VIEW: SHOW PRICING ---
     if (user?.role?.toLowerCase() === 'buyer') {
         return (
             <div className="space-y-12 pb-20 max-w-6xl mx-auto">
@@ -192,7 +191,7 @@ export default function SellerStorePage() {
         );
     }
 
-    // --- VIEW CHO SELLER: HIEN FORM QUAN LY ---
+    // --- SELLER VIEW: SHOW MANAGEMENT FORM ---
     return (
         <div className="space-y-10 pb-20">
             {notification && (

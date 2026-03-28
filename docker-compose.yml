@@ -44,6 +44,9 @@ services:
       - ExternalAuthSettings__GoogleClientId=${ExternalAuthSettings__GoogleClientId}
       - JwtSettings__SecretKey=${JwtSettings__SecretKey}
       - HCaptchaSecret__Secret=${HCaptchaSecret__Secret}
+      - Cloudinary__CloudName=${CLOUDINARY_CLOUD_NAME}
+      - Cloudinary__ApiKey=${CLOUDINARY_API_KEY}
+      - Cloudinary__ApiSecret=${CLOUDINARY_API_SECRET}
     depends_on:
       - db
     restart: unless-stopped

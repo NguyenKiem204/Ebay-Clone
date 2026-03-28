@@ -100,7 +100,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
   const onSubmit = async (data) => {
     try {
       if (data.applicableTo === 'product' && selectedProducts.length === 0) {
-        toast.error('Vui lòng chọn ít nhất một sản phẩm');
+        toast.error('Please select at least one product');
         return;
       }
 
@@ -116,10 +116,10 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
 
       if (isEditing) {
         await couponService.updateCoupon(editCoupon.id, payload);
-        toast.success('Cập nhật mã giảm giá thành công');
+        toast.success('Coupon updated successfully');
       } else {
         await couponService.createCoupon(payload);
-        toast.success('Tạo mã giảm giá thành công');
+        toast.success('Coupon created successfully');
       }
       onSuccess();
     } catch (error) {
@@ -147,7 +147,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
       }
 
       // If we couldn't map any specific field errors, or if there's a general message, show a toast
-      const message = apiRes?.message || apiRes?.title || 'Có lỗi xảy ra';
+      const message = apiRes?.message || apiRes?.title || 'An error occurred';
       
       // If we have errors that don't map to fields, we should still show them
       if (apiRes?.errors) {

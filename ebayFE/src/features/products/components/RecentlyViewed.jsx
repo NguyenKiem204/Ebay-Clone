@@ -8,9 +8,9 @@ import useSavedStore from '../../saved/useSavedStore';
 export function RecentlyViewed() {
     const historyItems = useHistoryStore(s => s.historyItems);
     const { isAuthenticated } = useAuthStore();
-    const savedIds  = useSavedStore(s => s.savedIds);
+    const savedIds = useSavedStore(s => s.savedIds);
     const toggleSaved = useSavedStore(s => s.toggleSaved);
-    const navigate  = useNavigate();
+    const navigate = useNavigate();
     const scrollRef = useRef(null);
 
     if (!historyItems || historyItems.length === 0) return null;
@@ -61,55 +61,55 @@ export function RecentlyViewed() {
                     {historyItems.map((item) => {
                         const isSaved = savedIds.has(item.productId);
                         return (
-                        <div
-                            key={item.productId}
-                            className="flex flex-col min-w-[160px] max-w-[160px] md:min-w-[200px] md:max-w-[200px] snap-start group pb-2"
-                        >
-                            <div className="relative w-full aspect-square rounded-2xl bg-[#F4F4F4] overflow-hidden mb-3 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow">
-                                <button
-                                    onClick={(e) => handleSaveToggle(e, item.productId)}
-                                    className="absolute top-2 right-2 z-10 w-9 h-9 bg-white/70 hover:bg-white backdrop-blur rounded-full flex items-center justify-center transition-colors border border-gray-200 shadow-sm"
-                                    title={isSaved ? 'Remove from saved' : 'Save'}
-                                >
-                                    <Heart
-                                        size={20}
-                                        strokeWidth={1.5}
-                                        className={isSaved ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}
-                                    />
-                                </button>
-                                <Link to={`/products/${item.productId}`} className="block w-full h-full">
-                                    {item.productImage ? (
-                                        <img
-                                            src={item.productImage}
-                                            alt={item.productName}
-                                            className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 p-2"
+                            <div
+                                key={item.productId}
+                                className="flex flex-col min-w-[160px] max-w-[160px] md:min-w-[200px] md:max-w-[200px] snap-start group pb-2"
+                            >
+                                <div className="relative w-full aspect-square rounded-2xl bg-[#F4F4F4] overflow-hidden mb-3 group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow">
+                                    <button
+                                        onClick={(e) => handleSaveToggle(e, item.productId)}
+                                        className="absolute top-2 right-2 z-10 w-9 h-9 bg-white/70 hover:bg-white backdrop-blur rounded-full flex items-center justify-center transition-colors border border-gray-200 shadow-sm"
+                                        title={isSaved ? 'Remove from saved' : 'Save'}
+                                    >
+                                        <Heart
+                                            size={20}
+                                            strokeWidth={1.5}
+                                            className={isSaved ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}
                                         />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-200 text-4xl">Ã°Å¸â€œÂ¦</div>
-                                    )}
-                                    <div className="absolute inset-0 bg-neutral-800 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
+                                    </button>
+                                    <Link to={`/products/${item.productId}`} className="block w-full h-full">
+                                        {item.productImage ? (
+                                            <img
+                                                src={item.productImage}
+                                                alt={item.productName}
+                                                className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 p-2"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-200 text-4xl">Ã°Å¸â€œÂ¦</div>
+                                        )}
+                                        <div className="absolute inset-0 bg-neutral-800 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
+                                    </Link>
+                                </div>
+
+                                <Link to={`/products/${item.productId}`} className="flex flex-col flex-grow gap-1">
+                                    <h3 className="text-[14px] text-[#333] leading-[1.3] line-clamp-2 h-[2.6em] group-hover:underline m-0">
+                                        {item.productName}
+                                    </h3>
+                                    <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
+                                        <span className="font-bold text-[16px] text-gray-900">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.price || 0))}
+                                        </span>
+                                    </div>
+                                    <span className="text-[11px] text-blue-600 font-medium">
+                                        {item.shippingFee === 0
+                                            ? 'Free shipping'
+                                            : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.shippingFee || 0))} shipping`}
+                                    </span>
                                 </Link>
                             </div>
-
-                            <Link to={`/products/${item.productId}`} className="flex flex-col flex-grow gap-1">
-                                <h3 className="text-[14px] text-[#333] leading-[1.3] line-clamp-2 h-[2.6em] group-hover:underline m-0">
-                                    {item.productName}
-                                </h3>
-                                <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
-                                    <span className="font-bold text-[16px] text-gray-900">
-                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.price || 0))}
-                                    </span>
-                                </div>
-                                <span className="text-[11px] text-blue-600 font-medium">
-                                    {item.shippingFee === 0
-                                        ? 'Free shipping'
-                                        : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.shippingFee || 0))} shipping`}
-                                </span>
-                            </Link>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
             </div>
         </section>
     );

@@ -129,7 +129,7 @@ export default function SellerCreateListingPage() {
     const handleSubmit = async (status = 'active') => {
         // Basic validation
         if (!formData.title.trim() || formData.title.trim().length < 10) {
-            setNotification({ type: 'error', message: 'Tiêu đề sản phẩm phải có ít nhất 10 ký tự' });
+            setNotification({ type: 'error', message: 'Product title must be at least 10 characters' });
             return;
         }
         if (!formData.categoryId) {
@@ -137,11 +137,11 @@ export default function SellerCreateListingPage() {
             return;
         }
         if (!formData.isAuction && (!formData.price || parseFloat(formData.price) <= 0)) {
-            setNotification({ type: 'error', message: 'Vui lòng nhập giá sản phẩm hợp lệ' });
+            setNotification({ type: 'error', message: 'Please enter a valid product price' });
             return;
         }
         if (imageFiles.length === 0) {
-            setNotification({ type: 'error', message: 'Vui lòng upload ít nhất 1 ảnh sản phẩm' });
+            setNotification({ type: 'error', message: 'Please upload at least 1 product image' });
             return;
         }
 
@@ -198,12 +198,12 @@ export default function SellerCreateListingPage() {
 
         const result = await createProduct(data);
         if (result.success) {
-            toast.success(status === 'draft' ? 'Đã lưu bản nháp!' : 'Đăng bán sản phẩm thành công!');
+            toast.success(status === 'draft' ? 'Draft saved!' : 'Product listed successfully!');
             navigate('/seller/listings');
         } else {
             setNotification({
                 type: 'error',
-                message: result.error || 'Có lỗi xảy ra',
+                message: result.error || 'An error occurred',
                 details: extractApiErrorMessages(result.errors)
             });
         }

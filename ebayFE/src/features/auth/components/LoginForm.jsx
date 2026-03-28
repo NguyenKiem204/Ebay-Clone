@@ -51,13 +51,13 @@ export default function LoginForm() {
                 navigate(redirectUrl);
             } catch (err) {
                 console.error('Google Auth Error:', err);
-                setError('Xác thực với Google thất bại. Vui lòng thử lại.');
+                setError('Authentication with Google failed. Please try again.');
             } finally {
                 setIsLoading(false);
             }
         },
         onError: () => {
-            setError('Đăng nhập Google thất bại');
+            setError('Google sign in failed');
             setIsLoading(false);
         }
     });
@@ -87,7 +87,7 @@ export default function LoginForm() {
             await socialLogin(mockData);
             navigate(redirectUrl);
         } catch (err) {
-            setError(err.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập bằng ' + provider);
+            setError(err.response?.data?.message || 'An error occurred while signing in with ' + provider);
         } finally {
             setIsLoading(false);
         }

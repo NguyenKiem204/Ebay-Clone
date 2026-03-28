@@ -15,8 +15,8 @@ export default function ProductCouponSection({ coupons }) {
                 
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-bold text-gray-900">Tiết kiệm thêm với mã giảm giá</span>
-                        <Badge variant="success" className="text-[10px] uppercase">Gói ưu đãi</Badge>
+                        <span className="text-sm font-bold text-gray-900">Save more with coupons</span>
+                        <Badge variant="success" className="text-[10px] uppercase">Offer Bundle</Badge>
                     </div>
                     
                     <div className="flex items-baseline gap-2">
@@ -25,19 +25,19 @@ export default function ProductCouponSection({ coupons }) {
                                 ? `${mainCoupon.discountValue}% OFF`
                                 : `-${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(mainCoupon.discountValue)}`}
                         </span>
-                        <span className="text-xs text-gray-500">Mã: <span className="font-bold text-gray-700">{mainCoupon.code}</span></span>
+                        <span className="text-xs text-gray-500">Code: <span className="font-bold text-gray-700">{mainCoupon.code}</span></span>
                     </div>
 
                     <p className="text-[11px] text-gray-500 mt-1">
                         {mainCoupon.minOrderAmount > 0 
                             ? `Applies to orders from ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(mainCoupon.minOrderAmount)}.` 
-                            : 'Không giới hạn đơn hàng tối thiểu.'}
-                        {' '}Kết thúc sau {new Date(mainCoupon.endDate).toLocaleDateString()}.
+                            : 'No minimum order required.'}
+                        {' '}Ends on {new Date(mainCoupon.endDate).toLocaleDateString()}.
                     </p>
 
                     <div className="mt-3 flex gap-2">
                         <button className="text-[11px] font-bold text-secondary flex items-center gap-1 hover:underline">
-                            <Info size={12} /> Điều khoản & Điều kiện
+                            <Info size={12} /> Terms & Conditions
                         </button>
                     </div>
                 </div>

@@ -60,17 +60,17 @@ export default function OtpVerification({ email, onVerified, onCancel }) {
         if (e) e.preventDefault();
         const fullOtp = otp.join('');
         if (fullOtp.length < 6) {
-            toast.error('Vui lòng nhập đầy đủ 6 chữ số');
+            toast.error('Please enter all 6 digits');
             return;
         }
 
         setIsLoading(true);
         const result = await verifyOtp(email, fullOtp);
         if (result.success) {
-            toast.success('Xác thực thành công!');
+            toast.success('Verification successful!');
             onVerified();
         } else {
-            toast.error(result.error || 'Mã OTP không đúng');
+            toast.error(result.error || 'Invalid OTP code');
         }
         setIsLoading(false);
     };
@@ -81,12 +81,12 @@ export default function OtpVerification({ email, onVerified, onCancel }) {
         setIsResending(true);
         const result = await resendOtp(email);
         if (result.success) {
-            toast.success('Đã gửi lại mã OTP mới');
+            toast.success('New OTP code sent');
             setTimer(60);
             setOtp(['', '', '', '', '', '']);
             inputRefs.current[0].focus();
         } else {
-            toast.error(result.error || 'Gửi lại mã thất bại');
+            toast.error(result.error || 'Failed to resend code');
         }
         setIsResending(false);
     };

@@ -18,7 +18,7 @@ export function useDebounceButton(action, {
     threshold = 2,
     windowMs = 500,
     blockDurationMs = 2000,
-    warningMsg = 'Vui lòng không nhấn quá nhanh!'
+    warningMsg = 'Please do not click too fast!'
 } = {}) {
     const clickTimestamps = useRef([]);
     const [isBlocked, setIsBlocked] = useState(false);
