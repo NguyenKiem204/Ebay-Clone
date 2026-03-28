@@ -104,6 +104,36 @@ namespace ebay.Configuration
 
                 CREATE INDEX IF NOT EXISTS idx_review_reports_reporter
                     ON review_reports(reporter_id);
+
+                ALTER TABLE IF EXISTS notifications
+                    DROP CONSTRAINT IF EXISTS chk_notification_type;
+
+                ALTER TABLE IF EXISTS notifications
+                    ADD CONSTRAINT chk_notification_type CHECK (
+                        type IN (
+                            'order',
+                            'payment',
+                            'shipping',
+                            'promotion',
+                            'review',
+                            'message',
+                            'system',
+                            'product_review_received',
+                            'seller_feedback_received',
+                            'seller_reply',
+                            'auction_outbid',
+                            'auction_won',
+                            'auction_lost',
+                            'auction_ending_soon',
+                            'promotion_created',
+                            'promotion_updated',
+                            'promotion_ended',
+                            'order_cancellation_request',
+                            'order_cancellation_resolution',
+                            'order_shipped',
+                            'order_delivered'
+                        )
+                    );
                 """;
 
             await context.Database.ExecuteSqlRawAsync(sql);

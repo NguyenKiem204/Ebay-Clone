@@ -3,7 +3,6 @@ using ebay.Services.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using System.Net;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -12,17 +11,15 @@ namespace ebay.Services.Implementations
 {
     public class EmailService : IEmailService
     {
+        private const string FrontendBaseUrl = "https://ebay-clone.shop";
         private readonly MailSettings _mailSettings;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
 
         public EmailService(
             IOptions<MailSettings> mailSettings,
-            IConfiguration configuration,
             ILogger<EmailService> logger)
         {
             _mailSettings = mailSettings.Value;
-            _configuration = configuration;
             _logger = logger;
         }
 
@@ -310,13 +307,7 @@ namespace ebay.Services.Implementations
                 return absoluteUri.ToString();
             }
 
-            var baseUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL")
-                ?? _configuration["FRONTEND_BASE_URL"]
-                ?? _configuration["AppLinks:FrontendBaseUrl"]
-                ?? _configuration["FrontendBaseUrl"]
-                ?? "http://localhost:5173";
-
-            baseUrl = baseUrl.TrimEnd('/');
+            var baseUrl = FrontendBaseUrl.TrimEnd('/');
             var normalizedPath = string.IsNullOrWhiteSpace(pathOrUrl)
                 ? string.Empty
                 : (pathOrUrl.StartsWith("/") ? pathOrUrl : $"/{pathOrUrl}");

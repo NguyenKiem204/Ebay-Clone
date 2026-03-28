@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Button } from '../../../components/ui/Button';
@@ -34,6 +34,8 @@ export default function OrderReviewActionsPanel({ orderId }) {
     const [feedbackForm, setFeedbackForm] = useState(DEFAULT_FEEDBACK_FORM);
     const [reviewFiles, setReviewFiles] = useState([]);
     const [submitting, setSubmitting] = useState(null);
+    const reviewSubmitLock = useRef(false);
+    const feedbackSubmitLock = useRef(false);
 
     const loadEligibility = async () => {
         if (!orderId) return;
@@ -54,6 +56,11 @@ export default function OrderReviewActionsPanel({ orderId }) {
     }, [orderId]);
 
     const handleReviewSubmit = async (orderItemId) => {
+        if (reviewSubmitLock.current) {
+            return;
+        }
+
+        reviewSubmitLock.current = true;
         setSubmitting(`review-${orderItemId}`);
         try {
             const review = await reviewService.createProductReview({
@@ -73,13 +80,29 @@ export default function OrderReviewActionsPanel({ orderId }) {
             setActiveReviewItemId(null);
             await loadEligibility();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Unable to submit your product review.');
+            const message = error.response?.data?.message || 'Unable to submit your product review.';
+
+            if (message.toLowerCase().includes('already reviewed')) {
+                toast.success('Product review submitted.');
+                setReviewForm(DEFAULT_REVIEW_FORM);
+                setReviewFiles([]);
+                setActiveReviewItemId(null);
+                await loadEligibility();
+            } else {
+                toast.error(message);
+            }
         } finally {
             setSubmitting(null);
+            reviewSubmitLock.current = false;
         }
     };
 
     const handleFeedbackSubmit = async (orderItemId) => {
+        if (feedbackSubmitLock.current) {
+            return;
+        }
+
+        feedbackSubmitLock.current = true;
         setSubmitting(`feedback-${orderItemId}`);
         try {
             await reviewService.createSellerFeedback({
@@ -92,9 +115,19 @@ export default function OrderReviewActionsPanel({ orderId }) {
             setActiveFeedbackItemId(null);
             await loadEligibility();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Unable to submit your seller feedback.');
+            const message = error.response?.data?.message || 'Unable to submit your seller feedback.';
+
+            if (message.toLowerCase().includes('already left seller feedback')) {
+                toast.success('Seller feedback submitted.');
+                setFeedbackForm(DEFAULT_FEEDBACK_FORM);
+                setActiveFeedbackItemId(null);
+                await loadEligibility();
+            } else {
+                toast.error(message);
+            }
         } finally {
             setSubmitting(null);
+            feedbackSubmitLock.current = false;
         }
     };
 

@@ -641,7 +641,31 @@ CREATE TABLE notifications (
     read_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT chk_notification_type CHECK (type IN ('order', 'payment', 'shipping', 'promotion', 'review', 'message', 'system'))
+    CONSTRAINT chk_notification_type CHECK (
+        type IN (
+            'order',
+            'payment',
+            'shipping',
+            'promotion',
+            'review',
+            'message',
+            'system',
+            'product_review_received',
+            'seller_feedback_received',
+            'seller_reply',
+            'auction_outbid',
+            'auction_won',
+            'auction_lost',
+            'auction_ending_soon',
+            'promotion_created',
+            'promotion_updated',
+            'promotion_ended',
+            'order_cancellation_request',
+            'order_cancellation_resolution',
+            'order_shipped',
+            'order_delivered'
+        )
+    )
 );
 
 CREATE INDEX idx_notifications_user ON notifications(user_id);
