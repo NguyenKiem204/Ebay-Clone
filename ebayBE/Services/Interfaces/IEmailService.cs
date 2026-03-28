@@ -13,6 +13,16 @@ namespace ebay.Services.Interfaces
         Task SendGuestOrderDeliveredEmailAsync(string email, string guestFullName, string orderNumber, string carrier, string trackingNumber, DateTime deliveredAtUtc);
         Task SendAuctionWonEmailAsync(string email, string buyerDisplayName, string productTitle, decimal finalPrice, string orderNumber);
         Task SendAuctionPaymentReminderEmailAsync(string email, string buyerDisplayName, string productTitle, decimal finalPrice, string orderNumber, DateTime paymentDueAtUtc);
+        Task SendMemberCaseUpdateEmailAsync(
+            string email,
+            string memberDisplayName,
+            string orderNumber,
+            string caseReference,
+            string subject,
+            string heading,
+            string summary,
+            string actionPath,
+            string? nextStep = null);
         Task SendGuestCaseUpdateEmailAsync(
             string email,
             string guestFullName,

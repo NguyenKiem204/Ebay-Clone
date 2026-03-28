@@ -1,5 +1,6 @@
 using ebay.Models;
 using ebay.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ebay.Services.Implementations
@@ -76,6 +77,16 @@ namespace ebay.Services.Implementations
                     body,
                     $"/cases/return/{returnRequestId}",
                     cancellationToken);
+
+                await TrySendMemberCaseEmailAsync(
+                    userId,
+                    orderNumber,
+                    $"Return request #{returnRequestId}",
+                    $"{title} - {orderNumber ?? "order"}",
+                    title,
+                    body,
+                    $"/cases/return/{returnRequestId}",
+                    cancellationToken);
             }
             catch (Exception ex)
             {
@@ -131,6 +142,16 @@ namespace ebay.Services.Implementations
             {
                 await CreateNotificationAsync(
                     userId,
+                    title,
+                    body,
+                    $"/cases/dispute/{disputeId}",
+                    cancellationToken);
+
+                await TrySendMemberCaseEmailAsync(
+                    userId,
+                    orderNumber,
+                    $"{DescribeDisputeCase(caseType)} #{disputeId}",
+                    $"{title} - {orderNumber ?? "order"}",
                     title,
                     body,
                     $"/cases/dispute/{disputeId}",
@@ -269,6 +290,51 @@ namespace ebay.Services.Implementations
             }
         }
 
+        private async Task TrySendMemberCaseEmailAsync(
+            int userId,
+            string? orderNumber,
+            string caseReference,
+            string subject,
+            string heading,
+            string summary,
+            string actionPath,
+            CancellationToken cancellationToken)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(currentUser => currentUser.Id == userId, cancellationToken);
+
+            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                _logger.LogInformation(
+                    "Member case email skipped because user {UserId} has no reachable email for case {CaseReference}.",
+                    userId,
+                    caseReference);
+                return;
+            }
+
+            try
+            {
+                await _emailService.SendMemberCaseUpdateEmailAsync(
+                    user.Email,
+                    ResolveMemberDisplayName(user),
+                    orderNumber ?? "Unknown order",
+                    caseReference,
+                    subject,
+                    heading,
+                    summary,
+                    actionPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to send member case email for user {UserId} and case {CaseReference}",
+                    userId,
+                    caseReference);
+            }
+        }
+
         private static string FormatOrderReference(string? orderNumber)
         {
             return string.IsNullOrWhiteSpace(orderNumber)
@@ -279,6 +345,22 @@ namespace ebay.Services.Implementations
         private static bool IsGuestOrder(Order order)
         {
             return string.Equals(order.CustomerType, CustomerTypeGuest, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ResolveMemberDisplayName(User user)
+        {
+            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+            if (!string.IsNullOrWhiteSpace(fullName))
+            {
+                return fullName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.Username))
+            {
+                return user.Username;
+            }
+
+            return "there";
         }
 
         private static (string Title, string Body) BuildReturnLifecycleNotificationContent(string lifecycleEvent, string? orderNumber)
