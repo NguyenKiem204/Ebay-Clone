@@ -21,7 +21,7 @@ services:
       context: ./ebayBE
     image: nguyenkiem/ebay-api:latest
     deploy:
-      replicas: 1
+      replicas: 3
       update_config:
         parallelism: 1
         delay: 10s
@@ -29,7 +29,7 @@ services:
       restart_policy:
         condition: on-failure
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -44,6 +44,9 @@ services:
       - ExternalAuthSettings__GoogleClientId=${ExternalAuthSettings__GoogleClientId}
       - JwtSettings__SecretKey=${JwtSettings__SecretKey}
       - HCaptchaSecret__Secret=${HCaptchaSecret__Secret}
+      - Cloudinary__CloudName=${CLOUDINARY_CLOUD_NAME}
+      - Cloudinary__ApiKey=${CLOUDINARY_API_KEY}
+      - Cloudinary__ApiSecret=${CLOUDINARY_API_SECRET}
     depends_on:
       - db
     restart: unless-stopped
@@ -55,13 +58,13 @@ services:
       context: ./ebayFE
     image: nguyenkiem/ebay-web:latest
     deploy:
-      replicas: 1
+      replicas: 2
       update_config:
         parallelism: 1
         delay: 5s
         order: start-first
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:80/ || exit 1" ]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
