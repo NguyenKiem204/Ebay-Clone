@@ -9,8 +9,8 @@ namespace ebay.Middlewares
         private readonly IMemoryCache _cache;
         private readonly ILogger<AntiSpamMiddleware> _logger;
 
-        private const int AnonymousLimitPerMinute = 900;
-        private const int VerifiedLimitPerMinute = 7200;
+        private const int AnonymousLimitPerMinute = 100;
+        private const int VerifiedLimitPerMinute = 300;
 
         public AntiSpamMiddleware(RequestDelegate next, IMemoryCache cache, ILogger<AntiSpamMiddleware> logger)
         {
@@ -27,7 +27,9 @@ namespace ebay.Middlewares
                 return;
             }
 
-            var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() 
+                          ?? context.Connection.RemoteIpAddress?.ToString() 
+                          ?? "unknown";
             var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
             var hasCaptchaVerification = string.Equals(context.Request.Cookies["hcaptcha_verified"], "true", StringComparison.Ordinal);
             var requestLimit = (isAuthenticated || hasCaptchaVerification) ? VerifiedLimitPerMinute : AnonymousLimitPerMinute;

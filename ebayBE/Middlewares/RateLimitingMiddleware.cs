@@ -31,11 +31,19 @@ namespace ebay.Middlewares
             var endpoint = context.GetEndpoint();
             var rateLimitAttribute = endpoint?.Metadata.GetMetadata<RateLimitAttribute>();
 
+            var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
+            
+            // Apply Strict Default Policy if no specific attribute is found
+            if (rateLimitAttribute == null)
+            {
+                int defaultLimit = isAuthenticated ? 60 : 20;
+                rateLimitAttribute = new RateLimitAttribute("Default", defaultLimit, 60);
+            }
+
             if (rateLimitAttribute != null)
             {
                 var clientId = GetClientIdentifier(context);
                 var key = $"RateLimit_{rateLimitAttribute.Name}_{clientId}";
-                var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
                 var hasCaptchaVerification = string.Equals(context.Request.Cookies["hcaptcha_verified"], "true", StringComparison.Ordinal);
                 var effectiveLimit = hasCaptchaVerification
                     ? rateLimitAttribute.Limit * 20
@@ -119,18 +127,12 @@ namespace ebay.Middlewares
                 return $"User_{userId}";
             }
 
-            var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+            var ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() 
+                          ?? context.Request.Headers["X-Real-IP"].FirstOrDefault() 
+                          ?? context.Connection.RemoteIpAddress?.ToString() 
+                          ?? "Unknown";
 
-            if (context.Request.Headers.ContainsKey("X-Forwarded-For"))
-            {
-                ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim();
-            }
-            else if (context.Request.Headers.ContainsKey("X-Real-IP"))
-            {
-                ipAddress = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-            }
-
-            return $"IP_{ipAddress ?? "Unknown"}";
+            return $"IP_{ipAddress}";
         }
 
         private string FormatPeriod(TimeSpan period)
