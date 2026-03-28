@@ -60,8 +60,8 @@ namespace ebay.Controllers
         {
             try
             {
-                var coupon = await _couponService.CreateCouponAsync(request);
-                return Ok(ApiResponse<CouponResponseDto>.SuccessResponse(MapToResponseDto(coupon), "Tạo mã giảm giá thành công"));
+                var couponResponse = await _couponService.CreateCouponAsync(request);
+                return Ok(ApiResponse<CouponResponseDto>.SuccessResponse(couponResponse, "Tạo mã giảm giá thành công"));
             }
             catch (ArgumentException ex)
             {
@@ -137,8 +137,8 @@ namespace ebay.Controllers
                 CategoryId = coupon.CategoryId,
                 ProductId = coupon.ProductId,
                 StoreId = coupon.StoreId,
-                StoreName = coupon.Store?.StoreName,
-                CategoryName = coupon.Category?.Name,
+                StoreName = coupon.Store?.StoreName?.Trim(),
+                CategoryName = coupon.Category?.Name?.Trim(),
                 ApplicableTo = coupon.ApplicableTo,
                 SelectedProductIds = coupon.Products?.Select(p => p.Id).ToList(),
                 SelectedProductTitles = coupon.Products?.Select(p => p.Title).ToList(),

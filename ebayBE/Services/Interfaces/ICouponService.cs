@@ -11,7 +11,7 @@ namespace ebay.Services.Interfaces
         Task<IEnumerable<Coupon>> GetAllCouponsAsync();
         Task<IEnumerable<Coupon>> GetSellerCouponsAsync(int sellerId);
         Task<Coupon?> GetCouponByIdAsync(int id);
-        Task<Coupon> CreateCouponAsync(CreateCouponRequest request);
+        Task<CouponResponseDto> CreateCouponAsync(CreateCouponRequest request);
         Task<CouponResponseDto> UpdateCouponAsync(int sellerId, int id, UpdateCouponRequest request);
         Task<bool> DeleteCouponAsync(int sellerId, int id);
         Task<List<ProductResponseDto>> GetCouponProductsAsync(int couponId);

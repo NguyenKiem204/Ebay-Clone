@@ -18,10 +18,6 @@ namespace ebay.Services.Implementations
 
         public async Task<CouponValidationResponseDto> ValidateCouponAsync(string code, decimal orderAmount, int userId)
         {
-            // Note: For a robust validation, we need the list of products in the cart.
-            // Since this method signature doesn't have it, we'll perform general checks.
-            // A more specific version should be called during checkout with List<CartItem>.
-            
             var coupon = await _context.Coupons
                 .Include(c => c.Products)
                 .Include(c => c.Store)
@@ -39,7 +35,6 @@ namespace ebay.Services.Implementations
             if (orderAmount < (coupon.MinOrderAmount ?? 0))
                 return new CouponValidationResponseDto { Valid = false, Message = $"Đơn hàng tối thiểu {coupon.MinOrderAmount:N0}đ để sử dụng mã này" };
 
-            // Check if user already used this coupon
             var usedByUserCount = await _context.CouponUsages
                 .CountAsync(cu => cu.CouponId == coupon.Id && cu.UserId == userId);
             
@@ -55,7 +50,7 @@ namespace ebay.Services.Implementations
                     discount = coupon.MaxDiscount.Value;
                 }
             }
-            else // fixed
+            else
             {
                 discount = coupon.DiscountValue;
             }
@@ -94,7 +89,7 @@ namespace ebay.Services.Implementations
             }
         }
 
-        public async Task<Coupon> CreateCouponAsync(CreateCouponRequest request)
+        public async Task<CouponResponseDto> CreateCouponAsync(CreateCouponRequest request)
         {
             if (request.StoreId.HasValue) 
             {
@@ -116,7 +111,6 @@ namespace ebay.Services.Implementations
                 throw new ArgumentException("Giá trị đơn hàng tối thiểu phải lớn hơn giá trị giảm giá");
             }
 
-            // For fixed type: auto-set MaxDiscount = DiscountValue
             if (request.DiscountType == "fixed")
                 request.MaxDiscount = request.DiscountValue;
 
@@ -145,10 +139,6 @@ namespace ebay.Services.Implementations
             await _context.Coupons.AddAsync(coupon);
             await _context.SaveChangesAsync();
 
-            // Load relations for response
-            await _context.Entry(coupon).Reference(c => c.Store).LoadAsync();
-            await _context.Entry(coupon).Reference(c => c.Category).LoadAsync();
-            await _context.Entry(coupon).Collection(c => c.Products).LoadAsync();
             await CreatePromotionNotificationAsync(
                 coupon.Store?.SellerId,
                 "promotion_created",
@@ -156,7 +146,7 @@ namespace ebay.Services.Implementations
                 $"Promotion {coupon.Code} is now active.",
                 "/seller/marketing");
 
-            return coupon;
+            return await GetFullCouponResponseAsync(coupon.Id);
         }
 
         public async Task<IEnumerable<Coupon>> GetAllCouponsAsync()
@@ -211,24 +201,17 @@ namespace ebay.Services.Implementations
                 throw new ArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
             }
 
-            // Immutability checks
             if (request.Code != coupon.Code && !string.IsNullOrEmpty(request.Code))
                 throw new ArgumentException("Không được sửa mã giảm giá sau khi đã tạo");
 
             if (coupon.StartDate <= DateTime.UtcNow)
             {
-                // If already started, force the original StartDate and DiscountType 
-                // to ignore any minor precision/format changes from the frontend
                 request.StartDate = coupon.StartDate;
                 request.DiscountType = coupon.DiscountType;
             }
             else
             {
-                if (request.EndDate <= request.StartDate)
-                {
-                    throw new ArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-                }
-                coupon.StartDate = request.StartDate;
+                coupon.StartDate = request.StartDate.ToUniversalTime();
             }
 
             if (request.DiscountType == "percentage" && request.DiscountValue > 100)
@@ -241,7 +224,6 @@ namespace ebay.Services.Implementations
                 throw new ArgumentException("Giá trị đơn hàng tối thiểu phải lớn hơn giá trị giảm giá");
             }
 
-            // For fixed type: auto-set MaxDiscount = DiscountValue
             if (request.DiscountType == "fixed")
                 request.MaxDiscount = request.DiscountValue;
 
@@ -255,8 +237,7 @@ namespace ebay.Services.Implementations
             coupon.DiscountValue = request.DiscountValue;
             coupon.MinOrderAmount = request.MinOrderAmount;
             coupon.MaxDiscount = request.MaxDiscount;
-            coupon.StartDate = request.StartDate;
-            coupon.EndDate = request.EndDate;
+            coupon.EndDate = request.EndDate.ToUniversalTime();
             coupon.MaxUsage = request.MaxUsage;
             coupon.MaxUsagePerUser = request.MaxUsagePerUser;
             coupon.CouponType = request.CouponType;
@@ -273,10 +254,6 @@ namespace ebay.Services.Implementations
 
             await _context.SaveChangesAsync();
 
-            // Load relations for response
-            await _context.Entry(coupon).Reference(c => c.Store).LoadAsync();
-            await _context.Entry(coupon).Reference(c => c.Category).LoadAsync();
-            await _context.Entry(coupon).Collection(c => c.Products).LoadAsync();
             await CreatePromotionNotificationAsync(
                 sellerId,
                 "promotion_updated",
@@ -284,7 +261,7 @@ namespace ebay.Services.Implementations
                 $"Promotion {coupon.Code} was updated successfully.",
                 "/seller/marketing");
 
-            return MapCouponToResponseDto(coupon);
+            return await GetFullCouponResponseAsync(coupon.Id);
         }
 
         private static CouponResponseDto MapCouponToResponseDto(Coupon coupon)
@@ -308,6 +285,8 @@ namespace ebay.Services.Implementations
                 CreatedAt = coupon.CreatedAt,
                 CategoryId = coupon.CategoryId,
                 StoreId = coupon.StoreId,
+                StoreName = coupon.Store?.StoreName?.Trim(),
+                CategoryName = coupon.Category?.Name?.Trim(),
                 ApplicableTo = coupon.ApplicableTo,
                 SelectedProductIds = coupon.Products?.Select(p => p.Id).ToList(),
                 SelectedProductTitles = coupon.Products?.Select(p => p.Title).ToList(),
@@ -322,7 +301,6 @@ namespace ebay.Services.Implementations
 
             if (applicableTo == "all")
             {
-                // Check if store has any products
                 var hasProducts = await _context.Products.AnyAsync(p => p.StoreId == coupon.StoreId && p.IsActive == true);
                 if (!hasProducts) throw new ArgumentException("Cửa hàng hiện chưa có sản phẩm nào đang hoạt động để áp dụng mã");
 
@@ -334,11 +312,9 @@ namespace ebay.Services.Implementations
             {
                 if (!categoryId.HasValue) throw new ArgumentException("Thiếu ID danh mục cho loại áp dụng theo danh mục");
                 
-                // Check if category exists
                 var category = await _context.Categories.FindAsync(categoryId);
                 if (category == null) throw new ArgumentException("Danh mục không tồn tại");
 
-                // Check if store has products in this category
                 var hasProductsInCategory = await _context.Products.AnyAsync(p => p.StoreId == coupon.StoreId && p.CategoryId == categoryId && p.IsActive == true);
                 if (!hasProductsInCategory) throw new ArgumentException("Cửa hàng không có sản phẩm nào thuộc danh mục này đang hoạt động");
 
@@ -351,12 +327,9 @@ namespace ebay.Services.Implementations
                 coupon.CategoryId = null;
                 coupon.ProductId = null;
 
-                // Filter out nulls and convert to normal int list
                 var cleanProductIds = productIds.Where(id => id.HasValue).Select(id => id!.Value).ToList();
-
                 if (cleanProductIds.Count == 0) throw new ArgumentException("Cần chọn ít nhất một sản phẩm");
 
-                // Load and set products
                 var products = await _context.Products
                     .Where(p => cleanProductIds.Contains(p.Id))
                     .ToListAsync();
@@ -368,7 +341,6 @@ namespace ebay.Services.Implementations
                     throw new ArgumentException($"Không tìm thấy sản phẩm có ID: {string.Join(", ", missingIds)}");
                 }
 
-                // Ensure all products belong to the store and are active
                 foreach (var p in products)
                 {
                     if (p.StoreId != coupon.StoreId) 
@@ -405,6 +377,7 @@ namespace ebay.Services.Implementations
         {
             var coupon = await _context.Coupons.FindAsync(id);
             if (coupon == null) return false;
+            
             var sellerUserId = coupon.StoreId.HasValue
                 ? (await _context.Stores.AsNoTracking().Where(store => store.Id == coupon.StoreId.Value).Select(store => (int?)store.SellerId).FirstOrDefaultAsync())
                 : null;
@@ -424,32 +397,56 @@ namespace ebay.Services.Implementations
 
         private async Task CreatePromotionNotificationAsync(int? userId, string type, string title, string body, string link)
         {
-            if (!userId.HasValue)
+            if (!userId.HasValue) return;
+
+            try
             {
-                return;
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = userId.Value,
+                    Type = type,
+                    Title = title,
+                    Body = body,
+                    Link = link,
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                await _context.SaveChangesAsync();
             }
-
-            _context.Notifications.Add(new Notification
+            catch (Exception ex)
             {
-                UserId = userId.Value,
-                Type = type,
-                Title = title,
-                Body = body,
-                Link = link,
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            });
+                Console.WriteLine($"Error creating notification: {ex.Message}");
+            }
+        }
 
-            await _context.SaveChangesAsync();
+        private async Task<CouponResponseDto> GetFullCouponResponseAsync(int id)
+        {
+            var coupon = await _context.Coupons
+                .Include(c => c.Category)
+                .Include(c => c.Store)
+                .Include(c => c.Products)
+                    .ThenInclude(p => p.Category)
+                .Include(c => c.Products)
+                    .ThenInclude(p => p.Seller)
+                .Include(c => c.Products)
+                    .ThenInclude(p => p.Reviews)
+                .Include(c => c.Products)
+                    .ThenInclude(p => p.Bids)
+                .Include(c => c.Products)
+                    .ThenInclude(p => p.OrderItems)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (coupon == null) return null!;
+            return MapCouponToResponseDto(coupon);
         }
 
         private async Task ValidateStoreAsync(int storeId)
         {
             var store = await _context.Stores.FindAsync(storeId);
             if (store == null) throw new KeyNotFoundException("Không tìm thấy cửa hàng");
-            // In a real app, check if current user is the seller of this store:
-            // if (store.SellerId != currentUserId) throw new UnauthorizedAccessException(...);
         }
+
         public async Task<List<ProductResponseDto>> GetCouponProductsAsync(int couponId)
         {
             var coupon = await _context.Coupons

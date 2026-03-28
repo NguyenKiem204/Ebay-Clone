@@ -32,7 +32,7 @@ const schema = yup.object().shape({
     .nullable()
     .when('discountType', {
       is: 'percentage',
-      then: (schema) => schema.required('Max discount amount is required for percentage type').min(1, 'Must be at least $1'),
+      then: (schema) => schema.required('Max discount amount is required for percentage type').min(0.01, 'Must be greater than 0'),
       otherwise: (schema) => schema.nullable()
     }),
   startDate: yup.date().required(),
@@ -92,7 +92,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
     if (sellerProducts.length === 0) fetchSellerProducts({ PageSize: 500 });
   }, [fetchCategories, store, fetchMyStore, fetchSellerProducts, categories.length, sellerProducts.length]);
 
-  const filteredSellerProducts = sellerProducts.filter(p => 
+  const filteredSellerProducts = sellerProducts.filter(p =>
     p.title.toLowerCase().includes(productSearch.toLowerCase()) &&
     !selectedProducts.some(sp => sp.id === p.id)
   ).slice(0, 5);
@@ -121,8 +121,13 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
         await couponService.createCoupon(payload);
         toast.success('Tạo mã giảm giá thành công');
       }
+
+      // Important: Call onSuccess ONLY after a successful API call
       onSuccess();
+      return; // Exit early on success
     } catch (error) {
+      console.error('Coupon Submission Error:', error);
+
       const apiRes = error.response?.data;
       let hasMappedError = false;
 
@@ -131,13 +136,13 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
           // Handle JSON path style keys like "$.productIds[0]"
           let fieldName = field;
           if (field.startsWith('$.')) {
-             const match = field.match(/\$\.([^\[]+)/);
-             if (match) fieldName = match[1];
+            const match = field.match(/\$\.([^\[]+)/);
+            if (match) fieldName = match[1];
           }
 
           // Map backend field names (TitleCase) to frontend (camelCase)
           const formField = fieldName.charAt(0).toLowerCase() + fieldName.slice(1);
-          
+
           setError(formField, {
             type: 'manual',
             message: apiRes.errors[field][0]
@@ -148,14 +153,14 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
 
       // If we couldn't map any specific field errors, or if there's a general message, show a toast
       const message = apiRes?.message || apiRes?.title || 'Có lỗi xảy ra';
-      
+
       // If we have errors that don't map to fields, we should still show them
       if (apiRes?.errors) {
         const unmappedErrors = Object.keys(apiRes.errors).filter(field => {
           const formField = field.charAt(0).toLowerCase() + field.slice(1);
           return !['code', 'description', 'discountType', 'discountValue', 'minOrderAmount', 'maxDiscount', 'startDate', 'endDate', 'maxUsage', 'maxUsagePerUser', 'applicableTo', 'categoryId'].includes(formField);
         });
-        
+
         if (unmappedErrors.length > 0) {
           toast.error(`${message}: ${apiRes.errors[unmappedErrors[0]][0]}`);
           return;
@@ -163,7 +168,8 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
       }
 
       // Don't show generic toast if we have specific errors unless it's a real specific message
-      if (!hasMappedError || apiRes?.message) {
+      // and ensure we don't accidentally show success message as error
+      if (!hasMappedError || (apiRes?.message && error.response?.status >= 400)) {
         toast.error(message);
       }
     }
@@ -280,7 +286,7 @@ export default function CreateCouponForm({ editCoupon = null, onCancel, onSucces
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-sm">$</span>
                     <input
                       type="number"
-                      step="1000"
+                      step="0.01"
                       {...register('maxDiscount')}
                       placeholder="e.g. 200000"
                       className="w-full border border-gray-300 pl-8 pr-4 py-3 rounded-md outline-none focus:border-secondary"
