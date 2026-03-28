@@ -7,10 +7,14 @@ import { useRequireAuth } from '../hooks/useRequireAuth';
 import useCurrencyStore from '../store/useCurrencyStore';
 
 export default function ProductsPage() {
-    const formatPrice = useCurrencyStore(s => s.formatPrice);
-    const [viewMode, setViewMode] = useState('grid');
     const location = useLocation();
     const navigate = useNavigate();
+    const {
+        isVietnamese,
+        exchangeRate,
+        formatPrice
+    } = useCurrencyStore();
+    const [viewMode, setViewMode] = useState('grid');
     const {
         searchResults: filteredProducts,
         totalItems,
@@ -193,19 +197,44 @@ export default function ProductsPage() {
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.currentTarget);
-                            queryParams.set('minPrice', formData.get('min') || '');
-                            queryParams.set('maxPrice', formData.get('max') || '');
+                            let min = formData.get('min')?.toString().replace(/[^0-9.]/g, '') || '';
+                            let max = formData.get('max')?.toString().replace(/[^0-9.]/g, '') || '';
+                            
+                            if (isVietnamese && exchangeRate > 0) {
+                                if (min) min = (parseFloat(min) / exchangeRate).toFixed(2);
+                                if (max) max = (parseFloat(max) / exchangeRate).toFixed(2);
+                            }
+
+                            if (min) queryParams.set('minPrice', min); else queryParams.delete('minPrice');
+                            if (max) queryParams.set('maxPrice', max); else queryParams.delete('maxPrice');
+                            queryParams.set('page', '1'); // Reset to page 1 on filter change
                             navigate(`?${queryParams.toString()}`);
                         }} className="space-y-3">
                             <div className="flex justify-between items-center gap-2">
                                 <div className="relative flex-1">
-                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
-                                    <input name="min" className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Min" />
+                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">
+                                        {isVietnamese ? '₫' : '$'}
+                                    </span>
+                                    <input 
+                                        name="min" 
+                                        className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" 
+                                        type="text" 
+                                        placeholder="Min" 
+                                        defaultValue={minPrice ? (isVietnamese ? Math.round(parseFloat(minPrice) * exchangeRate) : minPrice) : ''}
+                                    />
                                 </div>
                                 <span className="text-gray-400">-</span>
                                 <div className="relative flex-1">
-                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">$</span>
-                                    <input name="max" className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" type="text" placeholder="Max" />
+                                    <span className="absolute left-2 top-1.5 text-xs text-gray-400">
+                                        {isVietnamese ? '₫' : '$'}
+                                    </span>
+                                    <input 
+                                        name="max" 
+                                        className="w-full text-xs border border-gray-300 rounded pl-5 pr-2 py-1.5" 
+                                        type="text" 
+                                        placeholder="Max" 
+                                        defaultValue={maxPrice ? (isVietnamese ? Math.round(parseFloat(maxPrice) * exchangeRate) : maxPrice) : ''}
+                                    />
                                 </div>
                             </div>
                             <button type="submit" className="w-full bg-gray-100 hover:bg-gray-200 text-sm py-1.5 rounded font-medium">Apply</button>
