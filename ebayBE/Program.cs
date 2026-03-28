@@ -39,7 +39,8 @@ if (Encoding.UTF8.GetBytes(jwtSettings.SecretKey).Length < 32)
     throw new InvalidOperationException("JWT SecretKey must be at least 256-bit");
 
 builder.Services.AddDbContext<EbayDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+        o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();

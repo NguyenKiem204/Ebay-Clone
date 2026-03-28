@@ -22,6 +22,26 @@ namespace ebay.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
+            var ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim() 
+                          ?? context.Request.Headers["X-Real-IP"].FirstOrDefault() 
+                          ?? context.Connection.RemoteIpAddress?.ToString() 
+                          ?? "Unknown";
+
+            // Whitelist localhost
+            if (ipAddress == "127.0.0.1" || ipAddress == "::1" || ipAddress == "::ffff:127.0.0.1" || ipAddress == "Unknown")
+            {
+                await _next(context);
+                return;
+            }
+
+            // Hardblock specific spamming IP (Crawler/Bot)
+            if (ipAddress == "58.186.68.138")
+            {
+                _logger.LogWarning("RATE LIMIT HARD BLOCK: Blocked known spammer {IP}.", ipAddress);
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return;
+            }
+
             if (HttpMethods.IsOptions(context.Request.Method))
             {
                 await _next(context);
