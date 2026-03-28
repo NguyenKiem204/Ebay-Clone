@@ -179,25 +179,23 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Bật Swagger cho mọi môi trường để dễ test
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "eBay API v1");
-    c.RoutePrefix = "swagger"; // Truy cập tại /swagger
+    c.RoutePrefix = "swagger";
 });
 
 app.MapHealthChecks("/health");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<AntiSpamMiddleware>();
 app.UseMiddleware<RateLimitingMiddleware>();
-app.UseCors("AllowFrontend"); // Enable CORS before Auth
+app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 app.MapControllers();
-// Apply migrations automatically on startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

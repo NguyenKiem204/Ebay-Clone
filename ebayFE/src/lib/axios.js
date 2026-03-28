@@ -1,14 +1,15 @@
 import axios from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
-export const BASE_URL = 'http://localhost:5000';
+export const BASE_URL = import.meta.env.VITE_API_URL !== undefined
+    ? import.meta.env.VITE_API_URL
+    : 'http://localhost:5000';
 
 const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
 });
 
-// Response interceptor for automatic refresh
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
