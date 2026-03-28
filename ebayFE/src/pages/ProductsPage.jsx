@@ -87,8 +87,11 @@ export default function ProductsPage() {
         });
 
         searchProducts(params);
+    }, [location.search]); // Simplified dependencies: location.search handles all parameter changes
+
+    useEffect(() => {
         if (categories.length === 0) fetchCategories();
-    }, [location.search, searchProducts, fetchCategories, categories.length, keyword, page, filter, sortBy, minPrice, maxPrice, categoryQuery, navCategorySlugs]);
+    }, [categories.length, fetchCategories]); // Category fetching is separate
 
     if (loading && filteredProducts.length === 0) {
         return (

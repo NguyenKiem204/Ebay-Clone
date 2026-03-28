@@ -33,9 +33,10 @@ namespace ebay.Middlewares
 
             var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
             
+            // Apply Sensible Default Policy if no specific attribute is found
             if (rateLimitAttribute == null)
             {
-                int defaultLimit = isAuthenticated ? 60 : 20;
+                int defaultLimit = isAuthenticated ? 180 : 60;
                 rateLimitAttribute = new RateLimitAttribute("Default", defaultLimit, 60);
             }
 
