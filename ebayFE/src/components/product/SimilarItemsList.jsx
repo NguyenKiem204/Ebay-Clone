@@ -1,14 +1,9 @@
 import { Link } from 'react-router-dom';
+import useCurrencyStore from '../../store/useCurrencyStore';
 import { resolveMediaUrl } from '../../lib/media';
 
-function formatUsd(value) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(value || 0);
-}
-
 export default function SimilarItemsList({ relatedProducts = [], productId }) {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const displayItems = Array.isArray(relatedProducts)
         ? relatedProducts.filter((item) => item?.id !== productId).slice(0, 3)
         : [];
@@ -50,9 +45,9 @@ export default function SimilarItemsList({ relatedProducts = [], productId }) {
                                 {item.title}
                             </h3>
                             <div className="pt-1">
-                                <p className="text-[16px] font-bold text-gray-900">{formatUsd(item.price)}</p>
+                                <p className="text-[16px] font-bold text-gray-900">{formatPrice(item.price)}</p>
                                 <p className="text-[12px] text-gray-900">
-                                    {Number(item.shippingFee || 0) === 0 ? 'Free delivery' : `+ ${formatUsd(item.shippingFee)} delivery`}
+                                    {Number(item.shippingFee || 0) === 0 ? 'Free delivery' : `+ ${formatPrice(item.shippingFee)} delivery`}
                                 </p>
                                 <p className="text-[12px] text-gray-500">Seller {item.sellerName || 'Marketplace seller'}</p>
                             </div>

@@ -8,16 +8,16 @@ namespace ebay.Validators.Auth
         public ResetPasswordRequestValidator()
         {
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email là bắt buộc")
-                .EmailAddress().WithMessage("Email không hợp lệ");
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Invalid email address");
 
             RuleFor(x => x.Otp)
-                .NotEmpty().WithMessage("Mã OTP là bắt buộc")
-                .Length(6).WithMessage("Mã OTP phải có 6 chữ số");
+                .NotEmpty().WithMessage("OTP code is required")
+                .Length(6).WithMessage("OTP code must be 6 digits");
 
             RuleFor(x => x.NewPassword)
-                .NotEmpty().WithMessage("Mật khẩu mới là bắt buộc")
-                .MinimumLength(6).WithMessage("Mật khẩu mới phải có ít nhất 6 ký tự");
+                .NotEmpty().WithMessage("New password is required")
+                .MinimumLength(6).WithMessage("New password must be at least 6 characters");
         }
     }
 }

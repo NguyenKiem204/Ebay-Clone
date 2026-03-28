@@ -4,8 +4,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useProductStore from '../store/useProductStore';
 import useCategoryStore from '../store/useCategoryStore';
 import { useRequireAuth } from '../hooks/useRequireAuth';
+import useCurrencyStore from '../store/useCurrencyStore';
 
 export default function ProductsPage() {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const [viewMode, setViewMode] = useState('grid');
     const location = useLocation();
     const navigate = useNavigate();
@@ -82,7 +84,7 @@ export default function ProductsPage() {
 
         searchProducts(params);
         if (categories.length === 0) fetchCategories();
-    }, [location.search, searchProducts, fetchCategories, categories.length]);
+    }, [location.search, searchProducts, fetchCategories, categories.length, keyword, page, filter, sortBy, minPrice, maxPrice, categoryQuery, navCategorySlugs]);
 
     if (loading && filteredProducts.length === 0) {
         return (
@@ -107,7 +109,6 @@ export default function ProductsPage() {
                     <span className="font-bold">{totalItems}</span> results
                 </h1>
                 <div className="flex items-center gap-4">
-                    {/* ... (buttons remain same) */}
                     <button 
                         onClick={() => handleSecureAction(() => {})} 
                         className="hidden sm:flex items-center gap-1 px-4 py-1.5 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50"
@@ -185,7 +186,6 @@ export default function ProductsPage() {
                         </ul>
                     </div>
 
-                    {/* ... price range and listing type ... remains largely same but updated navigate */}
                     <div className="border-t border-gray-200 mt-4 pt-4">
                         <h3 className="font-bold text-sm mb-3 flex justify-between items-center cursor-pointer">
                             Price Range
@@ -193,8 +193,8 @@ export default function ProductsPage() {
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.currentTarget);
-                            queryParams.set('minPrice', formData.get('min'));
-                            queryParams.set('maxPrice', formData.get('max'));
+                            queryParams.set('minPrice', formData.get('min') || '');
+                            queryParams.set('maxPrice', formData.get('max') || '');
                             navigate(`?${queryParams.toString()}`);
                         }} className="space-y-3">
                             <div className="flex justify-between items-center gap-2">
@@ -276,8 +276,8 @@ export default function ProductsPage() {
                                                 </Link>
                                                 <div className="flex items-center gap-1 mb-2">
                                                     <div className="flex text-yellow-400 text-xs shadow-sm">
-                                                        {'ÃƒÂ¢Ã‹Å“Ã¢â‚¬Â¦'.repeat(Math.round(product.rating || 5))}
-                                                        {'ÃƒÂ¢Ã‹Å“Ã¢â‚¬Â '.repeat(5 - Math.round(product.rating || 5))}
+                                                        {'★'.repeat(Math.round(product.rating || 5))}
+                                                        {'☆'.repeat(5 - Math.round(product.rating || 5))}
                                                     </div>
                                                     <span className="text-xs text-gray-500">({product.reviewCount || 0} reviews)</span>
                                                 </div>
@@ -289,12 +289,12 @@ export default function ProductsPage() {
                                                 <div className="mt-auto flex flex-col sm:flex-row justify-between sm:items-end gap-4">
                                                     <div>
                                                         <div className="text-2xl font-bold text-gray-900">
-                                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
+                                                            {formatPrice(product.price)}
                                                         </div>
                                                         <div className="text-xs font-semibold text-blue-700 mt-1">
                                                             {product.shippingFee === 0
                                                                 ? 'Free shipping'
-                                                                : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.shippingFee)} shipping`}
+                                                                : `+${formatPrice(product.shippingFee)} shipping`}
                                                         </div>
                                                         <div className="text-xs text-gray-500 mt-1">Seller: {product.sellerName || 'ebay_seller'}</div>
                                                     </div>

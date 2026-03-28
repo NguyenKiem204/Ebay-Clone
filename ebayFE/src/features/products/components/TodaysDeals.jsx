@@ -4,7 +4,10 @@ import useProductStore from '../../../store/useProductStore';
 import useAuthStore from '../../../store/useAuthStore';
 import useSavedStore from '../../saved/useSavedStore';
 
+import useCurrencyStore from '../../../store/useCurrencyStore';
+
 export function TodaysDeals() {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const { bestDeals, loading } = useProductStore();
     const { isAuthenticated } = useAuthStore();
     const savedIds = useSavedStore(s => s.savedIds);
@@ -82,11 +85,11 @@ export function TodaysDeals() {
                                 </h3>
                                 <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
                                     <span className="font-bold text-[17px] text-gray-900">
-                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)}
+                                        {formatPrice(product.price)}
                                     </span>
                                     {product.discountPrice && (
                                         <span className="text-gray-500 text-sm line-through">
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.discountPrice)}
+                                            {formatPrice(product.discountPrice)}
                                         </span>
                                     )}
                                 </div>

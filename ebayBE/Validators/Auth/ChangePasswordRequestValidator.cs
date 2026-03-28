@@ -1,4 +1,4 @@
-﻿using ebay.DTOs.Requests;
+using ebay.DTOs.Requests;
 using FluentValidation;
 
 namespace ebay.Validators.Auth
@@ -8,22 +8,22 @@ namespace ebay.Validators.Auth
         public ChangePasswordRequestValidator()
         {
             RuleFor(x => x.CurrentPassword)
-                .NotEmpty().WithMessage("Mật khẩu hiện tại là bắt buộc")
-                .MaximumLength(128).WithMessage("Mật khẩu không được vượt quá 128 ký tự");
+                .NotEmpty().WithMessage("Current password is required")
+                .MaximumLength(128).WithMessage("Password must not exceed 128 characters");
 
             RuleFor(x => x.NewPassword)
-                .NotEmpty().WithMessage("Mật khẩu mới là bắt buộc")
-                .MinimumLength(8).WithMessage("Mật khẩu mới phải có ít nhất 8 ký tự")
-                .MaximumLength(128).WithMessage("Mật khẩu mới không được vượt quá 128 ký tự")
-                .Matches(@"[A-Z]").WithMessage("Mật khẩu mới phải chứa ít nhất 1 chữ hoa")
-                .Matches(@"[a-z]").WithMessage("Mật khẩu mới phải chứa ít nhất 1 chữ thường")
-                .Matches(@"[0-9]").WithMessage("Mật khẩu mới phải chứa ít nhất 1 chữ số")
-                .Matches(@"[@$!%*?&]").WithMessage("Mật khẩu mới phải chứa ít nhất 1 ký tự đặc biệt (@$!%*?&)")
-                .NotEqual(x => x.CurrentPassword).WithMessage("Mật khẩu mới phải khác mật khẩu hiện tại");
+                .NotEmpty().WithMessage("New password is required")
+                .MinimumLength(8).WithMessage("New password must be at least 8 characters")
+                .MaximumLength(128).WithMessage("New password must not exceed 128 characters")
+                .Matches(@"[A-Z]").WithMessage("New password must contain at least one uppercase letter")
+                .Matches(@"[a-z]").WithMessage("New password must contain at least one lowercase letter")
+                .Matches(@"[0-9]").WithMessage("New password must contain at least one digit")
+                .Matches(@"[@$!%*?&]").WithMessage("New password must contain at least one special character (@$!%*?&)")
+                .NotEqual(x => x.CurrentPassword).WithMessage("New password must be different from current password");
 
             RuleFor(x => x.ConfirmPassword)
-                .NotEmpty().WithMessage("Xác nhận mật khẩu là bắt buộc")
-                .Equal(x => x.NewPassword).WithMessage("Mật khẩu xác nhận không khớp");
+                .NotEmpty().WithMessage("Confirm password is required")
+                .Equal(x => x.NewPassword).WithMessage("Passwords do not match");
         }
     }
 }

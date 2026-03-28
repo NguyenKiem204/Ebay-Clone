@@ -21,6 +21,7 @@ import {
     getAuctionStatusMeta,
     normalizeAuctionLifecycle
 } from '../../features/auction/utils/auctionPresentation';
+import useCurrencyStore from '../../store/useCurrencyStore';
 
 function formatCompactCount(value) {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -59,10 +60,6 @@ function formatAuctionStatusCopy(status) {
     }
 }
 
-function formatUsd(value) {
-    return `US $${Number(value || 0).toLocaleString()}`;
-}
-
 function formatBidInputValue(value) {
     const digitsOnly = String(value ?? '').replace(/\D/g, '');
     if (!digitsOnly) {
@@ -82,6 +79,8 @@ function parseBidInputValue(value) {
 }
 
 export default function ProductPurchaseOptions({ product }) {
+    const { isVietnamese, formatVnd } = useCurrencyStore();
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const [quantity, setQuantity] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
@@ -209,7 +208,7 @@ export default function ProductPurchaseOptions({ product }) {
 
         const parsedBid = parseBidInputValue(bidAmount);
         if (!Number.isFinite(parsedBid) || parsedBid < Number(auctionMinNextBid || 0)) {
-            toast.error(`Enter at least ${formatUsd(auctionMinNextBid)}.`);
+            toast.error(`Enter at least ${formatPrice(auctionMinNextBid)}.`);
             return null;
         }
 
@@ -281,9 +280,9 @@ export default function ProductPurchaseOptions({ product }) {
     }, spamOpts);
 
     const auctionSummaryCopy = isAuctionClosed
-        ? `Auction status: ${auctionStatusMeta.label}. Final price ${formatUsd(displayAuctionPrice)}.`
-        : `${auctionStatusMeta.label}. Current bid ${formatUsd(displayAuctionPrice)}. Minimum next bid ${formatUsd(auctionMinNextBid)}.`;
-    const shippingCopy = Number(product?.shippingFee || 0) > 0 ? `${formatUsd(product.shippingFee)} shipping` : 'Free shipping';
+        ? `Auction status: ${auctionStatusMeta.label}. Final price ${formatPrice(displayAuctionPrice)}.`
+        : `${auctionStatusMeta.label}. Current bid ${formatPrice(displayAuctionPrice)}. Minimum next bid ${formatPrice(auctionMinNextBid)}.`;
+    const shippingCopy = Number(product?.shippingFee || 0) > 0 ? `${formatPrice(product.shippingFee)} shipping` : 'Free shipping';
 
     return (
         <div className="w-full">
@@ -316,7 +315,7 @@ export default function ProductPurchaseOptions({ product }) {
                         <div className="flex items-center justify-between gap-3">
                             <div>
                                 <p className="text-sm text-gray-500">Current price</p>
-                                <p className="text-2xl font-bold text-gray-900">{formatUsd(displayAuctionPrice)}</p>
+                                <p className="text-2xl font-bold text-gray-900">{formatPrice(displayAuctionPrice)}</p>
                             </div>
                             <div className="text-right text-sm text-gray-500">
                                 <p>{shippingCopy}</p>
@@ -328,7 +327,7 @@ export default function ProductPurchaseOptions({ product }) {
                     <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f5f7fa] px-4 py-4">
                         <div>
                             <p className="text-sm text-gray-500">Your bid amount</p>
-                            <p className="text-3xl font-bold text-gray-900">{formatUsd(pendingBidAmount)}</p>
+                            <p className="text-3xl font-bold text-gray-900">{formatPrice(pendingBidAmount)}</p>
                         </div>
                         <Button
                             onClick={async () => {
@@ -400,16 +399,24 @@ export default function ProductPurchaseOptions({ product }) {
             </div>
 
             <div className="mt-6">
-                <div className="mb-1 flex items-baseline gap-2">
+                <div className="flex flex-col mb-1">
                     <span className="text-[24px] font-bold text-gray-900">
-                        {formatUsd(displayPrice)}
+                        US {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD'
+                        }).format(displayPrice)}
                     </span>
+                    {isVietnamese && (
+                        <span className="text-[13px] text-gray-500 mt-0.5">
+                            Approximately <span className="font-medium text-gray-700">{formatVnd(displayPrice)}</span>
+                        </span>
+                    )}
                 </div>
 
                 {isAuthenticated && !isAuction ? (
                     <div className="mb-4 flex items-center gap-2 text-[15px] text-[#248232]">
                         <span className="font-bold">
-                            Save $15.00
+                            Save {formatPrice(15.00, true)}
                         </span>
                         <span className="font-normal text-gray-500">with coupon code</span>
                         <Link to="#" className="text-[13px] text-gray-500 underline">
@@ -442,11 +449,25 @@ export default function ProductPurchaseOptions({ product }) {
                         <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
                                 <p className="text-gray-500">Current bid</p>
-                                <p className="font-bold text-gray-900">{formatUsd(displayAuctionPrice)}</p>
+                                <p className="font-bold text-gray-900 leading-tight">
+                                    US {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayAuctionPrice)}
+                                </p>
+                                {isVietnamese && (
+                                    <p className="text-[11px] text-gray-500 mt-0.5">
+                                        ≈ {formatVnd(displayAuctionPrice)}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <p className="text-gray-500">Minimum next bid</p>
-                                <p className="font-bold text-gray-900">{formatUsd(auctionMinNextBid)}</p>
+                                <p className="font-bold text-gray-900 leading-tight">
+                                    US {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(auctionMinNextBid)}
+                                </p>
+                                {isVietnamese && (
+                                    <p className="text-[11px] text-gray-500 mt-0.5">
+                                        ≈ {formatVnd(auctionMinNextBid)}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <p className="text-gray-500">{isAuctionScheduled ? 'Starts in' : 'Time left'}</p>
@@ -459,7 +480,14 @@ export default function ProductPurchaseOptions({ product }) {
                             {auctionBuyItNowPrice && (
                                 <div>
                                     <p className="text-gray-500">Buy It Now</p>
-                                    <p className="font-bold text-gray-900">{formatUsd(auctionBuyItNowPrice)}</p>
+                                    <p className="font-bold text-gray-900 leading-tight">
+                                        US {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(auctionBuyItNowPrice)}
+                                    </p>
+                                    {isVietnamese && (
+                                        <p className="text-[11px] text-gray-500 mt-0.5">
+                                            ≈ {formatVnd(auctionBuyItNowPrice)}
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -505,7 +533,7 @@ export default function ProductPurchaseOptions({ product }) {
                             </div>
                             {auctionFeedback?.yourBid ? (
                                 <p className="text-sm text-gray-600">
-                                    Your latest max bid: <span className="font-semibold text-gray-900">{formatUsd(auctionFeedback.yourBid)}</span>
+                                    Your latest max bid: <span className="font-semibold text-gray-900">{formatPrice(auctionFeedback.yourBid)}</span>
                                 </p>
                             ) : (
                                 <p className="text-sm text-gray-500">
@@ -523,7 +551,7 @@ export default function ProductPurchaseOptions({ product }) {
                                             Purchase instantly at the fixed auction price.
                                         </p>
                                     </div>
-                                    <p className="text-lg font-bold text-[#3665f3]">{formatUsd(auctionBuyItNowPrice)}</p>
+                                    <p className="text-lg font-bold text-[#3665f3]">{formatPrice(auctionBuyItNowPrice)}</p>
                                 </div>
                                 <Button
                                     onClick={handleBuyItNow}

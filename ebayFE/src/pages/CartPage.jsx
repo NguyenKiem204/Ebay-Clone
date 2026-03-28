@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Info } from "lucide-react";
 import { useCart } from "../features/cart/hooks/useCart";
 import useAuthStore from "../store/useAuthStore";
 import CartItem from "../features/cart/components/CartItem";
@@ -10,18 +11,18 @@ export default function CartPage() {
 
     return (
         <div className="bg-white min-h-screen pb-12">
-            <div className="container mx-auto px-4 py-6 max-w-7xl">
-                <div className="flex justify-between items-end mb-6">
-                    <h1 className="text-[32px] font-bold text-gray-900 leading-none">Cart</h1>
-                    <button className="text-[#3665f3] hover:underline text-[13px]">Send Us Your Comments</button>
+            <div className="container mx-auto px-4 py-8 max-w-[1248px]">
+                <div className="flex justify-between items-baseline mb-6">
+                    <h1 className="text-[32px] font-bold text-[#191919]">Cart</h1>
+                    <button className="text-[#0654ba] hover:underline text-[13px] font-normal">Send Us Your Comments</button>
                 </div>
 
                 {!isAuthenticated && (
-                    <div className="bg-[#3665f3] text-white p-3 rounded-md mb-6 flex items-center gap-3 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 flex-shrink-0">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                        </svg>
-                        <p className="text-[15px]">
+                    <div className="bg-[#3665f3] text-white p-3.5 rounded-sm mb-8 flex items-center gap-3 shadow-sm">
+                        <div className="bg-white/20 p-1 rounded-full">
+                            <Info size={18} className="text-white" />
+                        </div>
+                        <p className="text-[14px] font-medium">
                             You're signed out right now. To save these items or see your previously saved items, <Link to="/login" className="underline font-bold">sign in</Link>.
                         </p>
                     </div>

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Info, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 import { useDebounceButton } from '../../../hooks/useDebounceButton';
 import useCartStore from '../hooks/useCartStore';
+import useCurrencyStore from '../../../store/useCurrencyStore';
 import { checkoutService } from '../../checkout/services/checkoutService';
 
 export default function CartSummary({ subtotal, totalItems }) {
@@ -13,6 +14,7 @@ export default function CartSummary({ subtotal, totalItems }) {
     const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
     const [eligibilityMessage, setEligibilityMessage] = useState('');
     const [guestQuote, setGuestQuote] = useState(null);
+    const { isVietnamese, formatVnd } = useCurrencyStore();
 
     const fallbackShipping = useMemo(
         () => cartItems.reduce((sum, item) => sum + (item.shippingPrice ?? 0), 0),
@@ -69,7 +71,6 @@ export default function CartSummary({ subtotal, totalItems }) {
     const shouldShowCalculatedShipping = !isAuthenticated && !guestQuote;
     const shouldShowCalculatedTotal = !isAuthenticated && !guestQuote;
 
-    // Anti-spam: block rapid repeated clicks on checkout
     const { trigger: handleCheckout, isBlocked } = useDebounceButton(
         async () => {
             if (isAuthenticated) {
@@ -110,65 +111,62 @@ export default function CartSummary({ subtotal, totalItems }) {
         { threshold: 2, windowMs: 600, blockDurationMs: 2000, warningMsg: 'Please do not click too fast!' }
     );
 
-    return (
-        <div className="bg-[#f2f2f2]/40 border border-gray-200 p-8 rounded-[16px] shadow-sm">
-            <h2 className="text-[24px] font-bold mb-8 text-gray-900 leading-tight">Order summary</h2>
+    const formatPrice = (amount) => {
+        if (isVietnamese) return formatVnd(amount);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    };
 
-            <div className="space-y-6 mb-10">
-                <div className="flex justify-between text-[15px] text-gray-900">
-                    <span>Items ({totalItems})</span>
-                    <span>
-                        {shouldShowCalculatedSubtotal
-                            ? 'Calculated at checkout'
-                            : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displaySubtotal)}
+    return (
+        <div className="bg-[#f7f7f7] border border-gray-200 p-6 rounded-[8px] shadow-sm">
+            <h2 className="text-[24px] font-bold mb-6 text-[#191919]">Order summary</h2>
+
+            <div className="space-y-4 mb-6">
+                <div className="flex justify-between text-[15px] text-[#191919]">
+                    <span className="font-normal text-gray-600">Items ({totalItems})</span>
+                    <span className="font-normal">
+                        {shouldShowCalculatedSubtotal ? 'Calculated at checkout' : formatPrice(displaySubtotal)}
                     </span>
                 </div>
-                <div className="flex justify-between text-[15px] text-gray-900">
-                    <div className="flex items-center gap-1">
-                        <span>Shipping</span>
-                        <Info size={16} className="text-gray-400 cursor-pointer" />
-                    </div>
-                    <span>
-                        {shouldShowCalculatedShipping
-                            ? 'Calculated at checkout'
-                            : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayShipping)}
+                <div className="flex justify-between text-[15px] text-[#191919]">
+                    <span className="font-normal text-gray-600">Shipping</span>
+                    <span className="font-normal">
+                        {shouldShowCalculatedShipping ? 'Calculated at checkout' : formatPrice(displayShipping)}
                     </span>
                 </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-6 mb-8 flex justify-between items-center">
-                <span className="text-[18px] font-bold text-gray-900">Order total</span>
-                <span className="text-[18px] font-bold text-gray-900">
-                    {shouldShowCalculatedTotal
-                        ? 'Calculated at checkout'
-                        : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayTotal)}
-                </span>
+            <div className="border-t border-gray-200 pt-5 mb-6 flex justify-between items-baseline">
+                <span className="text-[18px] font-bold text-[#191919]">Order total</span>
+                <div className="text-right">
+                    <span className="text-[18px] font-bold text-[#191919] block">
+                        {shouldShowCalculatedTotal ? 'Calculated at checkout' : formatPrice(displayTotal)}
+                    </span>
+                    {!shouldShowCalculatedTotal && isVietnamese && (
+                        <span className="text-[13px] text-gray-500 font-normal">
+                            (Approximately {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(displayTotal)})
+                        </span>
+                    )}
+                </div>
             </div>
 
             <button
                 onClick={handleCheckout}
                 disabled={isBlocked || isCheckingEligibility}
-                className="block w-full text-center py-3.5 bg-[#3665f3] text-white font-bold rounded-full hover:bg-blue-700 transition text-[16px] shadow-md shadow-blue-500/10 mb-8 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="block w-full text-center py-3 bg-[#3665f3] text-white font-bold rounded-full hover:bg-blue-700 transition text-[16px] mb-6 disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-500/10"
             >
                 {isCheckingEligibility ? 'Checking guest eligibility...' : !isAuthenticated ? 'Go to guest checkout' : 'Go to checkout'}
             </button>
 
-            {!isAuthenticated && (
-                <div className="mb-8 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                    Guest checkout is available for eligible fixed-price items only. Auction items, PayPal, and coupons are not supported in guest checkout during Phase 1.
-                </div>
-            )}
-
             {eligibilityMessage && (
-                <div className="mb-8 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                <div className="mb-6 rounded-md border border-red-100 bg-red-50/30 px-4 py-3 text-[13px] text-red-600">
                     {eligibilityMessage}
                 </div>
             )}
 
-            <div className="flex items-start gap-2 pt-2 border-t border-gray-100 mt-4">
-                <ShieldCheck size={20} className="text-[#3665f3] flex-shrink-0 mt-0.5" />
-                <p className="text-[12px] text-gray-600 leading-relaxed">
-                    Purchase protected by <a href="#" className="text-[#3665f3] underline">eBay Money Back Guarantee</a>
+            <div className="flex items-start gap-2 pt-4 border-t border-gray-200">
+                <ShieldCheck size={18} className="text-[#3665f3] flex-shrink-0 mt-0.5" />
+                <p className="text-[12px] text-gray-600 leading-tight">
+                    Purchase protected by <a href="#" className="text-[#3665f3] hover:underline">eBay Money Back Guarantee</a>
                 </p>
             </div>
         </div>

@@ -264,19 +264,26 @@ const router = createBrowserRouter([
 
 import { Toaster } from 'react-hot-toast';
 
+import useCurrencyStore from './store/useCurrencyStore';
+
 let hasBootstrappedAuthCheck = false;
+let hasBootstrappedCurrency = false;
 
 export default function App() {
   const { checkAuth, loading } = useAuthStore();
+  const { initialize: initCurrency } = useCurrencyStore();
 
   useEffect(() => {
-    if (hasBootstrappedAuthCheck) {
-      return;
+    if (!hasBootstrappedAuthCheck) {
+      hasBootstrappedAuthCheck = true;
+      checkAuth();
     }
 
-    hasBootstrappedAuthCheck = true;
-    checkAuth();
-  }, [checkAuth]);
+    if (!hasBootstrappedCurrency) {
+      hasBootstrappedCurrency = true;
+      initCurrency();
+    }
+  }, [checkAuth, initCurrency]);
 
   if (loading) {
     return (

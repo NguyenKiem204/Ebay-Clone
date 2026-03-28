@@ -5,6 +5,7 @@ import useAuthStore from '../../store/useAuthStore';
 import useCategoryStore from '../../store/useCategoryStore';
 import useCartStore from '../../features/cart/hooks/useCartStore';
 import useNotificationStore from '../../store/useNotificationStore';
+import useCurrencyStore from '../../store/useCurrencyStore';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { isUserInteractingWithForm } from '../../lib/autoRefresh';
 
@@ -130,6 +131,8 @@ export default function Header() {
     const markAsRead = useNotificationStore((state) => state.markAsRead);
     const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 
+    const { isVietnamese, toggleVietnamese } = useCurrencyStore();
+
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
 
@@ -225,6 +228,24 @@ export default function Header() {
                         <Link to="#" className="hover:underline">Brand Outlet</Link>
                         <Link to="#" className="hover:underline">Gift Cards</Link>
                         <Link to="#" className="hover:underline">Help & Contact</Link>
+                        
+                        {/* Currency/Region Toggle */}
+                        <div className="flex items-center ml-2 border-l border-gray-200 pl-4 h-4">
+                            <button 
+                                onClick={toggleVietnamese}
+                                className="flex items-center gap-1.5 hover:text-blue-600 transition-colors group"
+                                title="Click to switch currency"
+                            >
+                                <span className={`flex items-center justify-center w-5 h-5 rounded-full overflow-hidden border ${isVietnamese ? 'border-red-100' : 'border-blue-100'}`}>
+                                    {isVietnamese ? (
+                                        <img src="https://flagcdn.com/w20/vn.png" alt="VN" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <img src="https://flagcdn.com/w20/us.png" alt="US" className="w-full h-full object-cover" />
+                                    )}
+                                </span>
+                                <span className="font-bold">{isVietnamese ? 'VND' : 'USD'}</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-5">

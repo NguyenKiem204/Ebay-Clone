@@ -91,6 +91,7 @@ builder.Services.AddScoped<ISellerOrderQueryService, SellerOrderQueryService>();
 builder.Services.AddScoped<ISellerOrderFulfillmentService, SellerOrderFulfillmentService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IPaypalService, PaypalService>();
+builder.Services.AddScoped<IGeoService, GeoService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.HistoryCleanupService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.AuctionSettlementBackgroundService>();
 builder.Services.AddHostedService<ebay.Services.Implementations.AuctionPaymentFollowUpBackgroundService>();

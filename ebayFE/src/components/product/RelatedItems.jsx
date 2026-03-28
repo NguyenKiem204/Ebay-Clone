@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { resolveMediaUrl } from '../../lib/media';
+import useCurrencyStore from '../../store/useCurrencyStore';
 
 export default function RelatedItems({ relatedProducts, productId }) {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const scrollRef = useRef(null);
 
     const scroll = (dir) => {
@@ -42,10 +44,10 @@ export default function RelatedItems({ relatedProducts, productId }) {
                             <div className="space-y-1">
                                 <h3 className="text-[13px] leading-tight text-gray-800 line-clamp-2 group-hover:underline group-hover:text-blue-600">{item.title}</h3>
                                 <div className="text-[12px] text-gray-500 capitalize">{item.condition}</div>
-                                <div className="text-[16px] font-bold text-gray-900">{item.price.toLocaleString()} USD</div>
+                                <div className="text-[16px] font-bold text-gray-900">{formatPrice(item.price)}</div>
                                 {item.discountPrice && item.discountPrice > item.price && (
                                     <div className="text-[12px] text-gray-500">
-                                        <span className="line-through">{item.discountPrice.toLocaleString()} USD</span>
+                                        <span className="line-through">{formatPrice(item.discountPrice)}</span>
                                         <span className="ml-1 font-bold text-gray-900 text-[#dd1e31]">
                                             {Math.round((1 - item.price / item.discountPrice) * 100)}% off
                                         </span>
@@ -54,7 +56,7 @@ export default function RelatedItems({ relatedProducts, productId }) {
                                 <div className="text-[12px] text-gray-500">
                                     {item.shippingFee === 0
                                         ? 'Free delivery'
-                                        : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.shippingFee)} delivery`}
+                                        : `+${formatPrice(item.shippingFee)} delivery`}
                                 </div>
                                 <div className="text-[11px] text-gray-400">Seller {item.sellerName}</div>
                             </div>

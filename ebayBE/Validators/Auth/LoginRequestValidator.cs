@@ -1,4 +1,4 @@
-﻿using ebay.DTOs.Requests;
+using ebay.DTOs.Requests;
 using FluentValidation;
 
 namespace ebay.Validators.Auth
@@ -8,14 +8,14 @@ namespace ebay.Validators.Auth
         public LoginRequestValidator()
         {
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email là bắt buộc")
-                .EmailAddress().WithMessage("Email không hợp lệ")
-                .MaximumLength(255).WithMessage("Email không được vượt quá 255 ký tự");
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Invalid email address")
+                .MaximumLength(255).WithMessage("Email must not exceed 255 characters");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Mật khẩu là bắt buộc")
-                .MinimumLength(6).WithMessage("Mật khẩu phải có ít nhất 6 ký tự")
-                .MaximumLength(128).WithMessage("Mật khẩu không được vượt quá 128 ký tự");
+                .NotEmpty().WithMessage("Password is required")
+                .MinimumLength(6).WithMessage("Password must be at least 6 characters")
+                .MaximumLength(128).WithMessage("Password must not exceed 128 characters");
         }
     }
 }

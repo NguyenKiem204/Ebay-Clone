@@ -501,34 +501,34 @@ export const useCheckout = () => {
 
             if (!response?.success || !response?.data?.valid) {
                 setAppliedCoupon(null);
-                const backendMessage = response?.data?.message || response?.message || '';
-                setCouponError(
-                    /không hợp lệ|khong hop le|invalid/i.test(backendMessage)
-                        ? 'This coupon code is invalid.'
-                        : backendMessage || 'This coupon could not be applied.'
-                );
-                return false;
-            }
-
-            setAppliedCoupon({
-                id: response.data.couponId,
-                code: response.data.code,
-                discountAmount: response.data.discountAmount,
-                description: response.data.description
-            });
-            setCouponCode(response.data.code || trimmedCode.toUpperCase());
-            setCouponError('');
-            return true;
-        } catch (err) {
-            setAppliedCoupon(null);
-            const backendMessage = err.response?.data?.message || err.message || '';
+            const backendMessage = response?.data?.message || response?.message || '';
             setCouponError(
-                /không hợp lệ|khong hop le|invalid/i.test(backendMessage)
+                /invalid/i.test(backendMessage)
                     ? 'This coupon code is invalid.'
                     : backendMessage || 'This coupon could not be applied.'
             );
             return false;
-        } finally {
+        }
+
+        setAppliedCoupon({
+            id: response.data.couponId,
+            code: response.data.code,
+            discountAmount: response.data.discountAmount,
+            description: response.data.description
+        });
+        setCouponCode(response.data.code || trimmedCode.toUpperCase());
+        setCouponError('');
+        return true;
+    } catch (err) {
+        setAppliedCoupon(null);
+        const backendMessage = err.response?.data?.message || err.message || '';
+        setCouponError(
+            /invalid/i.test(backendMessage)
+                ? 'This coupon code is invalid.'
+                : backendMessage || 'This coupon could not be applied.'
+        );
+        return false;
+    } finally {
             setIsApplyingCoupon(false);
         }
     };

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import useCurrencyStore from '../../store/useCurrencyStore';
 
 export function RecommendedItems({ recommendations }) {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     if (!recommendations || recommendations.length === 0) return null;
 
     return (
@@ -28,7 +30,7 @@ export function RecommendedItems({ recommendations }) {
                             {product.title}
                         </p>
                         <p className="text-[14px] font-bold text-gray-900 mt-1">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(product.price || 0))}
+                            {formatPrice(Number(product.price || 0))}
                         </p>
                     </Link>
                 ))}

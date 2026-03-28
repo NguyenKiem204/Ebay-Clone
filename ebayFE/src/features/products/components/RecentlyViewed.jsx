@@ -5,7 +5,10 @@ import useHistoryStore from '../../history/useHistoryStore';
 import useAuthStore from '../../../store/useAuthStore';
 import useSavedStore from '../../saved/useSavedStore';
 
+import useCurrencyStore from '../../../store/useCurrencyStore';
+
 export function RecentlyViewed() {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const historyItems = useHistoryStore(s => s.historyItems);
     const { isAuthenticated } = useAuthStore();
     const savedIds = useSavedStore(s => s.savedIds);
@@ -97,13 +100,13 @@ export function RecentlyViewed() {
                                     </h3>
                                     <div className="flex flex-wrap items-baseline gap-x-2 mt-1">
                                         <span className="font-bold text-[16px] text-gray-900">
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.price || 0))}
+                                            {formatPrice(Number(item.price || 0))}
                                         </span>
                                     </div>
                                     <span className="text-[11px] text-blue-600 font-medium">
                                         {item.shippingFee === 0
                                             ? 'Free shipping'
-                                            : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(item.shippingFee || 0))} shipping`}
+                                            : `+${formatPrice(Number(item.shippingFee || 0))} shipping`}
                                     </span>
                                 </Link>
                             </div>

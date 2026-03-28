@@ -10,7 +10,10 @@ import {
 } from '../../features/auction/utils/auctionPresentation';
 import { resolveMediaUrl } from '../../lib/media';
 
+import useCurrencyStore from '../../store/useCurrencyStore';
+
 export function ProductCard({ product }) {
+    const formatPrice = useCurrencyStore(s => s.formatPrice);
     const [nowTick, setNowTick] = useState(() => Date.now());
     const { isAuthenticated } = useAuthStore();
     const isSaved = useSavedStore(s => s.savedIds.has(product?.id));
@@ -101,8 +104,8 @@ export function ProductCard({ product }) {
                 </Link>
                 <div className="flex items-center gap-1 mb-1">
                     <div className="flex text-yellow-400 text-[10px]">
-                        {'â˜…'.repeat(Math.round(product.rating || 5))}
-                        {'â˜†'.repeat(5 - Math.round(product.rating || 5))}
+                        {'★'.repeat(Math.round(product.rating || 5))}
+                        {'☆'.repeat(5 - Math.round(product.rating || 5))}
                     </div>
                     <span className="text-[10px] text-gray-500">({product.reviewCount || 0})</span>
                 </div>
@@ -112,10 +115,10 @@ export function ProductCard({ product }) {
                         {product.isAuction ? (
                             <>
                                 <span className="text-[11px] font-normal text-gray-500 block mb-0.5">Current bid:</span>
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.currentBid || product.price)}
+                                {formatPrice(product.currentBid || product.price)}
                             </>
                         ) : (
-                            new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)
+                            formatPrice(product.price)
                         )}
                     </div>
                     {product.isAuction && (
@@ -125,14 +128,14 @@ export function ProductCard({ product }) {
                             </div>
                             {product.buyItNowPrice && (
                                 <div className="text-[11px] text-[#3665f3] font-medium mt-0.5">
-                                    Buy It Now: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.buyItNowPrice)}
+                                    Buy It Now: {formatPrice(product.buyItNowPrice)}
                                 </div>
                             )}
                         </>
                     )}
                     {!product.isAuction && product.originalPrice && product.originalPrice > product.price && (
                         <div className="text-[11px] text-gray-500 line-through">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.originalPrice)}
+                            {formatPrice(product.originalPrice)}
                         </div>
                     )}
 
@@ -140,7 +143,7 @@ export function ProductCard({ product }) {
                         <span className="text-[11px] text-blue-700 font-medium leading-none">
                             {product.shippingFee === 0
                                 ? 'Free shipping'
-                                : `+${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.shippingFee || 0)} shipping`}
+                                : `+${formatPrice(product.shippingFee || 0)} shipping`}
                         </span>
                         <span className="text-[10px] text-gray-400">From {product.sellerName || 'ebay_seller'}</span>
                     </div>

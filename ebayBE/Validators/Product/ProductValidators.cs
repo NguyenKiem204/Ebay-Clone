@@ -9,60 +9,60 @@ namespace ebay.Validators.Product
         public CreateProductRequestValidator()
         {
             RuleFor(x => x.Title)
-                .NotEmpty().WithMessage("Tiêu đề không được để trống")
-                .MinimumLength(10).WithMessage("Tiêu đề phải ít nhất 10 ký tự")
-                .MaximumLength(150).WithMessage("Tiêu đề không được quá 150 ký tự")
-                .Must(StoreValidationHelpers.NotContainBadWords).WithMessage("Tiêu đề chứa từ ngữ không hợp lệ");
+                .NotEmpty().WithMessage("Title is required")
+                .MinimumLength(10).WithMessage("Title must be at least 10 characters")
+                .MaximumLength(150).WithMessage("Title must not exceed 150 characters")
+                .Must(StoreValidationHelpers.NotContainBadWords).WithMessage("Title contains invalid words");
 
             RuleFor(x => x.Description)
-                .MaximumLength(5000).WithMessage("Mô tả không được quá 5000 ký tự")
-                .Must(StoreValidationHelpers.NotContainBadWords).WithMessage("Mô tả chứa từ ngữ không hợp lệ");
+                .MaximumLength(5000).WithMessage("Description must not exceed 5000 characters")
+                .Must(StoreValidationHelpers.NotContainBadWords).WithMessage("Description contains invalid words");
 
             RuleFor(x => x.Price)
-                .GreaterThan(0).When(x => !x.IsAuction).WithMessage("Giá sản phẩm phải lớn hơn 0");
+                .GreaterThan(0).When(x => !x.IsAuction).WithMessage("Product price must be greater than 0");
 
             RuleFor(x => x.Stock)
-                .GreaterThanOrEqualTo(0).WithMessage("Số lượng kho không được âm");
+                .GreaterThanOrEqualTo(0).WithMessage("Stock quantity cannot be negative");
 
             RuleFor(x => x.Stock)
                 .Equal(1)
                 .When(x => x.IsAuction)
-                .WithMessage("Listing đấu giá chỉ hỗ trợ số lượng kho bằng 1");
+                .WithMessage("Auction listings only support a stock quantity of 1");
 
             RuleFor(x => x.Condition)
-                .NotEmpty().WithMessage("Trạng thái sản phẩm (Condition) không được để trống");
+                .NotEmpty().WithMessage("Product condition is required");
 
             RuleFor(x => x.CategoryId)
-                .NotEmpty().WithMessage("Vui lòng chọn danh mục cho sản phẩm");
+                .NotEmpty().WithMessage("Please select a category for the product");
 
             RuleFor(x => x.Images)
-                .Must(x => x != null && x.Count > 0).WithMessage("Sản phẩm phải có ít nhất 1 ảnh")
-                .Must(x => x == null || x.Count <= 24).WithMessage("Sản phẩm không được quá 24 ảnh");
+                .Must(x => x != null && x.Count > 0).WithMessage("Product must have at least 1 image")
+                .Must(x => x == null || x.Count <= 24).WithMessage("Product cannot have more than 24 images");
             
             RuleFor(x => x.StartingBid)
-                .GreaterThan(0).When(x => x.IsAuction).WithMessage("Giá khởi điểm đấu giá phải lớn hơn 0");
+                .GreaterThan(0).When(x => x.IsAuction).WithMessage("Auction starting bid must be greater than 0");
 
             RuleFor(x => x.ReservePrice)
                 .GreaterThan(0).When(x => x.IsAuction && x.ReservePrice.HasValue)
-                .WithMessage("Reserve price phải lớn hơn 0");
+                .WithMessage("Reserve price must be greater than 0");
 
             RuleFor(x => x)
                 .Must(x => !x.IsAuction || !x.ReservePrice.HasValue || !x.StartingBid.HasValue || x.ReservePrice.Value >= x.StartingBid.Value)
-                .WithMessage("Reserve price phải lớn hơn hoặc bằng starting bid");
+                .WithMessage("Reserve price must be greater than or equal to the starting bid");
 
             RuleFor(x => x)
                 .Must(x => !x.IsAuction || !x.BuyItNowPrice.HasValue || !x.StartingBid.HasValue || x.BuyItNowPrice.Value >= x.StartingBid.Value * 1.3m)
-                .WithMessage("Buy It Now phải >= 130% starting bid theo rule auction + BIN");
+                .WithMessage("Buy It Now price must be >= 130% of the starting bid for auction + BIN listings");
 
             RuleFor(x => x.AuctionDurationMinutes)
                 .InclusiveBetween(15, 14_400)
                 .When(x => x.IsAuction && x.AuctionDurationMinutes.HasValue)
-                .WithMessage("Thời lượng đấu giá phải từ 15 phút đến 10 ngày");
+                .WithMessage("Auction duration must be between 15 minutes and 10 days");
 
             RuleFor(x => x.AuctionDurationDays)
                 .Must(d => !d.HasValue || new[] { 1, 3, 5, 7, 10 }.Contains(d.Value))
                 .When(x => x.IsAuction && !x.AuctionDurationMinutes.HasValue)
-                .WithMessage("Thời lượng đấu giá chỉ hỗ trợ: 1, 3, 5, 7 hoặc 10 ngày");
+                .WithMessage("Auction duration only supports: 1, 3, 5, 7, or 10 days");
         }
     }
 
@@ -71,52 +71,52 @@ namespace ebay.Validators.Product
         public UpdateProductRequestValidator()
         {
             RuleFor(x => x.Title)
-                .MinimumLength(10).When(x => !string.IsNullOrEmpty(x.Title)).WithMessage("Tiêu đề phải ít nhất 10 ký tự")
-                .MaximumLength(150).When(x => !string.IsNullOrEmpty(x.Title)).WithMessage("Tiêu đề không được quá 150 ký tự")
-                .Must(StoreValidationHelpers.NotContainBadWords).When(x => !string.IsNullOrEmpty(x.Title)).WithMessage("Tiêu đề chứa từ ngữ không hợp lệ");
+                .MinimumLength(10).When(x => !string.IsNullOrEmpty(x.Title)).WithMessage("Title must be at least 10 characters")
+                .MaximumLength(150).When(x => !string.IsNullOrEmpty(x.Title)).WithMessage("Title must not exceed 150 characters")
+                .Must(StoreValidationHelpers.NotContainBadWords).When(x => !string.IsNullOrEmpty(x.Title)).WithMessage("Title contains invalid words");
 
             RuleFor(x => x.Description)
-                .MaximumLength(5000).When(x => !string.IsNullOrEmpty(x.Description)).WithMessage("Mô tả không được quá 5000 ký tự")
-                .Must(StoreValidationHelpers.NotContainBadWords).When(x => !string.IsNullOrEmpty(x.Description)).WithMessage("Mô tả chứa từ ngữ không hợp lệ");
+                .MaximumLength(5000).When(x => !string.IsNullOrEmpty(x.Description)).WithMessage("Description must not exceed 5000 characters")
+                .Must(StoreValidationHelpers.NotContainBadWords).When(x => !string.IsNullOrEmpty(x.Description)).WithMessage("Description contains invalid words");
 
             RuleFor(x => x.Price)
-                .GreaterThan(0).When(x => x.Price.HasValue && (!x.IsAuction.HasValue || !x.IsAuction.Value)).WithMessage("Giá sản phẩm phải lớn hơn 0");
+                .GreaterThan(0).When(x => x.Price.HasValue && (!x.IsAuction.HasValue || !x.IsAuction.Value)).WithMessage("Product price must be greater than 0");
 
             RuleFor(x => x.Stock)
-                .GreaterThanOrEqualTo(0).When(x => x.Stock.HasValue).WithMessage("Số lượng kho không được âm");
+                .GreaterThanOrEqualTo(0).When(x => x.Stock.HasValue).WithMessage("Stock quantity cannot be negative");
 
             RuleFor(x => x.Stock)
                 .Equal(1)
                 .When(x => x.IsAuction == true && x.Stock.HasValue)
-                .WithMessage("Listing đấu giá chỉ hỗ trợ số lượng kho bằng 1");
+                .WithMessage("Auction listings only support a stock quantity of 1");
 
             RuleFor(x => x.StartingBid)
                 .GreaterThan(0)
                 .When(x => x.IsAuction == true && x.StartingBid.HasValue)
-                .WithMessage("Giá khởi điểm đấu giá phải lớn hơn 0");
+                .WithMessage("Auction starting bid must be greater than 0");
 
             RuleFor(x => x.ReservePrice)
                 .GreaterThan(0)
                 .When(x => x.IsAuction == true && x.ReservePrice.HasValue)
-                .WithMessage("Reserve price phải lớn hơn 0");
+                .WithMessage("Reserve price must be greater than 0");
 
             RuleFor(x => x)
                 .Must(x => x.IsAuction != true || !x.ReservePrice.HasValue || !x.StartingBid.HasValue || x.ReservePrice.Value >= x.StartingBid.Value)
-                .WithMessage("Reserve price phải lớn hơn hoặc bằng starting bid");
+                .WithMessage("Reserve price must be greater than or equal to the starting bid");
 
             RuleFor(x => x)
                 .Must(x => x.IsAuction != true || !x.BuyItNowPrice.HasValue || !x.StartingBid.HasValue || x.BuyItNowPrice.Value >= x.StartingBid.Value * 1.3m)
-                .WithMessage("Buy It Now phải >= 130% starting bid theo rule auction + BIN");
+                .WithMessage("Buy It Now price must be >= 130% of the starting bid for auction + BIN listings");
 
             RuleFor(x => x.AuctionDurationMinutes)
                 .InclusiveBetween(15, 14_400)
                 .When(x => x.IsAuction == true && x.AuctionDurationMinutes.HasValue)
-                .WithMessage("Thời lượng đấu giá phải từ 15 phút đến 10 ngày");
+                .WithMessage("Auction duration must be between 15 minutes and 10 days");
 
             RuleFor(x => x.AuctionDurationDays)
                 .Must(d => !d.HasValue || new[] { 1, 3, 5, 7, 10 }.Contains(d.Value))
                 .When(x => x.IsAuction == true && !x.AuctionDurationMinutes.HasValue)
-                .WithMessage("Thời lượng đấu giá chỉ hỗ trợ: 1, 3, 5, 7 hoặc 10 ngày");
+                .WithMessage("Auction duration only supports: 1, 3, 5, 7, or 10 days");
         }
     }
 }
